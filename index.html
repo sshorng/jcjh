@@ -884,21 +884,48 @@
             <span class="modal-close" onclick="closeModal('adminModal')">&times;</span>
             <h2 style="color: var(--warm-brown); text-align: center; margin-bottom: 1rem;">管理後台</h2>
 
-            <div id="admin-setup-ui" style="padding-bottom: 2rem; border-bottom: 1px solid rgba(0,0,0,0.06);">
-                <h3 style="font-size: 1rem; margin-bottom: 1rem; color: var(--primary-coral);">1. API 連線設定</h3>
-                <label>GAS Web App URL (部署後的網址)</label>
-                <div style="display: flex; gap: 10px; margin-top: 0.5rem;">
-                    <input type="password" id="gasUrl" style="flex: 1;" placeholder="貼入 GAS 網址...">
-                    <button class="btn-submit" style="padding: 0 20px; font-size: 0.9rem;"
-                        onclick="saveSettings()">儲存</button>
+            <!-- API 連線設定 (摺疊式) -->
+            <details id="admin-setup-ui" style="border-bottom: 1px solid rgba(0,0,0,0.06); margin-bottom: 1rem;">
+                <summary
+                    style="cursor: pointer; padding: 10px; color: var(--primary-coral); font-weight: 600; font-size: 0.9rem;">
+                    ⚙️ API 連線與分享設定 (初次使用或更換資料庫時點開)
+                </summary>
+                <div style="padding: 10px; background: rgba(0,0,0,0.02); border-radius: 10px; margin-bottom: 1rem;">
+                    <label style="font-size: 0.85rem;">GAS Web App URL (部署後的網址)</label>
+                    <div style="display: flex; gap: 10px; margin-top: 0.5rem;">
+                        <input type="password" id="gasUrl" style="flex: 1;" placeholder="貼入 GAS 網址...">
+                        <button class="btn-submit" style="padding: 0 15px; font-size: 0.85rem;"
+                            onclick="saveSettings()">儲存</button>
+                    </div>
+                    <div style="margin-top: 10px; display: flex; gap: 10px;">
+                        <button class="btn-submit"
+                            style="background: #95a5a6; flex: 1; padding: 8px; font-size: 0.75rem;"
+                            onclick="clearSettings()">重設連線</button>
+                        <button class="btn-submit"
+                            style="background: #8e44ad; flex: 1; padding: 8px; font-size: 0.75rem;"
+                            onclick="openInfoModal()">部署教學</button>
+                        <button class="btn-submit"
+                            style="background: #27ae60; flex: 1; padding: 8px; font-size: 0.75rem;"
+                            onclick="generateShareLink()">產生分享連結</button>
+                    </div>
+
+                    <!-- 分享連結顯示區 (預設隱藏) -->
+                    <div id="share-link-area"
+                        style="display:none; margin-top: 15px; padding: 15px; background: white; border-radius: 10px; border: 1px solid #eee; text-align: center;">
+                        <p style="font-size: 0.8rem; color: #666; margin-bottom: 10px;">分享此連結給其他管理者，或由手機掃碼快速配置：</p>
+                        <div id="shareQrContainer" style="margin-bottom: 10px;">
+                            <img id="shareQrImg"
+                                style="width: 150px; height: 150px; border: 1px solid #eee; padding: 5px;">
+                        </div>
+                        <div style="display: flex; gap: 5px;">
+                            <input type="text" id="shareUrlDisplay" readonly
+                                style="flex: 1; font-size: 0.75rem; padding: 5px;">
+                            <button class="btn-submit" style="padding: 5px 10px; font-size: 0.75rem;"
+                                onclick="copyShareUrl()">複製連結</button>
+                        </div>
+                    </div>
                 </div>
-                <div style="margin-top: 10px; display: flex; gap: 10px;">
-                    <button class="btn-submit" style="background: #95a5a6; flex: 1; padding: 10px; font-size: 0.8rem;"
-                        onclick="clearSettings()">重設連線</button>
-                    <button class="btn-submit" style="background: #8e44ad; flex: 1; padding: 10px; font-size: 0.8rem;"
-                        onclick="openInfoModal()">查看部署教學</button>
-                </div>
-            </div>
+            </details>
 
             <div id="admin-management-ui" style="margin-top: 2rem;">
                 <h3 style="font-size: 1rem; margin-bottom: 1rem; color: #b07d62;">2. 留言內容管理</h3>
@@ -988,28 +1015,34 @@
 
         // --- 優先順序邏輯 ---
         function getGasUrl() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const configParam = urlParams.get('config');
-            if (configParam) {
-                try {
-                    const decoded = atob(configParam);
-                    localStorage.setItem('gas_url', decoded);
-                    // 移除參數避免重複讀取
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                    return decoded;
-                } catch (e) { }
-            }
+            // 已在 window.onload 處理過網址參數，此處直接讀取 localStorage 即可
             return localStorage.getItem('gas_url') || DEFAULT_GAS_URL;
         }
 
         // --- 初始化頁面 ---
         window.onload = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+
+            // 優先檢查網址參數是否有 config (自動連線設定)
+            if (urlParams.has('config')) {
+                try {
+                    const encodedUrl = urlParams.get('config');
+                    const decodedUrl = atob(encodedUrl);
+                    if (decodedUrl.startsWith('https://script.google.com')) {
+                        localStorage.setItem('gas_url', decodedUrl);
+                        showModal('設定成功', '已透過分享連結自動完成 API 配置', 'success');
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }
+                } catch (e) {
+                    console.error("Config URL decoding failed", e);
+                }
+            }
+
             const url = getGasUrl();
             if (url) {
                 loadMessages();
                 setInterval(loadMessages, 30000);
             } else {
-                // 如果沒有網址，彈出後台且不需密碼也能看到連線設定
                 openAdminModal();
                 Swal.fire({
                     title: '初始化設定',
@@ -1021,11 +1054,12 @@
             // 生成整合式 QR Code (使用新的緋紅色 f27979)
             const currentUrl = window.location.href.split('?')[0];
             const writeUrl = `${currentUrl}?write=true`;
-            document.getElementById('fabQrImg').src = `https://quickchart.io/qr?text=${encodeURIComponent(writeUrl)}&size=150&margin=0&dark=f27979&light=ffffff00`;
+            if (document.getElementById('fabQrImg')) {
+                document.getElementById('fabQrImg').src = `https://quickchart.io/qr?text=${encodeURIComponent(writeUrl)}&size=150&margin=0&dark=f27979&light=ffffff00`;
+            }
 
             // 關鍵功能：掃碼即寫檢測
-            const params = new URLSearchParams(window.location.search);
-            if (params.has('write')) {
+            if (urlParams.has('write')) {
                 setTimeout(openPostModal, 1500);
             }
 
@@ -1483,61 +1517,85 @@
         }
 
         // --- 設定與工具 ---
+        // --- 設定與工具 ---
         async function saveSettings() {
-            const url = document.getElementById('gasUrl').value;
-            if (url) {
-                localStorage.setItem('gas_url', url);
-
-                // 嘗試初始化後端
-                const btn = document.querySelector('#settingsModal .btn-submit');
-                const originalText = btn.textContent;
-                btn.disabled = true;
-                btn.textContent = "正在聯絡後端建立資料庫...";
-
-                const res = await fetchAPI('init');
-                btn.disabled = false;
-                btn.textContent = originalText;
-
-                if (res && (res.status === "success" || res.status === "ok")) {
-                    Swal.fire({
-                        title: '設定成功',
-                        text: '資料庫已初始化完成，即將重新整理頁面。',
-                        icon: 'success',
-                        timer: 2000
-                    }).then(() => {
-                        location.reload();
-                    });
-                } else {
-                    Swal.fire({
-                        title: '注意',
-                        text: '設定已儲存，但後端初始化回應異常。請確認 GAS 部署是否設為「所有人」。',
-                        icon: 'warning'
-                    }).then(() => {
-                        location.reload();
-                    });
-                }
+            const url = document.getElementById('gasUrl').value.trim();
+            if (!url.startsWith('https://script.google.com')) {
+                showModal('錯誤', '請輸入正確的 GAS Web App 網址', 'error');
+                return;
             }
-        }
+            localStorage.setItem('gas_url', url);
 
-        function clearSettings() {
-            localStorage.removeItem('gas_url');
-            location.reload();
+            // 嘗試初始化後端
+            const btn = document.querySelector('button[onclick="saveSettings()"]');
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = "正在聯絡後端...";
+
+            try {
+                const res = await fetchAPI('init');
+                if (res && (res.status === "success" || res.status === "ok")) {
+                    showModal('成功', '連線設定已儲存且資料庫已初始化', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showModal('警告', '設定已儲存，但後端初始化回應異常。請確認您的 GAS 部署權限。', 'warning');
+                    setTimeout(() => location.reload(), 3000);
+                }
+            } catch (e) {
+                showModal('成功', '連線設定已儲存', 'success');
+                setTimeout(() => location.reload(), 1500);
+            }
+
+            btn.disabled = false;
+            btn.textContent = originalText;
         }
 
         function generateShareLink() {
             const url = getGasUrl();
-            if (!url) return;
-            const encoded = btoa(url);
-            const shareUrl = `${window.location.origin}${window.location.pathname}?config=${encoded}`;
+            if (!url || url === "" || url === DEFAULT_GAS_URL) {
+                showModal('提示', '請先填入並儲存自訂的 GAS 網址後再產生分享連結', 'info');
+                return;
+            }
 
-            // 使用 quickchart.io QR code API
-            const qrContainer = document.getElementById('qrcode-container');
-            qrContainer.innerHTML = `<img src="https://quickchart.io/qr?text=${encodeURIComponent(shareUrl)}&size=200" alt="QR Code">`;
+            const area = document.getElementById('share-link-area');
+            const baseUrl = window.location.href.split('?')[0];
+            const configFullUrl = `${baseUrl}?config=${btoa(url)}`;
 
-            const input = document.getElementById('shortUrlOutput');
-            input.value = shareUrl;
-            input.style.display = 'block';
-            showModal('分享連結已產生', '你可以掃描 QR Code 或複製下方的長網址。', 'success');
+            // 顯示區域
+            area.style.display = 'block';
+            document.getElementById('shareUrlDisplay').value = configFullUrl;
+
+            // 生成 QR Code (對應分享連結)
+            const qrImg = document.getElementById('shareQrImg');
+            if (qrImg) {
+                qrImg.src = `https://quickchart.io/qr?text=${encodeURIComponent(configFullUrl)}&size=200&dark=f27979`;
+            }
+
+            showModal('分享連結已產生', '您現在可以複製連結或透過 QR Code 分享設定', 'success');
+        }
+
+        function copyShareUrl() {
+            const input = document.getElementById('shareUrlDisplay');
+            input.select();
+            document.execCommand('copy');
+            showModal('成功', '分享連結已複製', 'success');
+        }
+
+        function clearSettings() {
+            Swal.fire({
+                title: '確定重置？',
+                text: '這將刪除本地的 GAS 連線紀錄',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: '確定刪除',
+                cancelButtonText: '取消'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    localStorage.removeItem('gas_url');
+                    localStorage.removeItem('admin_token');
+                    location.reload();
+                }
+            });
         }
 
         // --- 通用 UI 函式 ---
