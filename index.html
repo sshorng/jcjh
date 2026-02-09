@@ -1430,7 +1430,7 @@
             const res = await fetchAPI('adminGetMessages', null, { password });
 
             if (res && !res.error) {
-                sessionStorage.setItem('admin_password', password); // 記憶登入狀態 (session)
+                localStorage.setItem('admin_password', password); // 記憶登入狀態 (持久化)
                 renderAdminUI(res);
             } else {
                 showModal('錯誤', '密碼不正確。', 'error');
@@ -1492,7 +1492,7 @@
                 return;
             }
 
-            const password = sessionStorage.getItem('admin_password');
+            const password = localStorage.getItem('admin_password');
             let successCount = 0;
 
             Swal.fire({ title: '批次處理中...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
@@ -1509,7 +1509,7 @@
         }
 
         async function loadAdminMessages() {
-            const password = sessionStorage.getItem('admin_password');
+            const password = localStorage.getItem('admin_password');
             if (!password) return;
             const res = await fetchAPI('adminGetMessages', null, { password });
             if (res && !res.error) {
@@ -1519,7 +1519,7 @@
         }
 
         function logoutAdmin() {
-            sessionStorage.removeItem('admin_password');
+            localStorage.removeItem('admin_password');
             location.reload();
         }
 
@@ -1529,7 +1529,7 @@
         }
 
         async function updateStatus(id, newStatus) {
-            const password = sessionStorage.getItem('admin_password');
+            const password = localStorage.getItem('admin_password');
             const res = await fetchAPI('updateStatus', { id, status: newStatus, password });
             if (res && res.status === "success") {
                 loadAdminMessages();
@@ -1637,7 +1637,15 @@
             document.getElementById('gasUrl').value = getGasUrl();
             document.getElementById('settingsModal').style.display = 'flex';
         }
-        function openAdminModal() { document.getElementById('adminModal').style.display = 'flex'; }
+        function openAdminModal() {
+            document.getElementById('adminModal').style.display = 'flex';
+            // 如果本地有存密碼且尚未解鎖，則自動嘗試登入
+            const savedPwd = localStorage.getItem('admin_password');
+            if (savedPwd && document.getElementById('admin-panel').style.display === 'none') {
+                document.getElementById('adminPassword').value = savedPwd;
+                doAdminLogin();
+            }
+        }
         function openInfoModal() {
             document.getElementById('infoModal').style.display = 'flex';
             // 讀取目前的程式碼供複製
