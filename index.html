@@ -169,9 +169,11 @@
             background: rgba(255, 255, 255, 0.45);
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
+            background: white;
+            /* 確保背景純白提升對比 */
             padding: 10px;
             border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.6);
+            border: 1px solid var(--primary-coral);
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
             transition: all 0.3s ease;
             cursor: pointer;
@@ -187,9 +189,7 @@
             height: 110px;
             display: block;
             border-radius: 8px;
-            mix-blend-mode: multiply;
-            /* 讓 QR Code 更融合背景 */
-            opacity: 0.85;
+            /* 移除可能降低對比度的視覺效果 */
         }
 
         .admin-entry button {
@@ -1070,7 +1070,8 @@
                 const isLocal = window.location.protocol === 'file:';
                 if (isLocal) console.warn("偵測到本地檔案執行。QR Code 將包含本地路徑，手機掃描將無法跨裝置讀取。");
 
-                document.getElementById('fabQrImg').src = `https://quickchart.io/qr?text=${encodeURIComponent(writeUrl)}&size=150&margin=0&dark=f27979&light=ffffff`;
+                // 使用對比度更高的深紅色 (c23a3a) 確保掃碼成功率，同時維持粉紅色系
+                document.getElementById('fabQrImg').src = `https://quickchart.io/qr?text=${encodeURIComponent(writeUrl)}&size=200&margin=1&dark=c23a3a&light=ffffff`;
             }
 
             // 關鍵功能：掃碼即寫檢測
