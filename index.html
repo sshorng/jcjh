@@ -1617,7 +1617,10 @@
                 title,
                 text: message,
                 icon: type,
-                confirmButtonColor: '#e67e22'
+                confirmButtonColor: '#e67e22',
+                timer: 3000, // 3秒後自動關閉
+                timerProgressBar: true, // 顯示進度條
+                showConfirmButton: type === 'error', // 錯誤時才顯示確認按鈕，其他狀況自動消失
             });
         }
 
