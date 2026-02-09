@@ -457,6 +457,36 @@
             font-size: 1rem;
         }
 
+        .fab-button-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .fab-secondary {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: var(--primary-coral);
+            border: 2px solid var(--primary-coral);
+            padding: 1rem;
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            box-shadow: 0 8px 25px rgba(242, 121, 121, 0.15);
+        }
+
+        .fab-secondary:hover {
+            background: var(--primary-coral);
+            color: white;
+            transform: translateY(-3px) scale(1.05);
+        }
+
+        .fab-secondary.active {
+            background: var(--primary-coral);
+            color: white;
+        }
+
         .pulsate {
             animation: pulsate 1.5s infinite;
         }
@@ -800,13 +830,20 @@
 
     <!-- 整合式功能球：QR + 寫留言 -->
     <div class="fab-container">
-        <div class="fab-qr-wrapper" onclick="openPostModal()" title="掃碼亦可留言">
+        <!-- 分享留言板 QR Code (預設隱藏，點擊分享按鈕後顯示) -->
+        <div id="shareWriteQrWrapper" class="fab-qr-wrapper" style="display: none;" title="掃碼即可寫留言（免設定）">
             <img id="fabQrImg" class="fab-qr-img" src="" alt="QR">
+            <div style="text-align: center; font-size: 0.7rem; color: #888; margin-top: 5px;">掃碼寫留言</div>
         </div>
-        <button class="fab" onclick="openPostModal()">
-            <i class="fas fa-feather-alt pulsate"></i>
-            <span>寫留言</span>
-        </button>
+        <div class="fab-button-group">
+            <button class="fab fab-secondary" id="shareWriteBtn" onclick="toggleShareWriteQr()" title="分享留言板 QR Code">
+                <i class="fas fa-qrcode"></i>
+            </button>
+            <button class="fab" onclick="openPostModal()">
+                <i class="fas fa-feather-alt pulsate"></i>
+                <span>寫留言</span>
+            </button>
+        </div>
     </div>
 
     <!-- 右下角隱藏入口 -->
@@ -921,10 +958,11 @@
                             onclick="generateShareLink()">產生分享連結</button>
                     </div>
 
-                    <!-- 分享連結顯示區 (預設隱藏) -->
+                    <!-- 分享連結顯示區 (預設隱藏) - 管理者設定用 -->
                     <div id="share-link-area"
                         style="display:none; margin-top: 15px; padding: 15px; background: white; border-radius: 10px; border: 1px solid #eee; text-align: center;">
-                        <p style="font-size: 0.8rem; color: #666; margin-bottom: 10px;">分享此連結給其他管理者，或由手機掃碼快速配置：</p>
+                        <p style="font-size: 0.8rem; color: #666; margin-bottom: 10px;">🔧 管理者設定用 - 分享此連結讓其他管理者自動完成 API
+                            配置：</p>
                         <div id="shareQrContainer" style="margin-bottom: 10px;">
                             <img id="shareQrImg"
                                 style="width: 150px; height: 150px; border: 1px solid #eee; padding: 5px;">
@@ -934,6 +972,36 @@
                                 style="flex: 1; font-size: 0.75rem; padding: 5px;">
                             <button class="btn-submit" style="padding: 5px 10px; font-size: 0.75rem;"
                                 onclick="copyShareUrl()">複製連結</button>
+                        </div>
+                    </div>
+
+                    <!-- 學生寫留言專用連結區 -->
+                    <div
+                        style="margin-top: 15px; padding: 15px; background: linear-gradient(135deg, #fff0f5 0%, #fffaf5 100%); border-radius: 12px; border: 2px dashed var(--primary-coral);">
+                        <h4 style="margin: 0 0 10px 0; color: var(--primary-coral); font-size: 0.9rem;">✏️ 學生寫留言專用 QR
+                            Code</h4>
+                        <p style="font-size: 0.8rem; color: #666; margin-bottom: 12px;">把這個 QR Code
+                            貼在教室佈告欄！學生掃碼後可以<strong>直接寫留言</strong>，完全不需要任何設定。</p>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button class="btn-submit"
+                                style="flex: 1; padding: 10px; font-size: 0.85rem; background: linear-gradient(135deg, #f27979 0%, #ff9e9e 100%);"
+                                onclick="generateWriteShareLink()">
+                                <i class="fas fa-qrcode"></i> 產生寫留言 QR Code
+                            </button>
+                            <button class="btn-submit"
+                                style="flex: 1; padding: 10px; font-size: 0.85rem; background: #3498db;"
+                                onclick="copyWriteShareUrl()">
+                                <i class="fas fa-copy"></i> 複製寫留言連結
+                            </button>
+                        </div>
+                        <!-- 寫留言 QR Code 顯示區 -->
+                        <div id="write-share-area"
+                            style="display: none; margin-top: 15px; text-align: center; background: white; padding: 15px; border-radius: 10px;">
+                            <img id="writeShareQrImg"
+                                style="width: 200px; height: 200px; border-radius: 10px; box-shadow: 0 4px 15px rgba(242,121,121,0.2);">
+                            <p style="margin-top: 10px; font-size: 0.75rem; color: #888;">學生掃碼即可直接寫留言</p>
+                            <input type="text" id="writeShareUrlDisplay" readonly
+                                style="width: 100%; font-size: 0.7rem; padding: 8px; margin-top: 8px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 6px;">
                         </div>
                     </div>
                 </div>
@@ -1042,7 +1110,14 @@
                     const decodedUrl = atob(encodedUrl);
                     if (decodedUrl.startsWith('https://script.google.com')) {
                         localStorage.setItem('gas_url', decodedUrl);
-                        showModal('設定成功', '已透過分享連結自動完成 API 配置', 'success');
+
+                        // 優化體驗：如果是寫留言模式，不跳設定成功的彈窗，以免干擾
+                        if (!urlParams.has('write')) {
+                            showModal('設定成功', '已透過分享連結自動完成 API 配置', 'success');
+                        } else {
+                            console.log('已自動配置 GAS 連線');
+                        }
+
                         window.history.replaceState({}, document.title, window.location.pathname);
                     }
                 } catch (e) {
@@ -1063,23 +1138,8 @@
                 });
             }
 
-            // 生成整合式 QR Code
-            let currentUrl = window.location.origin;
-            if (currentUrl === "null") { // 處理 file:// 協議
-                currentUrl = window.location.href.split('?')[0];
-            } else {
-                currentUrl = window.location.origin + window.location.pathname;
-            }
-
-            const writeUrl = `${currentUrl}?write=true`;
-            if (document.getElementById('fabQrImg')) {
-                // 如果是本地檔案，在 console 給予警告提示，並確保 QR Code 是黑色的提高對比度
-                const isLocal = window.location.protocol === 'file:';
-                if (isLocal) console.warn("偵測到本地檔案執行。QR Code 將包含本地路徑，手機掃描將無法跨裝置讀取。");
-
-                // 使用對比度更高的深紅色 (c23a3a) 確保掃碼成功率，同時維持粉紅色系
-                document.getElementById('fabQrImg').src = `https://quickchart.io/qr?text=${encodeURIComponent(writeUrl)}&size=200&margin=1&dark=c23a3a&light=ffffff`;
-            }
+            // 預生成分享用的寫留言 QR Code（包含 config 設定，掃碼者可直接寫留言）
+            generateWriteQrCode();
 
             // 關鍵功能：掃碼即寫檢測
             if (urlParams.has('write')) {
@@ -1088,6 +1148,66 @@
 
             setInterval(rotateMessages, 2000);
         };
+
+        // --- 生成寫留言專用 QR Code (包含 config 設定) ---
+        function generateWriteQrCode() {
+            const gasUrl = getGasUrl();
+            const qrImg = document.getElementById('fabQrImg');
+            if (!qrImg) return;
+
+            // 取得目前頁面網址（不含參數）
+            let currentUrl = window.location.origin;
+            if (currentUrl === "null") { // 處理 file:// 協議
+                currentUrl = window.location.href.split('?')[0];
+            } else {
+                currentUrl = window.location.origin + window.location.pathname;
+            }
+
+            const isLocal = window.location.protocol === 'file:';
+            if (isLocal) {
+                console.warn("偵測到本地檔案執行。QR Code 將包含本地路徑，手機掃描將無法跨裝置讀取。");
+            }
+
+            // 如果有設定 GAS URL，生成帶有 config 的完整分享連結
+            if (gasUrl && gasUrl !== '') {
+                const encodedConfig = btoa(gasUrl);
+                const fullShareUrl = `${currentUrl}?config=${encodedConfig}&write=true`;
+                qrImg.src = `https://quickchart.io/qr?text=${encodeURIComponent(fullShareUrl)}&size=200&margin=1&dark=c23a3a&light=ffffff`;
+                console.log("已生成寫留言專用分享連結（含 GAS 設定）");
+            } else {
+                // 沒設定則只顯示 write=true 的基本連結
+                const basicWriteUrl = `${currentUrl}?write=true`;
+                qrImg.src = `https://quickchart.io/qr?text=${encodeURIComponent(basicWriteUrl)}&size=200&margin=1&dark=999999&light=ffffff`;
+                console.log("尚未設定 GAS URL，QR Code 無法讓掃碼者直接使用");
+            }
+        }
+
+        // --- 切換顯示/隱藏分享 QR Code ---
+        function toggleShareWriteQr() {
+            const wrapper = document.getElementById('shareWriteQrWrapper');
+            const btn = document.getElementById('shareWriteBtn');
+            const gasUrl = getGasUrl();
+
+            // 檢查是否已設定 GAS URL
+            if (!gasUrl || gasUrl === '') {
+                showModal('尚未設定', '請先在管理後台設定 GAS 連線網址後，才能生成分享用的 QR Code', 'warning');
+                return;
+            }
+
+            const isVisible = wrapper.style.display !== 'none';
+
+            if (isVisible) {
+                wrapper.style.display = 'none';
+                btn.classList.remove('active');
+            } else {
+                generateWriteQrCode(); // 確保 QR Code 是最新的
+                wrapper.style.display = 'block';
+                btn.classList.add('active');
+
+                // 提示使用者
+                showModal('分享 QR Code', '讓其他人掃碼即可直接留言，無需設定！', 'success');
+            }
+        }
 
 
         // --- 切換匿名暱稱輸入 ---
@@ -1599,7 +1719,60 @@
             const input = document.getElementById('shareUrlDisplay');
             input.select();
             document.execCommand('copy');
-            showModal('成功', '分享連結已複製', 'success');
+            showModal('成功', '管理者設定連結已複製', 'success');
+        }
+
+        // --- 生成學生寫留言專用分享連結 ---
+        function generateWriteShareLink() {
+            const gasUrl = getGasUrl();
+            if (!gasUrl || gasUrl === '' || gasUrl === DEFAULT_GAS_URL) {
+                showModal('尚未設定', '請先填入並儲存 GAS 網址後再產生寫留言 QR Code', 'warning');
+                return;
+            }
+
+            const area = document.getElementById('write-share-area');
+            const baseUrl = window.location.href.split('?')[0];
+            const encodedConfig = btoa(gasUrl);
+            const writeShareUrl = `${baseUrl}?config=${encodedConfig}&write=true`;
+
+            // 顯示區域
+            area.style.display = 'block';
+            document.getElementById('writeShareUrlDisplay').value = writeShareUrl;
+
+            // 生成高對比度的 QR Code（確保掃碼成功率）
+            const qrImg = document.getElementById('writeShareQrImg');
+            if (qrImg) {
+                qrImg.src = `https://quickchart.io/qr?text=${encodeURIComponent(writeShareUrl)}&size=300&margin=2&dark=c23a3a&light=ffffff`;
+            }
+
+            showModal('寫留言 QR Code 已產生！', '把這個 QR Code 貼在教室，學生掃碼就能直接寫留言！', 'success');
+        }
+
+        // --- 複製學生寫留言專用連結 ---
+        function copyWriteShareUrl() {
+            const gasUrl = getGasUrl();
+            if (!gasUrl || gasUrl === '' || gasUrl === DEFAULT_GAS_URL) {
+                showModal('尚未設定', '請先填入並儲存 GAS 網址', 'warning');
+                return;
+            }
+
+            const baseUrl = window.location.href.split('?')[0];
+            const encodedConfig = btoa(gasUrl);
+            const writeShareUrl = `${baseUrl}?config=${encodedConfig}&write=true`;
+
+            // 複製到剪貼簿
+            navigator.clipboard.writeText(writeShareUrl).then(() => {
+                showModal('成功', '寫留言連結已複製！可以分享給學生使用', 'success');
+            }).catch(() => {
+                // fallback 方案
+                const tempInput = document.createElement('input');
+                tempInput.value = writeShareUrl;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                showModal('成功', '寫留言連結已複製！', 'success');
+            });
         }
 
         function clearSettings() {
