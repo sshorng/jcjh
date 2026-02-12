@@ -181,8 +181,8 @@
         .ticker-content {
             display: flex;
             white-space: nowrap;
-            padding-left: 50%;
-            /* 縮短初始留白，讓公告更快「出場」 */
+            padding-left: 70%;
+            /* 出場位置調整為 70%，平衡等待時間與進入感 */
             animation: marquee 40s linear infinite;
             /* 預設更慢的速度 */
             color: white;
@@ -1514,8 +1514,8 @@
                 const items = res.map(a => `<div class="ticker-item"><i class="fas fa-bullhorn"></i> ${a.content}</div>`).join('');
                 content.innerHTML = items + items; // 雙倍內容確保循環
                 ticker.style.display = 'flex';
-                // 根據公告長度動態調整動畫時間 (一則公告約 32s，節奏更清爽不拖沓)
-                content.style.animationDuration = `${res.length * 32}s`;
+                // 根據公告長度動態調整動畫時間 (回復至每則 45s，維持最舒適的慢節奏)
+                content.style.animationDuration = `${res.length * 45}s`;
             } else {
                 ticker.style.display = 'none';
             }
