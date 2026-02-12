@@ -1054,6 +1054,11 @@
                 setTimeout(openPostModal, 1500);
             }
 
+            // 直接進入管理後台檢測
+            if (urlParams.has('admin')) {
+                setTimeout(openAdminModal, 500);
+            }
+
             setInterval(rotateMessages, 2000);
         };
 
@@ -1606,12 +1611,42 @@
 
         function openPostModal() { document.getElementById('postModal').style.display = 'flex'; }
         function openAdminModal() {
-            document.getElementById('adminModal').style.display = 'flex';
-            // 如果本地有存密碼且尚未解鎖，則自動嘗試登入
+            const modal = document.getElementById('adminModal');
+            modal.style.display = 'flex';
+
             const savedPwd = localStorage.getItem('admin_password');
-            if (savedPwd && document.getElementById('admin-panel').style.display === 'none') {
+            const loginUI = document.getElementById('admin-login-ui');
+            const panelUI = document.getElementById('admin-panel');
+
+            if (savedPwd && panelUI.style.display === 'none') {
+                // 如果有記憶密碼，先隱藏登入 UI 並顯示載入中
+                loginUI.style.display = 'none';
+
+                // 檢查是否已有載入提示，沒有則建立
+                let loadingHint = document.getElementById('admin-loading-hint');
+                if (!loadingHint) {
+                    loadingHint = document.createElement('div');
+                    loadingHint.id = 'admin-loading-hint';
+                    loadingHint.style.textAlign = 'center';
+                    loadingHint.style.padding = '3rem 1rem';
+                    loadingHint.innerHTML = `
+                        <div class="pulsate" style="font-size: 2rem; color: var(--primary-coral); margin-bottom: 1rem;">
+                            <i class="fas fa-unlock-alt"></i>
+                        </div>
+                        <p style="color: #8d7b70;">偵測到儲存的憑證，自動登入中...</p>
+                    `;
+                    document.getElementById('admin-management-ui').prepend(loadingHint);
+                }
+                loadingHint.style.display = 'block';
+
                 document.getElementById('adminPassword').value = savedPwd;
-                doAdminLogin();
+                doAdminLogin().then(() => {
+                    loadingHint.style.display = 'none';
+                });
+            } else if (!savedPwd) {
+                loginUI.style.display = 'block';
+                const loadingHint = document.getElementById('admin-loading-hint');
+                if (loadingHint) loadingHint.style.display = 'none';
             }
         }
 
