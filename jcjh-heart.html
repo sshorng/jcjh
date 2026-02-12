@@ -810,6 +810,13 @@
                 justify-content: center;
             }
         }
+
+        /* 投稿專用模式 (Post-Only Mode) */
+        body.post-only-mode #messageBoard,
+        body.post-only-mode .fab-container,
+        body.post-only-mode .admin-trigger {
+            display: none !important;
+        }
     </style>
 </head>
 
@@ -1004,19 +1011,26 @@
         // --- 初始化頁面 ---
         window.onload = () => {
             const urlParams = new URLSearchParams(window.location.search);
+            const isDisplayMode = urlParams.has('view') && urlParams.get('view') === 'wall';
+            const isAdminMode = urlParams.has('admin');
+
+            // 預設皆為投稿模式，除非明確開啟顯示牆或管理模式
+            if (!isDisplayMode && !isAdminMode) {
+                document.body.classList.add('post-only-mode');
+            }
 
             const url = getGasUrl();
-            if (url) {
+            // 只有在顯示模式或管理模式下，才載入留言
+            if (url && (isDisplayMode || isAdminMode)) {
                 loadMessages();
                 setInterval(loadMessages, 30000);
             }
 
-            // 預生成分享用的寫留言 QR Code
+            // 預生成分享用的寫留言 QR Code (指向預設模式)
             generateWriteQrCode();
 
-
-            // 關鍵功能：掃碼即寫檢測
-            if (urlParams.has('write')) {
+            // 關鍵功能：投稿偵測（預設模式也會自動開啟）
+            if (urlParams.has('write') || (!isDisplayMode && !isAdminMode)) {
                 setTimeout(openPostModal, 1500);
             }
 
