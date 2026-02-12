@@ -1,0 +1,1630 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>建成心能量</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SweetAlert2 for beautiful modals -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root {
+            --primary-coral: #f27979;
+            /* 輕緋紅 */
+            --soft-cream: #fffafb;
+            /* 偏粉的奶白色 */
+            --glass-bg: rgba(255, 255, 255, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --font-main: 'Outfit', 'Noto Sans TC', sans-serif;
+            --card-shadow: 0 10px 40px rgba(107, 79, 79, 0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: var(--font-main);
+        }
+
+        body {
+            font-family: var(--font-main);
+            background: #fff9f5;
+            margin: 0;
+            min-height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            color: #2d3436;
+        }
+
+        /* 巔峰質感：流體動態漸層背景 */
+        .ambient-glow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #fff9f5;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .ambient-glow::before,
+        .ambient-glow::after {
+            content: '';
+            position: absolute;
+            width: 80vmax;
+            height: 80vmax;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.15;
+            z-index: -1;
+            animation: drift 25s infinite alternate ease-in-out;
+        }
+
+        .ambient-glow::before {
+            background: radial-gradient(circle, #ff8e8e 0%, transparent 70%);
+            /* 緋紅光 */
+            top: -20%;
+            left: -10%;
+        }
+
+        .ambient-glow::after {
+            background: radial-gradient(circle, #f2a3a3 0%, transparent 70%);
+            /* 柔粉光 */
+            bottom: -20%;
+            right: -10%;
+            animation-duration: 35s;
+            animation-delay: -5s;
+        }
+
+        @keyframes drift {
+            0% {
+                transform: translate(0, 0) scale(1) rotate(0deg);
+            }
+
+            50% {
+                transform: translate(10%, 15%) scale(1.1) rotate(10deg);
+            }
+
+            100% {
+                transform: translate(-5%, -10%) scale(1) rotate(-5deg);
+            }
+        }
+
+        header {
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 300;
+            /* 高於卡片牆 */
+            position: relative;
+        }
+
+        .header-content {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            padding: 0.8rem 1.8rem;
+            border-radius: 40px;
+            border: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #f27979 0%, #ffb3b3 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+            box-shadow: 0 8px 20px rgba(242, 121, 121, 0.3);
+        }
+
+        .logo-text h1 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: 1px;
+            color: var(--primary-coral);
+        }
+
+        .logo-text p {
+            font-size: 0.75rem;
+            margin: 0;
+            opacity: 0.6;
+        }
+
+        .header-actions {
+            display: none;
+        }
+
+        /* 整合式功能區組件 */
+        .fab-container {
+            position: fixed;
+            bottom: 2.5rem;
+            right: 2.5rem;
+            z-index: 50;
+            /* 調低 z-index 讓卡片能遮擋 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .fab-qr-wrapper {
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            background: white;
+            /* 確保背景純白提升對比 */
+            padding: 10px;
+            border-radius: 20px;
+            border: 1px solid var(--primary-coral);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .fab-qr-wrapper:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        .fab-qr-img {
+            width: 110px;
+            height: 110px;
+            display: block;
+            border-radius: 8px;
+            /* 移除可能降低對比度的視覺效果 */
+        }
+
+        .admin-entry button {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            color: #636e72;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .admin-entry button:hover {
+            background: rgba(255, 255, 255, 0.6);
+            color: var(--primary-coral);
+            transform: translateY(-2px);
+        }
+
+        /* 留言展示區 */
+        #messageBoard {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 200;
+            /* 高於按鈕，讓卡片能遮擋功能區 */
+            pointer-events: none;
+        }
+
+        /* 頂級質感：高級紙質與紙膠帶卡片 */
+        .message-card {
+            background: #fffdf9;
+            background-image:
+                radial-gradient(#e5e5e5 0.5px, transparent 0.5px),
+                linear-gradient(rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.2));
+            background-size: 20px 20px, 100% 100%;
+            border-radius: 12px;
+            padding: 2.22rem;
+            padding-top: 3.2rem;
+            width: 340px;
+            min-height: 220px;
+            box-shadow:
+                0 15px 45px rgba(139, 90, 43, 0.08),
+                0 5px 15px rgba(139, 90, 43, 0.03);
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            will-change: transform, opacity;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            border: none;
+            z-index: 100;
+            /* 高於按鈕區域 */
+            pointer-events: auto;
+        }
+
+        /* 高品質和紙膠帶 - 整齊切邊 */
+        .message-card::before {
+            content: '';
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%) rotate(0.5deg);
+            width: 100px;
+            height: 32px;
+            background: rgba(255, 220, 180, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 5;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            /* 和紙纖維紋理 */
+            background-image:
+                linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+                linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+            background-size: 4px 4px;
+        }
+
+        .message-card:hover {
+            transform: translateY(-12px) rotate(var(--rot, 0deg)) scale(1.03) !important;
+            box-shadow: 0 30px 70px rgba(139, 90, 43, 0.12);
+            z-index: 400 !important;
+            /* 互動時絕對置頂 */
+        }
+
+        /* 標題整合於紙張中 */
+        .card-greeting {
+            color: #b07d62;
+            font-size: 1rem;
+            font-weight: 700;
+            padding-bottom: 8px;
+            border-bottom: 1.5px solid rgba(176, 125, 98, 0.15);
+            width: fit-content;
+        }
+
+        .card-content {
+            font-size: var(--font-size, 1.4rem);
+            line-height: 1.55;
+            font-weight: 400;
+            color: #4a3e3e;
+            flex: 1;
+            padding-right: 0;
+            overflow: visible;
+            /* 螢幕播放不使用滾動 */
+        }
+
+        /* 隱藏原生滾動條，改用極細美化版 */
+        .card-content::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        .card-content::-webkit-scrollbar-thumb {
+            background: rgba(176, 125, 98, 0.2);
+            border-radius: 10px;
+        }
+
+        /* 字級縮放類別 - 針對螢幕播放優化 */
+        .size-large {
+            --font-size: 1.65rem;
+        }
+
+        .size-medium {
+            --font-size: 1.35rem;
+        }
+
+        .size-small {
+            --font-size: 1.15rem;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+            padding-top: 1.2rem;
+        }
+
+        .card-author {
+            color: #636e72;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .card-tag {
+            font-size: 0.75rem;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        /* 莫蘭迪和諧色標籤 */
+        .card-tag {
+            font-size: 0.75rem;
+            padding: 5px 14px;
+            border-radius: 8px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .tag-鼓勵 {
+            background: #d4e2d4;
+            color: #4a7c59;
+        }
+
+        .tag-讚美 {
+            background: #f0e4d7;
+            color: #b08968;
+        }
+
+        .tag-關心 {
+            background: #e3d5ca;
+            color: #7f5539;
+        }
+
+        .tag-感謝 {
+            background: #dfd3c3;
+            color: #8d7b70;
+        }
+
+        .tag-祝福 {
+            background: #f5ebe0;
+            color: #d4a373;
+        }
+
+        /* 精緻按鈕 */
+        .card-like {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            background: #fff0f0;
+            /* 淺粉色背景 */
+            border: 1px solid #ffdada;
+            /* 粉色邊框 */
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--primary-coral);
+            /* 愛心顏色 */
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(242, 121, 121, 0.1);
+            z-index: 10;
+        }
+
+        .card-like:hover {
+            transform: scale(1.1);
+            background: #ffe5e5;
+        }
+
+        .card-like.liked {
+            background: #ffdada;
+            /* 按讚後顏色加深一點 */
+        }
+
+        .like-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ff6b6b;
+            color: white;
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: 800;
+        }
+
+        /* 懸浮按鈕原始位置 CSS 已由 .fab-container 接管 */
+
+        .fab {
+            background: linear-gradient(135deg, #f27979 0%, #faa6a6 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            cursor: pointer;
+            box-shadow: 0 15px 35px rgba(242, 121, 121, 0.3);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .fab:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 20px 45px rgba(255, 138, 113, 0.5);
+        }
+
+        .fab i {
+            font-size: 1rem;
+        }
+
+        .fab-button-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .fab-secondary {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: var(--primary-coral);
+            border: 2px solid var(--primary-coral);
+            padding: 1rem;
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            box-shadow: 0 8px 25px rgba(242, 121, 121, 0.15);
+        }
+
+        .fab-secondary:hover {
+            background: var(--primary-coral);
+            color: white;
+            transform: translateY(-3px) scale(1.05);
+        }
+
+        .fab-secondary.active {
+            background: var(--primary-coral);
+            color: white;
+        }
+
+        .pulsate {
+            animation: pulsate 1.5s infinite;
+        }
+
+        @keyframes pulsate {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* 動畫效果 */
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+                transform: rotate(var(--rot, 0deg)) translateY(20px) scale(0.95);
+            }
+
+            100% {
+                opacity: 1;
+                transform: rotate(var(--rot, 0deg)) translateY(0) scale(1);
+            }
+        }
+
+        @keyframes fadeOut {
+            0% {
+                opacity: 1;
+                transform: rotate(var(--rot, 0deg));
+            }
+
+            100% {
+                opacity: 0;
+                transform: rotate(var(--rot, 0deg)) translateY(-15px) scale(0.95);
+            }
+        }
+
+        .animate-float {
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+
+        .animate-float.fade-out {
+            animation: fadeOut 0.8s ease-out forwards;
+        }
+
+
+        .admin-trigger {
+            position: fixed;
+            bottom: 5px;
+            right: 5px;
+            width: 20px;
+            height: 20px;
+            opacity: 0.05;
+            cursor: pointer;
+            z-index: 400;
+        }
+
+        .admin-trigger:hover {
+            opacity: 0.3;
+        }
+
+        /* Modal 覆蓋層 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(107, 79, 79, 0.3);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        .modal-content {
+            background: var(--soft-cream);
+            padding: 2rem;
+            border-radius: 20px;
+            width: 95%;
+            max-width: 800px;
+            /* 增加寬度以適應管理介面 */
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            border: 1px solid rgba(232, 153, 141, 0.3);
+            box-shadow: 0 20px 60px rgba(107, 79, 79, 0.15);
+            z-index: 1001;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: #636e72;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+
+        .modal-close:hover {
+            opacity: 1;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        label {
+            font-weight: bold;
+            margin-bottom: 0.2rem;
+            color: #4e342e;
+        }
+
+        input:not([type="checkbox"]):not([type="radio"]),
+        select,
+        textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-family: inherit;
+            font-size: 1rem;
+            color: #4e342e;
+            box-sizing: border-box;
+            /* 確保 padding 不會撐破寬度 */
+        }
+
+        button.btn-submit {
+            background: linear-gradient(135deg, var(--primary-coral) 0%, #d4a373 100%);
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            box-shadow: 0 4px 12px rgba(232, 153, 141, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        button.btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(232, 153, 141, 0.4);
+        }
+
+
+        /* 管理者介面專屬 */
+        .admin-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 0.5rem;
+        }
+
+        .tab-btn {
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            border: 1px solid transparent;
+            font-weight: bold;
+            color: #636e72;
+        }
+
+        .tab-btn.active {
+            background: var(--primary-coral);
+            color: white;
+        }
+
+
+        .admin-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 50vh;
+            overflow-y: auto;
+        }
+
+        .batch-actions {
+            margin-bottom: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+            background: rgba(232, 153, 141, 0.1);
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .admin-item {
+            background: white;
+            margin-bottom: 0.8rem;
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid #eee;
+            display: flex;
+            align-items: flex-start;
+            /* 改為頂端對齊，避免內容多時按鈕居中 */
+            gap: 1rem;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+
+        .admin-item:hover {
+            background: #fefefe;
+            border-color: var(--primary-coral);
+        }
+
+        .admin-item .item-checkbox {
+            flex-shrink: 0;
+            width: 18px;
+            height: 18px;
+            margin-top: 4px;
+        }
+
+        .admin-item .item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .admin-item .item-meta {
+            font-size: 0.75rem;
+            color: #999;
+            margin-bottom: 2px;
+        }
+
+        .admin-item .item-content {
+            word-break: break-all;
+            white-space: normal;
+            /* 允許換行 */
+            color: #4a3e3e;
+            margin: 5px 0;
+            line-height: 1.4;
+        }
+
+        .admin-item .item-target {
+            font-weight: 600;
+            color: var(--primary-coral);
+        }
+
+        .admin-actions {
+            display: flex;
+            gap: 0.3rem;
+            flex-shrink: 0;
+        }
+
+        .btn-approve {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .btn-reject {
+            background: #c0392b;
+            color: white;
+
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            #messageBoard {
+                padding: 1rem;
+            }
+
+            .message-card {
+                width: 100%;
+                position: relative !important;
+                opacity: 1 !important;
+                transform: none !important;
+                animation: none !important;
+            }
+
+            .fab-container {
+                bottom: 1.5rem;
+                right: 1.5rem;
+            }
+
+            .fab {
+                padding: 0.8rem 1.5rem;
+                font-size: 1rem;
+            }
+
+            header {
+                padding: 1rem;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .header-content {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .header-actions {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="ambient-glow"></div>
+
+    <header>
+        <div class="header-content">
+            <div class="logo-icon">🌸</div>
+            <div class="logo-text">
+                <h1>建成心能量</h1>
+                <p>Digital Floating Message Gallery</p>
+            </div>
+        </div>
+    </header>
+
+    <div id="messageBoard"></div>
+
+    <!-- 整合式功能球：QR + 寫留言 -->
+    <!-- 整合式功能球：QR + 寫留言 -->
+    <div class="fab-container">
+        <!-- 常駐 QR Code (掃碼即用) -->
+        <div id="shareWriteQrWrapper" class="fab-qr-wrapper" title="掃碼即可寫留言（免設定）">
+            <img id="fabQrImg" class="fab-qr-img" src="" alt="QR">
+        </div>
+
+        <button class="fab" onclick="openPostModal()">
+            <i class="fas fa-feather-alt pulsate"></i>
+            <span>寫留言</span>
+        </button>
+    </div>
+
+    <!-- 右下角隱藏入口 -->
+    <div class="admin-trigger" onclick="openAdminModal()"></div>
+
+
+    <!-- 隱藏的後端入口 -->
+    <!-- <div class="admin-trigger" onclick="openAdminModal()"></div> -->
+
+    <!-- 留言 Modal -->
+    <div id="postModal" class="modal-overlay" onclick="if(event.target === this) closeModal('postModal')">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('postModal')">&times;</span>
+            <h2 style="color: var(--warm-coral); text-align: center; margin-bottom: 1.5rem;">
+                投稿溫暖</h2>
+            <form id="postForm">
+                <!-- 溫馨提醒 -->
+                <div
+                    style="background: linear-gradient(135deg, #fff9e6 0%, #fff0f5 100%); padding: 1rem; border-radius: 12px; margin-bottom: 1rem; border-left: 4px solid var(--warm-coral);">
+                    <p style="font-size: 0.85rem; color: var(--warm-brown); margin: 0; line-height: 1.6;">
+                        💝 <strong>投稿小提醒</strong><br>
+                        • 請用正向、溫暖的文字傳遞心意<br>
+                        • 留言將經老師審核後公開顯示<br>
+                        • 系統會記錄帳號，請愛護校園友善環境
+                    </p>
+                </div>
+
+                <label>對誰說話？</label>
+                <input type="text" id="target" placeholder="例如：701 全體同學、王老師..." required>
+
+                <label>標籤</label>
+                <select id="tag">
+                    <option value="鼓勵">💪 鼓勵</option>
+                    <option value="讚美">✨ 讚美</option>
+                    <option value="關心">🫂 關心</option>
+                    <option value="感謝">🍂 感謝</option>
+                    <option value="祝福">🎈 祝福</option>
+                </select>
+
+                <label>留言內容</label>
+                <div style="position: relative;">
+                    <textarea id="content" rows="4" placeholder="寫下你的心意 (60字以內)..." required maxlength="60"
+                        oninput="updateCharCount()"></textarea>
+                    <div id="charCount"
+                        style="position: absolute; bottom: 10px; right: 10px; font-size: 0.75rem; color: #999; pointer-events: none;">
+                        0 / 60</div>
+                </div>
+
+                <div
+                    style="display: flex; align-items: center; gap: 0.8rem; margin-top: 0.5rem; background: rgba(139, 90, 43, 0.04); padding: 0.8rem; border-radius: 10px; border: 1px dashed rgba(139, 90, 43, 0.1);">
+                    <div style="display: flex; align-items: center; gap: 0.4rem; white-space: nowrap;">
+                        <input type="checkbox" id="isAnonymous" style="width: 18px; height: 18px; cursor: pointer;"
+                            onchange="toggleAnonymousName()">
+                        <label for="isAnonymous" style="margin: 0; font-weight: 600; cursor: pointer;">匿名留言</label>
+                    </div>
+                    <div id="anonymousNameWrapper" style="display: none; flex: 1; min-width: 0;">
+                        <input type="text" id="anonymousName"
+                            style="width: 100%; padding: 6px 12px; font-size: 0.9rem; border: 1px solid #ddd; border-radius: 6px; background: white;"
+                            placeholder="自訂暱稱 (預設: 小天使)" maxlength="10">
+                    </div>
+                </div>
+
+
+                <div id="google-login-container"
+                    style="margin-top: 1rem; text-align: center; position: relative; z-index: 1002;">
+                    <p style="font-size: 0.85rem; margin-bottom: 0.5rem; color: #666;">* 系統將記錄您的 Google 帳號以利維護環境秩序</p>
+                    <!-- Google Login Button Placeholder -->
+                    <div id="g_id_onload"
+                        data-client_id="236765538215-6o3ol1tl1brqhbd2qfavomq38l7j17aq.apps.googleusercontent.com"
+                        data-context="signin" data-ux_mode="popup" data-callback="handleCredentialResponse"
+                        data-auto_prompt="false" style="z-index: 2000;">
+                    </div>
+                    <div class="g_id_signin" data-type="standard" data-shape="rectangular" data-theme="outline"
+                        data-text="signin_with" data-size="large" data-logo_alignment="left" style="z-index: 2000;">
+                    </div>
+                </div>
+
+                <button type="button" class="btn-submit" onclick="submitDraft()">送出留言 (請先登入)</button>
+            </form>
+
+        </div>
+    </div>
+
+    <!-- 管理者介面 Modal (合併設定) -->
+    <div id="adminModal" class="modal-overlay" onclick="if(event.target === this) closeModal('adminModal')">
+        <div class="modal-content" style="max-width: 800px; width: 95%;">
+            <span class="modal-close" onclick="closeModal('adminModal')">&times;</span>
+            <h2 style="color: var(--warm-brown); text-align: center; margin-bottom: 1rem;">管理後台</h2>
+
+
+
+            <div id="admin-management-ui" style="margin-top: 2rem;">
+                <h3 style="font-size: 1rem; margin-bottom: 1rem; color: #b07d62;">留言內容管理</h3>
+
+                <div id="admin-login-ui">
+                    <p style="font-size: 0.85rem; color: #8d7b70; margin-bottom: 10px;">請輸入密碼解鎖管理員權限</p>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="password" id="adminPassword" placeholder="管理密碼" style="flex: 1;">
+                        <button class="btn-submit" style="padding: 0 20px;" onclick="doAdminLogin()">解鎖</button>
+                    </div>
+                </div>
+
+                <div id="admin-panel" style="display:none; margin-top: 1rem;">
+                    <div class="admin-tabs">
+                        <div class="tab-btn active" onclick="switchTab('待審核')">待審核</div>
+                        <div class="tab-btn" onclick="switchTab('通過')">已通過</div>
+                        <div class="tab-btn" onclick="switchTab('駁回')">已駁回</div>
+                    </div>
+
+                    <div id="tab-content-list" class="tab-pane">
+                        <div class="batch-actions" id="batch-actions-bar">
+                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"
+                                style="width:20px; height:20px;">
+                            <label for="selectAll">全選</label>
+                            <button class="btn-approve" onclick="batchUpdate('通過')">批次通過</button>
+                            <button class="btn-reject" onclick="batchUpdate('駁回')">批次駁回</button>
+                        </div>
+                        <ul id="admin-msg-list" class="admin-list"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: right; margin-top: 1rem;">
+                <button onclick="logoutAdmin()"
+                    style="font-size: 0.8rem; border:none; background:none; text-decoration: underline; color: #999; cursor:pointer;">登出管理員身分</button>
+            </div>
+        </div>
+    </div>
+    </div>
+
+
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+        // --- 設定與變數 ---
+        const _G = "https://script.google.com/macros/s/AKfycbzZOrUP3veKI5oexCOwUHqLXeduo4bRlpRoglpCF-zl1NxeLuKDTBcJg7o0Acx9qC0R/exec";
+        let currentUserEmail = null;
+        let currentUserName = null;
+        let allMessages = [];
+        let usedIndexes = new Set(); // 用於追蹤已顯示的留言索引
+        let likedMessages = JSON.parse(localStorage.getItem('liked_messages') || '[]'); // 已按讚的留言 ID
+
+        // 敏感詞清單（可自行擴充）
+        const SENSITIVE_WORDS = [
+            '笨蛋', '白癡', '去死', '智障', '廢物', '垃圾', '滾', '爛',
+            '幹', '靠', '媽的', '他媽', '屁', '賤', '婊', '渣',
+            'fuck', 'shit', 'damn', 'bitch', 'stupid', 'idiot'
+        ];
+
+        // --- 敏感詞檢測 ---
+        function containsSensitiveWords(text) {
+            const lowerText = text.toLowerCase();
+            return SENSITIVE_WORDS.some(word => lowerText.includes(word.toLowerCase()));
+        }
+
+        // --- 優先順序邏輯 ---
+        function getGasUrl() {
+            return _G;
+        }
+
+
+
+        // --- 初始化頁面 ---
+        window.onload = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+
+            const url = getGasUrl();
+            if (url) {
+                loadMessages();
+                setInterval(loadMessages, 30000);
+            }
+
+            // 預生成分享用的寫留言 QR Code
+            generateWriteQrCode();
+
+
+            // 關鍵功能：掃碼即寫檢測
+            if (urlParams.has('write')) {
+                setTimeout(openPostModal, 1500);
+            }
+
+            // 直接進入管理後台檢測
+            if (urlParams.has('admin')) {
+                setTimeout(openAdminModal, 500);
+            }
+
+            setInterval(rotateMessages, 2000);
+        };
+
+        // --- 生成寫留言專用 QR Code ---
+        function generateWriteQrCode() {
+            const qrImg = document.getElementById('fabQrImg');
+            if (!qrImg) return;
+
+            // 取得目前頁面網址（不含參數）
+            let currentUrl = window.location.origin + window.location.pathname;
+            if (window.location.protocol === 'file:') {
+                currentUrl = window.location.href.split('?')[0];
+            }
+
+            // 生成寫留言分享連結 (不再需要 config 參數)
+            const fullShareUrl = `${currentUrl}?write=true`;
+            qrImg.src = `https://quickchart.io/qr?text=${encodeURIComponent(fullShareUrl)}&size=200&margin=1&dark=c23a3a&light=ffffff`;
+            console.log("已生成寫留言專用分享連結");
+        }
+
+
+        // --- 切換顯示/隱藏分享 QR Code ---
+        function toggleShareWriteQr() {
+            const wrapper = document.getElementById('shareWriteQrWrapper');
+            const btn = document.getElementById('shareWriteBtn');
+            const gasUrl = getGasUrl();
+
+            // 檢查是否已設定 GAS URL
+            if (!gasUrl || gasUrl === '') {
+                showModal('尚未設定', '請先在管理後台設定 GAS 連線網址後，才能生成分享用的 QR Code', 'warning');
+                return;
+            }
+
+            const isVisible = wrapper.style.display !== 'none';
+
+            if (isVisible) {
+                wrapper.style.display = 'none';
+                btn.classList.remove('active');
+            } else {
+                generateWriteQrCode(); // 確保 QR Code 是最新的
+                wrapper.style.display = 'block';
+                btn.classList.add('active');
+
+                // 提示使用者
+                showModal('分享 QR Code', '讓其他人掃碼即可直接留言，無需設定！', 'success');
+            }
+        }
+
+
+        // --- 切換匿名暱稱輸入 ---
+        function toggleAnonymousName() {
+            const wrapper = document.getElementById('anonymousNameWrapper');
+            const checkbox = document.getElementById('isAnonymous');
+            wrapper.style.display = checkbox.checked ? 'block' : 'none';
+        }
+
+        // --- 愛心按讚 ---
+        async function toggleLike(msgId, btn) {
+            const isLiked = likedMessages.includes(msgId);
+            const increment = isLiked ? -1 : 1;
+
+            // 更新本地狀態
+            if (isLiked) {
+                likedMessages = likedMessages.filter(id => id !== msgId);
+                btn.classList.remove('liked');
+            } else {
+                likedMessages.push(msgId);
+                btn.classList.add('liked');
+            }
+
+            localStorage.setItem('liked_messages', JSON.stringify(likedMessages));
+
+            // 更新 UI 上的計數 (更穩健的選取方式)
+            let countEl = btn.querySelector('.like-count');
+            if (!countEl) {
+                // 如果原本沒有計數標籤，動態創建一個
+                countEl = document.createElement('span');
+                countEl.className = 'like-count';
+                btn.appendChild(countEl);
+            }
+
+            let count = parseInt(countEl.textContent) || 0;
+            count = Math.max(0, count + increment);
+            countEl.textContent = count > 0 ? count : '';
+
+            // 同步到後端
+            await fetchAPI('toggleLike', null, { id: msgId, increment: increment });
+        }
+
+
+
+
+        // --- API 串接 ---
+        async function fetchAPI(action, data = null, params = null) {
+            const url = getGasUrl();
+            if (!url) {
+                showModal('錯誤', '未設定 GAS 網址', 'error');
+                return null;
+            }
+
+            try {
+                // 修正邏輯：判斷哪些行動應該使用 POST
+                const isPost = (action === 'submitMessage' || action === 'updateStatus');
+
+                const options = {
+                    method: isPost ? 'POST' : 'GET',
+                    mode: 'cors'
+                };
+
+                let targetUrl = url;
+                if (!isPost) {
+                    // 全面修復：所有 GET 請求都必須包含 action 與參數
+                    targetUrl += `?action=${action}`;
+                    if (params) {
+                        for (let k in params) targetUrl += `&${k}=${encodeURIComponent(params[k])}`;
+                    }
+                } else {
+                    // POST 請求：將資料與行動包裝在 Body
+                    options.body = JSON.stringify({ ...data, action });
+                }
+
+                const response = await fetch(targetUrl, options);
+                const result = await response.json();
+
+                if (result.error) {
+                    showModal('API 訊息', result.error, 'warning');
+                    return null;
+                }
+                return result;
+            } catch (err) {
+                console.error(err);
+                showModal('連線失敗', '無法與服務端通訊，請檢查網址是否正確。', 'error');
+                return null;
+            }
+        }
+
+        // --- 核心功能：讀取留言 ---
+        async function loadMessages() {
+            const board = document.getElementById('messageBoard');
+            const result = await fetchAPI('getMessages');
+            if (result && !result.error) {
+                allMessages = result;
+                if (allMessages.length === 0) {
+                    board.innerHTML = '<div style="opacity:0.5;">目前還沒有溫暖的留言，快來寫第一則吧！</div>';
+                } else {
+                    board.innerHTML = '';
+                    // 初始時不立即顯示，讓 rotateMessages 逐步添加
+                }
+            }
+        }
+
+        // --- 核心功能：隨機旋轉留言卡片 ---
+        let displayingIndexes = new Set(); // 追蹤當前正在畫面上的卡片
+
+        function rotateMessages() {
+            if (allMessages.length === 0) return;
+
+            const board = document.getElementById('messageBoard');
+            if (!board) return;
+            const boardWidth = board.clientWidth;
+            const boardHeight = board.clientHeight;
+
+            // 調整共存卡片數量
+            const maxOnScreen = Math.min(window.innerWidth < 600 ? 3 : 6, allMessages.length);
+            const currentCards = board.querySelectorAll('.message-card');
+
+            if (currentCards.length < maxOnScreen) {
+                // 尋找一個不在畫面上的索引
+                let availableIndexes = [];
+                for (let i = 0; i < allMessages.length; i++) {
+                    if (!displayingIndexes.has(i)) {
+                        availableIndexes.push(i);
+                    }
+                }
+
+                if (availableIndexes.length === 0) return; // 所有留言都在畫面上了
+
+                const randomPick = availableIndexes[Math.floor(Math.random() * availableIndexes.length)];
+                displayingIndexes.add(randomPick);
+                createCard(allMessages[randomPick], boardWidth, boardHeight, randomPick);
+
+            }
+        }
+
+        // 預計算位置（更自然的散佈）
+        let gridPositions = [];
+        let positionIndex = 0;
+
+        function calculateGridPositions() {
+            gridPositions = [];
+            const bw = window.innerWidth;
+            const bh = window.innerHeight;
+            const cardW = 340;
+            const cardH = 260; // 稍微增加預估高度
+
+            // 設定邊界安全範圍 (避免貼邊或超出)
+            const margin = 30;
+            const availableW = bw - (margin * 2);
+            const availableH = bh - (margin * 2); // 移除下方預留空間，允許卡片覆蓋按鈕
+
+            const cols = Math.max(1, Math.floor(availableW / (cardW + 20)));
+            const rows = Math.max(1, Math.floor(availableH / (cardH + 20)));
+
+            const gapX = cols > 1 ? (availableW - cols * cardW) / (cols - 1) : 0;
+            const gapY = rows > 1 ? (availableH - rows * cardH) / (rows - 1) : 0;
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const startX = (bw - (cols * cardW + (cols - 1) * gapX)) / 2;
+                    const startY = margin + 40;
+
+                    gridPositions.push({
+                        x: startX + c * (cardW + gapX) + (Math.random() - 0.5) * 30,
+                        y: startY + r * (cardH + gapY) + (Math.random() - 0.5) * 30,
+                        rot: (Math.random() - 0.5) * 8
+                    });
+                }
+            }
+            gridPositions.sort(() => Math.random() - 0.5);
+        }
+
+
+        function createCard(msg, bw, bh, index) {
+            const board = document.getElementById('messageBoard');
+            const card = document.createElement('div');
+            card.className = 'message-card animate-float';
+
+            // 使用網格位置並加入物理安全檢查
+            if (gridPositions.length === 0 || positionIndex >= gridPositions.length) {
+                calculateGridPositions();
+                positionIndex = 0;
+            }
+            const pos = gridPositions[positionIndex];
+            positionIndex++;
+
+            // 安全限制：確保 left/top 不會讓卡片超出
+            const safeX = Math.max(20, Math.min(pos.x, window.innerWidth - 360));
+            const safeY = Math.max(80, Math.min(pos.y, window.innerHeight - 300));
+
+            card.style.setProperty('--rot', `${pos.rot}deg`);
+            card.style.setProperty('--tape-rot', `${(Math.random() - 0.5) * 8}deg`);
+            card.style.top = `${safeY}px`;
+            card.style.left = `${safeX}px`;
+
+            // 檢查是否已按讚
+            const isLiked = likedMessages.includes(msg.id);
+            const heartIcon = isLiked ? 'fas fa-heart' : 'far fa-heart';
+            const likedClass = isLiked ? 'liked' : '';
+
+            // 隨機膠帶位置邏輯
+            const tapePos = Math.random() > 0.5 ? '20px' : '230px';
+            const tapeRot = (Math.random() * 20 - 10) + (tapePos === '20px' ? -15 : 15);
+            card.style.setProperty('--tape-pos', tapePos);
+            card.style.setProperty('--tape-rot', tapeRot + 'deg');
+
+            // --- 大螢幕字級優化運算 ---
+            const contentLen = msg.content.length;
+            let sizeClass = "size-small";
+            if (contentLen < 40) sizeClass = "size-large";
+            else if (contentLen < 80) sizeClass = "size-medium";
+
+            card.innerHTML = `
+                <div class="card-greeting">致：${msg.target}</div>
+                <div class="card-content ${sizeClass}">${msg.content}</div>
+                <div class="card-footer">
+                    <div class="card-tag tag-${msg.tag}">${msg.tag}</div>
+                    <div class="card-author">${msg.displayName}</div>
+                </div>
+                <button class="card-like ${likedClass}" onclick="toggleLike('${msg.id}', this)" title="送他一個心">
+                    <i class="fas fa-heart"></i>
+                    ${msg.likes > 0 ? `<span class="like-count">${msg.likes}</span>` : ''}
+                </button>
+            `;
+
+
+
+
+
+
+
+
+            board.appendChild(card);
+
+            // 隨機動畫延遲
+            card.style.animationDelay = `0s, ${Math.random() * 2}s`;
+
+
+            // 12秒後移除
+            setTimeout(() => {
+                card.classList.add('fade-out');
+                setTimeout(() => {
+                    card.remove();
+                    displayingIndexes.delete(index);
+                }, 1000);
+            }, 11000);
+        }
+
+
+
+        // --- Google 登入處理 ---
+        function handleCredentialResponse(response) {
+            const payload = parseJwt(response.credential);
+            const email = payload.email;
+            const domain = "@stweb.jcjh.tp.edu.tw";
+
+            if (!email.endsWith(domain)) {
+                showModal('網域錯誤', `抱歉，本留言板僅限建成國中學生帳號 (${domain}) 使用。`, 'error');
+                return;
+            }
+
+            currentUserEmail = email;
+            currentUserName = payload.name;
+
+            const loginContainer = document.getElementById('google-login-container');
+            loginContainer.innerHTML = `<p style="color: #27ae60; font-weight: bold;">✅ 已認證：${currentUserName}</p>`;
+
+            document.querySelector('.btn-submit[onclick="submitDraft()"]').textContent = "確認送出留言";
+        }
+
+        function parseJwt(token) {
+            var base64Url = token.split('.')[1];
+            var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        }
+
+        // --- 送出留言 ---
+        async function submitDraft() {
+            if (!currentUserEmail) {
+                showModal('提示', '請先使用學校 Google 帳號登入，以維護校園留言環境。', 'warning');
+                return;
+            }
+
+            const content = document.getElementById('content').value;
+            const target = document.getElementById('target').value;
+
+            // 敏感詞檢測
+            if (containsSensitiveWords(content) || containsSensitiveWords(target)) {
+                showModal('內容不當', '您的留言包含不恰當的用語，請修改後重新送出。讓我們一起維護友善的校園環境 💝', 'warning');
+                return;
+            }
+
+            const isAnonymous = document.getElementById('isAnonymous').checked;
+            const anonymousName = document.getElementById('anonymousName')?.value?.trim() || '';
+
+            const data = {
+                target: target,
+                tag: document.getElementById('tag').value,
+                content: content,
+                isAnonymous: isAnonymous,
+                anonymousName: isAnonymous ? (anonymousName || '小天使') : '',
+                email: currentUserEmail,
+                name: currentUserName
+            };
+
+            if (!data.target || !data.content) {
+                showModal('填寫未完成', '請填寫留言對象與內容。', 'warning');
+                return;
+            }
+
+            const btn = document.querySelector('.btn-submit[onclick="submitDraft()"]');
+            btn.disabled = true;
+            btn.textContent = "傳送中...";
+
+            const res = await fetchAPI('submitMessage', data);
+
+            if (res && res.status === "success") {
+                showModal('送出成功', res.message, 'success');
+                closeModal('postModal');
+                document.getElementById('postForm').reset();
+            } else {
+                showModal('失敗', '留言送出失敗，請檢查網路。', 'error');
+            }
+
+            btn.disabled = false;
+            btn.textContent = "確認送出留言";
+        }
+
+        // --- 管理後台處理 ---
+        let adminRawData = [];
+        let currentTab = "待審核";
+
+        async function doAdminLogin() {
+            const password = document.getElementById('adminPassword').value;
+            const res = await fetchAPI('adminGetMessages', null, { password });
+
+            if (res && !res.error) {
+                localStorage.setItem('admin_password', password); // 記憶登入狀態 (持久化)
+                renderAdminUI(res);
+            } else {
+                showModal('錯誤', '密碼不正確。', 'error');
+            }
+        }
+
+        function renderAdminUI(data) {
+            adminRawData = data;
+            document.getElementById('admin-login-ui').style.display = 'none';
+            document.getElementById('admin-panel').style.display = 'block';
+            switchTab(currentTab);
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.toggle('active', b.textContent === tab);
+            });
+
+            const list = document.getElementById('admin-msg-list');
+            list.innerHTML = '';
+            document.getElementById('batch-actions-bar').style.display = (tab === '待審核') ? 'flex' : 'none';
+
+            const filtered = adminRawData.filter(m => m.status === tab);
+            if (filtered.length === 0) {
+                list.innerHTML = `<li style="text-align:center; padding: 2rem; color: #999;">目前沒有${tab}的留言。</li>`;
+                return;
+            }
+
+            filtered.forEach(m => {
+                const li = document.createElement('li');
+                li.className = 'admin-item';
+                const dateStr = new Date(m.timestamp).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                li.innerHTML = `
+                    <input type="checkbox" class="msg-checkbox item-checkbox" value="${m.id}">
+                    <div class="item-info">
+                        <div class="item-meta">${dateStr} · <span class="item-target">${m.target}</span> · ${m.tag}</div>
+                        <div class="item-content">${m.content}</div>
+                        <div style="font-size:0.75rem; color:#888; margin-top:2px;">
+                            顯示：${m.displayName} ｜ 真實：${m.realName || '不具名'}（${m.account}）
+                        </div>
+
+                    </div>
+                    <div class="admin-actions">
+                        ${m.status !== '通過' ? `<button class="btn-approve" onclick="updateStatus('${m.id}', '通過')">✓</button>` : ''}
+                        ${m.status !== '駁回' ? `<button class="btn-reject" onclick="updateStatus('${m.id}', '駁回')">✗</button>` : ''}
+                    </div>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+
+        async function batchUpdate(status) {
+            const checkboxes = document.querySelectorAll('.msg-checkbox:checked');
+            const ids = Array.from(checkboxes).map(cb => cb.value);
+            if (ids.length === 0) {
+                showModal('提示', '請先勾選要處理的留言。', 'info');
+                return;
+            }
+
+            const password = localStorage.getItem('admin_password');
+            let successCount = 0;
+
+            Swal.fire({ title: '批次處理中...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+            for (const id of ids) {
+                const res = await fetchAPI('updateStatus', { id, status, password });
+                if (res && res.status === "success") successCount++;
+            }
+
+            Swal.close();
+            showModal('完成', `已成功處理 ${successCount} 則留言。`, 'success');
+            loadAdminMessages(); // 重新整理資料
+            loadMessages(); // 前台更新
+        }
+
+        async function loadAdminMessages() {
+            const password = localStorage.getItem('admin_password');
+            if (!password) return;
+            const res = await fetchAPI('adminGetMessages', null, { password });
+            if (res && !res.error) {
+                adminRawData = res;
+                switchTab(currentTab);
+            }
+        }
+
+        function logoutAdmin() {
+            localStorage.removeItem('admin_password');
+            location.reload();
+        }
+
+        function toggleSelectAll(source) {
+            const checkboxes = document.querySelectorAll('.msg-checkbox');
+            checkboxes.forEach(cb => cb.checked = source.checked);
+        }
+
+        async function updateStatus(id, newStatus) {
+            const password = localStorage.getItem('admin_password');
+            const res = await fetchAPI('updateStatus', { id, status: newStatus, password });
+            if (res && res.status === "success") {
+                loadAdminMessages();
+                loadMessages();
+            }
+        }
+
+        // --- 設定與工具 ---
+        // --- 生成學生寫留言專用分享連結 ---
+        function generateWriteShareLink() {
+            const area = document.getElementById('write-share-area');
+            const baseUrl = window.location.href.split('?')[0];
+            const writeShareUrl = `${baseUrl}?write=true`;
+
+            // 顯示區域
+            area.style.display = 'block';
+            document.getElementById('writeShareUrlDisplay').value = writeShareUrl;
+
+            // 生成高對比度的 QR Code（確保掃碼成功率）
+            const qrImg = document.getElementById('writeShareQrImg');
+            if (qrImg) {
+                qrImg.src = `https://quickchart.io/qr?text=${encodeURIComponent(writeShareUrl)}&size=300&margin=2&dark=c23a3a&light=ffffff`;
+            }
+
+            showModal('寫留言 QR Code 已產生！', '把這個 QR Code 貼在教室，學生掃碼就能直接寫留言！', 'success');
+        }
+
+        // --- 複製學生寫留言專用連結 ---
+        function copyWriteShareUrl() {
+            const baseUrl = window.location.href.split('?')[0];
+            const writeShareUrl = `${baseUrl}?write=true`;
+
+            // 複製到剪貼簿
+            navigator.clipboard.writeText(writeShareUrl).then(() => {
+                showModal('成功', '寫留言連結已複製！可以分享給學生使用', 'success');
+            }).catch(() => {
+                // fallback 方案
+                const tempInput = document.createElement('input');
+                tempInput.value = writeShareUrl;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                showModal('成功', '寫留言連結已複製！', 'success');
+            });
+        }
+
+
+        // --- 通用 UI 函式 ---
+        function showModal(title, message, type = 'info') {
+            Swal.fire({
+                title,
+                text: message,
+                icon: type,
+                confirmButtonColor: '#e67e22',
+                timer: 3000, // 3秒後自動關閉
+                timerProgressBar: true, // 顯示進度條
+                showConfirmButton: type === 'error', // 錯誤時才顯示確認按鈕，其他狀況自動消失
+            });
+        }
+
+        function openPostModal() { document.getElementById('postModal').style.display = 'flex'; }
+        function openAdminModal() {
+            const modal = document.getElementById('adminModal');
+            modal.style.display = 'flex';
+
+            const savedPwd = localStorage.getItem('admin_password');
+            const loginUI = document.getElementById('admin-login-ui');
+            const panelUI = document.getElementById('admin-panel');
+
+            if (savedPwd && panelUI.style.display === 'none') {
+                // 如果有記憶密碼，先隱藏登入 UI 並顯示載入中
+                loginUI.style.display = 'none';
+
+                // 檢查是否已有載入提示，沒有則建立
+                let loadingHint = document.getElementById('admin-loading-hint');
+                if (!loadingHint) {
+                    loadingHint = document.createElement('div');
+                    loadingHint.id = 'admin-loading-hint';
+                    loadingHint.style.textAlign = 'center';
+                    loadingHint.style.padding = '3rem 1rem';
+                    loadingHint.innerHTML = `
+                        <div class="pulsate" style="font-size: 2rem; color: var(--primary-coral); margin-bottom: 1rem;">
+                            <i class="fas fa-unlock-alt"></i>
+                        </div>
+                        <p style="color: #8d7b70;">偵測到儲存的憑證，自動登入中...</p>
+                    `;
+                    document.getElementById('admin-management-ui').prepend(loadingHint);
+                }
+                loadingHint.style.display = 'block';
+
+                document.getElementById('adminPassword').value = savedPwd;
+                doAdminLogin().then(() => {
+                    loadingHint.style.display = 'none';
+                });
+            } else if (!savedPwd) {
+                loginUI.style.display = 'block';
+                const loadingHint = document.getElementById('admin-loading-hint');
+                if (loadingHint) loadingHint.style.display = 'none';
+            }
+        }
+
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        function updateCharCount() {
+            const content = document.getElementById('content').value;
+            document.getElementById('charCount').textContent = `${content.length} / 60`;
+        }
+    </script>
+
+    <!-- 用於提供給使用者複製的範本 -->
+</body>
+
+</html>
