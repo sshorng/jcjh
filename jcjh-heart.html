@@ -1633,27 +1633,17 @@
             const currentCards = board.querySelectorAll('.message-card');
 
             if (currentCards.length < maxOnScreen) {
-                // 優先選擇「釘選」且不在畫面上的留言
-                let pinnedAvailable = [];
-                let normalAvailable = [];
-
+                // 獲取不在畫面上的可用留言索引
+                let availableIndexes = [];
                 for (let i = 0; i < allMessages.length; i++) {
                     if (!displayingIndexes.has(i)) {
-                        if (allMessages[i].isPinned) pinnedAvailable.push(i);
-                        else normalAvailable.push(i);
+                        availableIndexes.push(i);
                     }
                 }
 
-                if (pinnedAvailable.length > 0) {
-                    // 為了確保釘選公告能第一時間出現在畫面上，
-                    // 只要有釘選留言且不在畫面上，就立即載入。
-                    randomPick = pinnedAvailable[Math.floor(Math.random() * pinnedAvailable.length)];
-                } else if (normalAvailable.length > 0) {
-                    randomPick = normalAvailable[Math.floor(Math.random() * normalAvailable.length)];
-                } else {
-                    return;
-                }
+                if (availableIndexes.length === 0) return;
 
+                const randomPick = availableIndexes[Math.floor(Math.random() * availableIndexes.length)];
                 displayingIndexes.add(randomPick);
                 createCard(allMessages[randomPick], boardWidth, boardHeight, randomPick);
             }
@@ -1697,13 +1687,10 @@
         }
 
         // --- 追蹤釘選公告垂直堆疊狀態 ---
-        let pinnedCount = 0;
-
         function createCard(msg, bw, bh, index) {
             const board = document.getElementById('messageBoard');
             const card = document.createElement('div');
-            const isPinned = msg.isPinned === true;
-            card.className = `message-card animate-float ${isPinned ? 'pinned-card' : ''}`;
+            card.className = `message-card animate-float`;
 
             let finalX, finalY, finalRot;
 
@@ -1750,10 +1737,10 @@
             else if (contentLen > 110) sizeClass = "size-mini"; // 內容超長時縮到最小
 
             card.innerHTML = `
-                <div class="card-greeting">${isPinned ? '📌 ' : '致：'}${msg.target}</div>
+                <div class="card-greeting">致：${msg.target}</div>
                 <div class="card-content ${sizeClass} ${hasNewline ? 'has-newline' : ''}">${renderedContent}</div>
                 <div class="card-footer">
-                    <div class="card-tag ${isPinned ? 'badge-pinned' : 'tag-' + msg.tag}">${isPinned ? '📌 重要公告' : msg.tag}</div>
+                    <div class="card-tag tag-${msg.tag}">${msg.tag}</div>
                     <div class="card-author">${msg.displayName}</div>
                 </div>
                 <button class="card-like ${likedClass}" onclick="toggleLike('${msg.id}', this)" title="送他一個心">
@@ -1988,12 +1975,11 @@
                 const isExpired = (now - messageTime) > twoWeeksMs;
 
                 if (tab === '已下架') {
-                    // For '已下架' tab, show messages that were '通過' and are now expired,
-                    // but exclude pinned messages from being considered 'expired' for display here.
-                    return m.status === '通過' && isExpired && !m.isPinned;
+                    // 已下架分頁：顯示通過但已過期的留言
+                    return m.status === '通過' && isExpired;
                 } else if (tab === '通過') {
-                    // For '通過' tab, show messages that are '通過' and not expired, or are pinned.
-                    return m.status === '通過' && (!isExpired || m.isPinned);
+                    // 已通過分頁：顯示通過且未過期的留言
+                    return m.status === '通過' && !isExpired;
                 } else {
                     return m.status === tab;
                 }
@@ -2009,7 +1995,7 @@
                 li.className = 'admin-item';
                 const msgDate = new Date(m.timestamp);
                 const isExpired = (new Date().getTime() - msgDate.getTime()) > twoWeeksMs;
-                const expiredBadge = (m.status === '通過' && isExpired && !m.isPinned) ? `<span style="background:#eee; color:#999; padding:2px 6px; border-radius:4px; font-size:10px; margin-left:5px;">時效已屆</span>` : '';
+                const expiredBadge = (m.status === '通過' && isExpired) ? `<span style="background:#eee; color:#999; padding:2px 6px; border-radius:4px; font-size:10px; margin-left:5px;">時效已屆</span>` : '';
 
                 const dateStr = msgDate.toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
                 li.innerHTML = `
@@ -2062,6 +2048,13 @@
             const res = await fetchAPI('adminGetMessages', { password });
             if (res && res.messages) {
                 adminRawData = res.messages;
+
+                // 同步測試模式狀態（確保在非首次登入時也能更新 Checkbox）
+                const testToggle = document.getElementById('toggleInternalTest');
+                if (testToggle && typeof res.isInternalTest !== 'undefined') {
+                    testToggle.checked = !!res.isInternalTest;
+                }
+
                 switchTab(currentTab);
             } else if (res && res.error) {
                 showModal('錯誤', res.error, 'error');
