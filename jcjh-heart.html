@@ -615,16 +615,19 @@
         }
 
         .stamp-label {
-            font-size: 0.6rem;
+            font-size: 0.55rem;
             font-weight: 700;
             color: rgba(186, 73, 73, 0.55);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-top: 2px;
-            max-width: 58px;
+            letter-spacing: -0.2px;
+            /* 緊縮間距以容納更多字 */
+            margin-top: 1px;
+            max-width: 60px;
+            /* 貼近郵戳邊緣 */
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            line-height: 1.1;
         }
 
 
@@ -2236,43 +2239,43 @@
             const bw = window.innerWidth;
             const bh = window.innerHeight;
 
-            // 改用 .header-bar，因為 header 本身可能因為子元素 fixed 而沒有高度
             const headerEl = document.querySelector('.header-bar');
             const headerRect = headerEl ? headerEl.getBoundingClientRect() : null;
 
             const cardW = 340;
             const cardH = 260;
 
-            const marginT = 100;
+            const marginT = 60; // 大幅上移，填補上方空間
             const marginB = 60;
-            const marginLR = 50;
+            const marginLR = 30; // 縮小邊距
 
             const availableW = bw - marginLR * 2;
             const availableH = bh - marginT - marginB;
 
-            const cols = Math.max(3, Math.floor(availableW / (cardW + 15)));
-            const rows = Math.max(3, Math.floor(availableH / (cardH + 15)));
+            // 極大化密度：使用負間距產生大量候選點供 Collision 算法篩選
+            const cols = Math.max(5, Math.floor(availableW / (cardW - 50)));
+            const rows = Math.max(4, Math.floor(availableH / (cardH - 50)));
 
             const cellW = availableW / cols;
             const cellH = availableH / rows;
 
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
-                    const offsetX = (cellW - cardW) / 2 + (Math.random() - 0.5) * (cellW * 0.4);
-                    const offsetY = (cellH - cardH) / 2 + (Math.random() - 0.5) * (cellH * 0.4);
+                    // 增加偏移範圍，讓交錯感更強
+                    const offsetX = (cellW - cardW) / 2 + (Math.random() - 0.5) * (cellW * 0.8);
+                    const offsetY = (cellH - cardH) / 2 + (Math.random() - 0.5) * (cellH * 0.8);
 
                     const posX = marginLR + c * cellW + offsetX;
                     const posY = marginT + r * cellH + offsetY;
 
-                    // 避讓邏輯：精準避開左上角 Logo 區域
+                    // 避讓邏輯：只要不重合就允許出現
                     if (headerRect && window.innerWidth > 600) {
-                        const buffer = 60; // 增加緩衝空間
-                        // 只要卡片的邊界進入 Logo 坐標範圍內，就跳過
-                        const cardRight = posX + cardW;
-                        const cardBottom = posY + cardH;
+                        const buffer = 5;
+                        // 檢查是否真的與 Logo 區域重疊
+                        const overlapX = posX < (headerRect.right + buffer) && (posX + cardW) > (headerRect.left - buffer);
+                        const overlapY = posY < (headerRect.bottom + buffer) && (posY + cardH) > (headerRect.top - buffer);
 
-                        // 檢查重疊：卡片左側 < Logo右側 且 卡片上方 < Logo下方
-                        if (posX < headerRect.right + buffer && posY < headerRect.bottom + buffer) {
+                        if (overlapX && overlapY) {
                             continue;
                         }
                     }
@@ -2280,11 +2283,10 @@
                     gridPositions.push({
                         x: posX,
                         y: posY,
-                        rot: (Math.random() - 0.5) * 12
+                        rot: (Math.random() - 0.5) * 15 // 稍微增加旋轉幅度，讓版面更活潑
                     });
                 }
             }
-            // 隨機打亂候選池
             gridPositions.sort(() => Math.random() - 0.5);
         }
 
@@ -2417,7 +2419,7 @@
             card.innerHTML = `
                 <div class="card-stamp">
                     <div class="stamp-date">${stampMonth}/${stampDay}</div>
-                    <div class="stamp-label">${msg.topicTag ? '#' + msg.topicTag : 'Heart'}</div>
+                    <div class="stamp-label">${msg.topicTag ? msg.topicTag : 'Heart'}</div>
                 </div>
                 <div class="card-body">
                     <div class="card-greeting">致：${msg.target}</div>
