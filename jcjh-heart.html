@@ -22,7 +22,7 @@
             /* 再次加深背景基準色 */
             --glass-bg: rgba(255, 255, 255, 0.65);
             --glass-border: rgba(255, 255, 255, 0.4);
-            --font-main: 'Inter', 'Noto Sans TC', 'Twemoji Color', 'Noto Color Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Microsoft JhengHei", sans-serif, system-ui;
+            --font-main: 'Inter', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Microsoft JhengHei", sans-serif, 'Twemoji Color', 'Noto Color Emoji', system-ui;
             /* 效能優化：精簡陰影渲染負擔 */
             --card-shadow: 0 8px 25px rgba(107, 79, 79, 0.12);
         }
@@ -32,11 +32,17 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: var(--font-main);
+        }
+
+        input,
+        button,
+        select,
+        textarea {
+            font-family: inherit;
         }
 
         body {
-            font-family: 'Inter', 'Noto Sans TC', 'Twemoji Color', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Segoe UI Symbol', "Microsoft JhengHei", Arial, sans-serif, system-ui;
+            font-family: var(--font-main);
             background: #fff5f2;
             color: #4a3e3e;
             margin: 0;
