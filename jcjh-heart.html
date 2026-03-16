@@ -3433,7 +3433,14 @@
                 inputPlaceholder: '請輸入 VIP 通行碼',
                 showCancelButton: true,
                 confirmButtonText: '驗證',
-                cancelButtonText: '取消'
+                cancelButtonText: '取消',
+                didOpen: () => {
+                    const input = Swal.getInput();
+                    if (input) {
+                        input.style.width = '100%';
+                        input.style.boxSizing = 'border-box';
+                    }
+                }
             });
 
             if (code === _VIP_CODE) {
