@@ -3358,8 +3358,17 @@
             updatePreview(); // 開啟時先預覽一次
         }
 
-        // --- 即時預覽功能 ---
+        // --- 即時預覽功能 (防抖動優化) ---
+        let _previewDebounceTimer = null;
+
         function updatePreview() {
+            clearTimeout(_previewDebounceTimer);
+            _previewDebounceTimer = setTimeout(() => {
+                _executePreview();
+            }, 300); // 等待 300 毫秒
+        }
+
+        function _executePreview() {
             const container = document.getElementById('preview-card-container');
             if (!container) return;
 
@@ -3394,9 +3403,9 @@
             card.style.position = 'relative';
             card.style.left = 'auto';
             card.style.top = 'auto';
-            card.style.transform = 'scale(0.8)'; // 手機上稍微縮小一點避免太擠
+            card.style.transform = 'scale(0.8)';
             card.style.margin = '0';
-            card.style.pointerEvents = 'none'; // 預覽卡片不需互動
+            card.style.pointerEvents = 'none';
             card.style.boxShadow = '0 10px 20px rgba(0,0,0,0.1)';
             
             container.appendChild(card);
