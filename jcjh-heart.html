@@ -14,7 +14,6 @@
     <!-- SweetAlert2 & Marked.js -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="icon" href="data:,"> <!-- 預防 favicon.ico 404 錯誤 -->
     <style>
         :root {
             --primary-coral: #e66767;
@@ -1172,94 +1171,6 @@
         }
 
         /* 寫留言標籤藥丸樣式 */
-        /* LINE 內置瀏覽器提醒樣式 */
-        .line-browser-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 9999;
-            color: white;
-            padding: 20px;
-            box-sizing: border-box;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            text-align: center;
-        }
-
-        .line-browser-msg {
-            background: white;
-            color: #333;
-            padding: 25px;
-            border-radius: 20px;
-            max-width: 320px;
-            width: 90%;
-            margin-top: 80px;
-            position: relative;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            animation: slideDown 0.5s ease-out;
-        }
-
-        .line-browser-msg::after {
-            content: "↗️";
-            position: absolute;
-            top: -40px;
-            right: 10px;
-            font-size: 3rem;
-            animation: pointUp 1s ease-in-out infinite;
-        }
-
-        @keyframes pointUp {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-
-        @keyframes slideDown {
-            from { transform: translateY(-30px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .line-browser-msg h3 {
-            color: #e66767;
-            margin-top: 0;
-        }
-
-        .line-browser-msg p {
-            line-height: 1.6;
-            margin-bottom: 20px;
-            font-size: 1.05rem;
-        }
-
-        .line-browser-msg ol {
-            text-align: left;
-            padding-left: 20px;
-        }
-
-        .line-browser-msg li {
-            margin-bottom: 10px;
-        }
-    </style>
-
-    <script>
-        // --- 全域變數與 Google 登入回撥 ---
-        // 確保 Google 一鍵登入 (GSI) 能在全域範圍找到回撥函數
-        window.handleCredentialResponse = function(response) {
-            if (typeof handleCredentialResponseImpl === 'function') {
-                handleCredentialResponseImpl(response);
-            } else {
-                console.warn("GSI 回撥已觸發，但實作函數尚未載入。");
-            }
-        };
-        // 舊版 Google 登入相容別名
-        window.onSignIn = window.handleCredentialResponse;
-    </script>
-
-    <style>
-        /* 原有標籤樣式 */
         .tag-pills-container {
             display: flex;
             flex-wrap: wrap;
@@ -1573,49 +1484,6 @@
     <!-- 右下角隱藏入口 (位於 adminModal 之前) -->
     <div class="admin-trigger" onclick="openAdminModal()"></div>
 
-    <!-- 專屬通道 Modal (連點 5 次觸發，不打擾學生) -->
-    <div id="special-auth-modal"
-        style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease;">
-        <div
-            style="background: white; width: 90%; max-width: 400px; border-radius: 20px; padding: 2rem; box-shadow: 0 10px 40px rgba(0,0,0,0.15); transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
-            <div style="text-align: center; margin-bottom: 1.5rem;">
-                <div
-                    style="width: 60px; height: 60px; background: #fff0f5; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 1rem;">
-                    <i class="fas fa-id-badge" style="font-size: 1.8rem; color: #e66767;"></i>
-                </div>
-                <h3 style="margin: 0 0 0.5rem; color: #8b5a2b;">專屬登入通道</h3>
-                <p style="margin: 0; font-size: 0.85rem; color: #999;">您好，請輸入驗證資訊以開啟留言權限</p>
-            </div>
-
-            <div style="display: flex; flex-direction: column; gap: 1.2rem;">
-                <div>
-                    <label style="display: block; font-size: 0.85rem; color: #666; margin-bottom: 0.3rem;">專屬認證碼</label>
-                    <input type="password" id="special-auth-code" placeholder="請輸入認證密碼"
-                        style="width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 10px; font-size: 1rem; outline: none; transition: border-color 0.2s;"
-                        onfocus="this.style.borderColor='#e66767'" onblur="this.style.borderColor='#eee'">
-                </div>
-                <div>
-                    <label style="display: block; font-size: 0.85rem; color: #666; margin-bottom: 0.3rem;">您的稱呼</label>
-                    <input type="text" id="special-auth-name" placeholder="例如：校長、王主任 等"
-                        style="width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 10px; font-size: 1rem; outline: none; transition: border-color 0.2s;"
-                        onfocus="this.style.borderColor='#e66767'" onblur="this.style.borderColor='#eee'"
-                        onkeypress="if(event.key === 'Enter') submitSpecialAuth()">
-                </div>
-
-                <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
-                    <button type="button" onclick="closeSpecialAuthModal()"
-                        style="flex: 1; padding: 12px; background: #f5f5f5; color: #666; border: none; border-radius: 10px; font-weight: bold; cursor: pointer;">
-                        取消
-                    </button>
-                    <button type="button" onclick="submitSpecialAuth()"
-                        style="flex: 1; padding: 12px; background: #e66767; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(230, 103, 103, 0.3);">
-                        確認登入
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- 留言 Modal -->
     <div id="postModal" class="modal-overlay" onclick="if(event.target === this) closeModal('postModal')">
         <div class="modal-content">
@@ -1623,15 +1491,13 @@
                 投稿溫暖</h2>
             <form id="postForm" style="display: flex; flex-direction: column; gap: 0.8rem;">
                 <!-- 投稿提醒 (最上方) -->
-                <div class="note-box" id="hidden-auth-trigger" onclick="handleHiddenAuthTrigger()"
-                    style="cursor: default;">
+                <div id="vip-trigger-area"
+                    style="background: linear-gradient(135deg, #fff9e6 0%, #fff0f5 100%); padding: 0.8rem 1rem; border-radius: 12px; border-left: 4px solid var(--warm-coral); margin-bottom: 0.2rem; cursor: pointer; user-select: none;">
                     <p
-                        style="font-size: 0.95rem; font-weight: 500; color: #8b5a2b; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-                        💝 投稿前請注意：
-                    </p>
-                    <p style="font-size: 0.85rem; color: #a67c52; margin: 0; line-height: 1.6;">
-                        • 請用正向、溫暖的文字給予身邊的人鼓勵與支持<br>
-                        • 留言將經輔導室老師審核後顯示在電視牆上<br>
+                        style="font-size: 0.85rem; color: var(--warm-brown); margin: 0; line-height: 1.6; pointer-events: none;">
+                        💝 <strong>投稿前請注意：</strong><br>
+                        • 請用正向、溫暖的文字傳遞心意<br>
+                        • 留言將經輔導室老師審核後公開顯示，兩週後自動下架<br>
                         • 請使用個人學校帳號登入留言，請愛護校園友善環境
                     </p>
                 </div>
@@ -1682,22 +1548,6 @@
                         <input type="text" id="target" placeholder="例如：701 全體同學、王老師..." required>
                     </div>
 
-                    <!-- LINE 內置瀏覽器提醒遮罩 -->
-    <div id="lineBrowserOverlay" class="line-browser-overlay">
-        <div class="line-browser-msg">
-            <h3>建議切換瀏覽器</h3>
-            <p>偵測到您正在使用 LINE 內置瀏覽器，這可能會導致 <b>Google 登入失效</b>。</p>
-            <ol>
-                <li>點擊右上角「<b>⋮</b>」或「<b>...</b>」</li>
-                <li>選擇「<b>使用預設瀏覽器開啟</b>」</li>
-            </ol>
-            <button onclick="document.getElementById('lineBrowserOverlay').style.display='none'"
-                style="background: #eee; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; color: #666; font-weight: bold;">
-                我知道了，先關閉
-            </button>
-        </div>
-    </div>
-
                     <!-- 類別與標籤 (橫向並排) -->
                     <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start;">
                         <div style="flex: 0 0 140px; display: flex; flex-direction: column; gap: 0.3rem;">
@@ -1733,6 +1583,17 @@
                         </div>
                     </div>
                 </div>
+                <!-- 即時預覽區域 -->
+                <div id="preview-area"
+                    style="margin-top: 1rem; border-top: 1px dashed #eee; padding-top: 1rem; position: relative;">
+                    <label style="font-size: 0.85rem; color: #999; margin-bottom: 0.5rem; display: block;">👀 即時預覽
+                        (送出後的樣子)</label>
+                    <div id="preview-card-container"
+                        style="display: flex; justify-content: center; align-items: center; min-height: 220px; overflow: hidden; background: rgba(0,0,0,0.02); border-radius: 8px;">
+                        <!-- 預覽卡片將由 JS 動態生成 -->
+                    </div>
+                </div>
+
                 <button type="button" class="btn-submit" id="submitBtn" onclick="submitDraft()"
                     style="margin-top: 0.5rem; height: 48px; font-size: 1.1rem; width: 100%;">
                     送出留言
@@ -1944,7 +1805,14 @@
         let topicConfig = { library: "", activeSubmissionTags: "", defaultWallTags: "" }; // 活動標籤設定
         let currentFilterTag = ""; // 當前過濾標籤
         let currentSubmissionMode = "school"; // 當前投稿模式 (school, public, closed)
-        // 敏感詞清單（可自行擴充）
+        // --- 秘鑰與 VIP 狀態 ---
+        let _isVipMode = false;
+        const _VIP_CODE = "jcjh888";
+        let _vipClickCount = 0;
+        let _vipClickTimer = null;
+        let _vipLongPressTimer = null;
+
+        // --- 敏感詞清單（可自行擴充） ---
         const SENSITIVE_WORDS = [
             '笨蛋', '白癡', '去死', '智障', '廢物', '垃圾', '滾', '爛',
             '幹', '靠', '媽的', '他媽', '屁', '賤', '婊', '渣',
@@ -1968,21 +1836,7 @@
         // 全域輪播計時器，確保手動與自動輪播同步，避免同時出卡
         let lastRotateTimestamp = 0;
 
-        function checkLineBrowser() {
-            const ua = navigator.userAgent || navigator.vendor || window.opera;
-            const isLine = ua.indexOf('Line') > -1;
-            if (isLine) {
-                const overlay = document.getElementById('lineBrowserOverlay');
-                if (overlay) {
-                    overlay.style.display = 'flex';
-                    // 鎖定 body 捲動
-                    document.body.style.overflow = 'hidden';
-                }
-            }
-        }
-
         window.onload = () => {
-            checkLineBrowser(); // 執行 LINE 偵測
             const urlParams = new URLSearchParams(window.location.search);
             const isDisplayMode = urlParams.has('view') && urlParams.get('view') === 'wall';
             const isAdminMode = urlParams.has('admin');
@@ -2249,7 +2103,7 @@
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[i], array[j]];
+                [array[i], array[j]] = [array[j], array[i]];
             }
             return array;
         }
@@ -2389,130 +2243,61 @@
         }
 
         // --- 追蹤釘選公告垂直堆疊狀態 ---
-        function createCard(msg, bw, bh, index) {
-            const board = document.getElementById('messageBoard');
+        // --- 核心功能：建立留言卡片 ---
+        function createMessageCard(msg, index, isPreview = false) {
             const card = document.createElement('div');
-            card.className = `message-card animate-float`;
+            card.className = `message-card ${isPreview ? '' : 'animate-float'}`;
 
-            // 1. 取得畫面上所有現存卡片的位置 (Collision Detection)
-            const existingCards = Array.from(board.querySelectorAll('.message-card')).map(el => {
-                const rect = el.getBoundingClientRect();
-                // 取卡片中心點作為距離計算基準，比左上角更準確
-                return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-            });
-
-            // 2. 確保候選網格已生成
-            if (gridPositions.length === 0) calculateGridPositions();
-
-            // 3. 尋找最佳位置：挑選「離所有現有卡片最遠」的候選點
-            let bestPos = gridPositions[0];
-            let maxMinDist = -1;
-
-            // 隨機選取 10 個候選點進行評估 (避免計算量過大，雖只有幾十個點其實全跑也沒關係)
-            // 為了效能與隨機性，我們遍歷所有候選點，因為數量不多 (約 20-30 個)
-            for (const pos of gridPositions) {
-                // 計算此候選點(中心)與所有現存卡片(中心)的最近距離
-                // 預估卡片中心 x = pos.x + 165, y = pos.y + 130
-                const centerX = pos.x + 175;
-                const centerY = pos.y + 130;
-
-                let minDist = Infinity;
-
-                if (existingCards.length === 0) {
-                    minDist = Infinity;
-                } else {
-                    for (const exist of existingCards) {
-                        const dx = centerX - exist.x;
-                        const dy = centerY - exist.y;
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        if (dist < minDist) minDist = dist;
-                    }
-                }
-
-                // 更新最佳解
-                if (minDist > maxMinDist) {
-                    maxMinDist = minDist;
-                    bestPos = pos;
-                }
-            }
-
-            // 使用評估出的最佳位置 (如果 maxMinDist 仍很小，表示螢幕真的很滿，但也盡力選了最空的)
-
-            // 安全限制：確保卡片完全在可見範圍內 (預留邊距)
-            const safeX = Math.max(30, Math.min(bestPos.x, bw - 390));
-            const safeY = Math.max(80, Math.min(bestPos.y, bh - 320));
-
-            card.style.setProperty('--rot', `${bestPos.rot}deg`);
-            card.style.top = `${safeY}px`;
-            card.style.left = `${safeX}px`;
-
-            // --- 郵戳日期處理 (使用原始投稿時間) ---
+            // --- 郵戳日期處理 ---
             const dateObj = new Date(msg.timestamp);
             const stampMonth = (dateObj.getMonth() + 1).toString().padStart(2, '0');
             const stampDay = dateObj.getDate().toString().padStart(2, '0');
-            const stampRot = (Math.random() * 20 - 10); // 隨機蓋章偏轉
+            const stampRot = (Math.random() * 20 - 10);
             card.style.setProperty('--stamp-rot', `${stampRot}deg`);
 
-
-
-            // 隨機膠帶位置邏輯
+            // 隨機膠帶位置
             const tapePos = Math.random() > 0.5 ? '20px' : '230px';
             const tapeRot = (Math.random() * 20 - 10) + (tapePos === '20px' ? -15 : 15);
             card.style.setProperty('--tape-pos', tapePos);
             card.style.setProperty('--tape-rot', tapeRot + 'deg');
 
-            // --- 內容處理：動態計算字級，確保原始呈現 ---
+            // --- 內容處理：動態計算字級 ---
             const content = msg.content || "";
             const lineCount = content.split('\n').length;
-            const charPerLine = 14; // 預估每行可容納的中文字數
+            const charPerLine = 14;
             const autoWrappedLines = Math.ceil(content.length / charPerLine);
-
-            // 決定最終參考行數 (手動換行 vs 自動折行，取較大者或加權)
             const effectiveLines = Math.max(lineCount, autoWrappedLines);
 
             let dynamicFontSize;
-            if (effectiveLines <= 1) {
-                dynamicFontSize = 1.7;
-            } else if (effectiveLines <= 2) {
-                dynamicFontSize = 1.5;
-            } else if (effectiveLines <= 3) {
-                dynamicFontSize = 1.3;
-            } else if (effectiveLines <= 4) {
-                dynamicFontSize = 1.15;
-            } else if (effectiveLines <= 5) {
-                dynamicFontSize = 1.0;
-            } else {
-                dynamicFontSize = 0.9;
-            }
+            if (effectiveLines <= 1) dynamicFontSize = 1.7;
+            else if (effectiveLines <= 2) dynamicFontSize = 1.5;
+            else if (effectiveLines <= 3) dynamicFontSize = 1.3;
+            else if (effectiveLines <= 4) dynamicFontSize = 1.15;
+            else if (effectiveLines <= 5) dynamicFontSize = 1.0;
+            else dynamicFontSize = 0.9;
 
             const hasNewline = content.includes('\n');
 
-
-
-            // --- 關鍵字特效偵測 (支援多個關鍵字用逗號分隔) ---
-            let matchedEffect = null;
+            // --- 關鍵字特效 ---
             if (currentEffects && currentEffects.length > 0) {
+                let matchedEffect = null;
                 let firstIndex = Infinity;
                 currentEffects.forEach(eff => {
                     const keywords = eff.keyword.split(',').map(k => k.trim());
                     keywords.forEach(kw => {
-                        const idx = msg.content.indexOf(kw);
+                        const idx = content.indexOf(kw);
                         if (idx !== -1 && idx < firstIndex) {
                             firstIndex = idx;
                             matchedEffect = eff;
                         }
                     });
                 });
-
                 if (matchedEffect) {
                     card.dataset.autoEffect = "true";
                     card.dataset.effectMode = matchedEffect.mode;
                     card.dataset.effectIcon = matchedEffect.icon;
                 }
             }
-
-            // --- 內容處理：恢復原始呈現 (不進行 Markdown 解析或過濾) ---
-            let contentHtml = msg.content;
 
             card.innerHTML = `
                 <div class="card-stamp">
@@ -2528,44 +2313,75 @@
                     <div class="card-author">${msg.displayName}</div>
                 </div>
             `;
-
-            // 使用 textContent 確保原始文字（包含 [] 和 \n）原樣呈現且不被解析
             card.querySelector('.card-content').textContent = content;
 
+            if (!isPreview) {
+                // 處理電視牆位置邏輯
+                const board = document.getElementById('messageBoard');
+                const bw = window.innerWidth;
+                const bh = window.innerHeight;
 
+                const existingCards = Array.from(board.querySelectorAll('.message-card')).map(el => {
+                    const rect = el.getBoundingClientRect();
+                    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+                });
 
+                if (gridPositions.length === 0) calculateGridPositions();
 
+                let bestPos = gridPositions[0];
+                let maxMinDist = -1;
 
+                for (const pos of gridPositions) {
+                    const centerX = pos.x + 175;
+                    const centerY = pos.y + 130;
+                    let minDist = Infinity;
+                    if (existingCards.length > 0) {
+                        for (const exist of existingCards) {
+                            const dx = centerX - exist.x;
+                            const dy = centerY - exist.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist < minDist) minDist = dist;
+                        }
+                    }
+                    if (minDist > maxMinDist) {
+                        maxMinDist = minDist;
+                        bestPos = pos;
+                    }
+                }
 
+                const safeX = Math.max(30, Math.min(bestPos.x, bw - 390));
+                const safeY = Math.max(80, Math.min(bestPos.y, bh - 320));
 
+                card.style.setProperty('--rot', `${bestPos.rot}deg`);
+                card.style.top = `${safeY}px`;
+                card.style.left = `${safeX}px`;
 
-            board.appendChild(card);
+                board.appendChild(card);
 
-            // 關鍵字特效自動觸發 (出現 1 秒後執行)
-            if (card.dataset.autoEffect === "true") {
+                if (card.dataset.autoEffect === "true") {
+                    setTimeout(() => {
+                        const contentEl = card.querySelector('.card-content');
+                        if (contentEl) createParticles(contentEl, card.dataset.effectMode, card.dataset.effectIcon);
+                    }, 1000);
+                }
+
+                const lifeTime = Math.floor(Math.random() * (20000 - 12000 + 1) + 12000);
                 setTimeout(() => {
-                    createParticles(card.querySelector('.card-content'), card.dataset.effectMode, card.dataset.effectIcon);
-                }, 1000);
+                    card.classList.add('fade-out');
+                    setTimeout(() => {
+                        card.remove();
+                        displayingIndexes.delete(index);
+                        setTimeout(() => rotateMessages(), 4000);
+                    }, 1000);
+                }, lifeTime);
             }
 
+            return card;
+        }
 
-
-            // 卡片生命週期：10 秒後回收 (含淡出)
-            // 卡片生命週期：隨機 12~20 秒 (達成 3~5 張的隨機波動感)
-            // 數學原理：12s/4s = 3張, 20s/4s = 5張
-            const lifeTime = Math.floor(Math.random() * (20000 - 12000 + 1) + 12000);
-
-            setTimeout(() => {
-                card.classList.add('fade-out');
-                setTimeout(() => {
-                    card.remove();
-                    displayingIndexes.delete(index);
-
-                    // 關鍵：卡片消失後，主動觸發一次補位檢查
-                    // 依需求：消失後 4 秒才補位
-                    setTimeout(() => rotateMessages(), 4000);
-                }, 1000);
-            }, lifeTime);
+        // --- 舊函式相容層 ---
+        function createCard(msg, bw, bh, index) {
+            return createMessageCard(msg, index, false);
         }
 
 
@@ -2601,8 +2417,8 @@
 
         // --- 送出留言 ---
         async function submitDraft() {
-            // 決定身份：若為學校模式且未登入，則擋下；若為訪客模式且未登入，則套用 visitor 邏輯
-            if (currentSubmissionMode === 'school' && !currentUserEmail) {
+            // 決定身份：若為學校模式且未登入，則擋下；但 VIP 模式例外
+            if (currentSubmissionMode === 'school' && !currentUserEmail && !_isVipMode) {
                 showModal('提示', '請先使用學校 Google 帳號登入，以維護校園留言環境。', 'warning');
                 return;
             }
@@ -2654,7 +2470,7 @@
                             </div>
                             <h2 style="color: var(--warm-brown); margin-bottom: 1rem;">投稿成功！</h2>
                             <p style="font-size: 1.1rem; color: #666; line-height: 1.6; margin-bottom: 2rem;">
-                                留言審核後將顯示於<br><strong style="color: var(--primary-coral); font-size: 1.3rem;">「中庭電視牆」</strong>
+                                留言審核後將顯示於<br><strong style="color: var(--primary-coral); font-size: 1.3rem;">「於庭電視牆」</strong>
                             </p>
                             <button class="btn-submit" onclick="location.reload()" style="width: auto; padding: 0.8rem 2.5rem;">
                                 <i class="fas fa-feather-alt"></i> 再寫一則
@@ -2679,86 +2495,6 @@
         let adminRawData = [];
         let currentTab = "待審核";
         let currentAdminLimit = 20; // 預設顯示數量
-        // --- 專屬通道 (後門方案，解決特殊帳號無法登入問題) ---
-        let _hiddenAuthClicks = 0;
-        let _hiddenAuthTimer = null;
-        const SECRET_CODE = "jcjh888"; // ← 您可以自行修改此暗號
-
-        function handleHiddenAuthTrigger() {
-            _hiddenAuthClicks++;
-            if (_hiddenAuthTimer) clearTimeout(_hiddenAuthTimer);
-
-            if (_hiddenAuthClicks >= 5) {
-                _hiddenAuthClicks = 0;
-                openSpecialAuthModal();
-            } else {
-                _hiddenAuthTimer = setTimeout(() => { _hiddenAuthClicks = 0; }, 2000);
-            }
-        }
-
-        function openSpecialAuthModal() {
-            const modal = document.getElementById('special-auth-modal');
-            const card = modal.querySelector('div > div');
-            document.getElementById('special-auth-code').value = '';
-            document.getElementById('special-auth-name').value = '';
-
-            modal.style.display = 'flex';
-            // Trigger reflow for animation
-            void modal.offsetWidth;
-            modal.style.opacity = '1';
-            card.style.transform = 'scale(1)';
-
-            setTimeout(() => {
-                document.getElementById('special-auth-code').focus();
-            }, 300);
-        }
-
-        function closeSpecialAuthModal() {
-            const modal = document.getElementById('special-auth-modal');
-            const card = modal.querySelector('div > div');
-            modal.style.opacity = '0';
-            card.style.transform = 'scale(0.9)';
-            setTimeout(() => {
-                modal.style.display = 'none';
-            }, 300);
-        }
-
-        function submitSpecialAuth() {
-            const code = document.getElementById('special-auth-code').value;
-            const name = document.getElementById('special-auth-name').value.trim();
-
-            if (code !== SECRET_CODE) {
-                showModal('驗證失敗', '專屬認證碼錯誤，請重新確認。', 'error');
-                return;
-            }
-            if (!name) {
-                showModal('提醒', '請輸入您的稱呼', 'warning');
-                return;
-            }
-
-            // 驗證成功：分配虛擬系統信箱，不需手動填寫複雜格式
-            const virtualEmail = 'vip_auth_' + Date.now() + '@stweb.jcjh.tp.edu.tw';
-            currentUserEmail = virtualEmail;
-            currentUserName = name;
-
-            const loginContainer = document.getElementById('google-login-container');
-            // 替換為符合留言板風格的登入成功樣式，與前面更新的樣式一致
-            loginContainer.innerHTML = `
-                <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:#f0faf0;border:1px solid #c3e6c3;border-radius:10px;">
-                    <i class="fas fa-check-circle" style="color:#27ae60;font-size:1.2rem;"></i>
-                    <div style="line-height:1.3;flex:1;">
-                        <div style="font-weight:bold;color:#27ae60;font-size:0.9rem;">${currentUserName}</div>
-                        <div style="font-size:0.75rem;color:#888;">專屬通道認證</div>
-                    </div>
-                </div>`;
-
-            const submitBtn = document.querySelector('.btn-submit[onclick="submitDraft()"]');
-            if (submitBtn) submitBtn.textContent = "確認送出留言";
-
-            closeSpecialAuthModal();
-            showModal('登入成功', '您好，' + name + '！已為您開通專屬權限，現在可以開始留言了。', 'success');
-        }
-
         const ADMIN_PAGE_SIZE = 20; // 每次展開數量
 
         async function doAdminLogin() {
@@ -3065,6 +2801,8 @@
                     `<select id="swal-topic" class="swal2-select" style="width:100%; margin:10px 0;">
                         ${topicOptionsHTML}
                     </select>` +
+                    `<label>對象：</label>` +
+                    `<input id="swal-target" class="swal2-input" style="width:100%; margin:10px 0;" value="${msg.target || ''}">` +
                     `<label>顯示名稱：</label>` +
                     `<input id="swal-displayname" class="swal2-input" style="width:100%; margin:10px 0;" value="${msg.displayName}">` +
                     `</div>`,
@@ -3077,6 +2815,7 @@
                         content: document.getElementById('swal-content').value,
                         tag: document.getElementById('swal-tag').value,
                         topicTag: document.getElementById('swal-topic').value,
+                        target: document.getElementById('swal-target').value,
                         displayName: document.getElementById('swal-displayname').value
                     }
                 }
@@ -3091,6 +2830,7 @@
                     content: formValues.content,
                     tag: formValues.tag,
                     topicTag: formValues.topicTag,
+                    target: formValues.target,
                     displayName: formValues.displayName,
                     password
                 });
@@ -3531,6 +3271,9 @@
         }
 
         async function openPostModal() {
+            // 初始化 VIP 觸發器 (僅在第一次開啟時綁定)
+            initVipTrigger();
+
             await checkSystemConfig();
             loadTopicConfig();
             const modal = document.getElementById('postModal');
@@ -3563,7 +3306,7 @@
                 const anonymousNameWrapper = document.getElementById('anonymousNameWrapper');
                 const anonymousNameInput = document.getElementById('anonymousName');
 
-                if (currentSubmissionMode === 'public') {
+                if (currentSubmissionMode === 'public' || _isVipMode) {
                     if (googleLogin) googleLogin.style.display = 'none';
 
                     // 讓外層容器也與下方一致 (移除白色底色與邊框)
@@ -3586,7 +3329,7 @@
 
                     document.getElementById('isAnonymous').checked = true;
                     anonymousNameInput.placeholder = "您的稱呼 (選填)";
-                    document.querySelector('#postModal h2').textContent = "✨ 寫下暖心留言 (外賓開放中)";
+                    document.querySelector('#postModal h2').textContent = _isVipMode ? "✨ 寫下暖心留言 (VIP 模式已開啟)" : "✨ 寫下暖心留言 (外賓開放中)";
                 } else {
                     if (googleLogin) googleLogin.style.display = 'block';
 
@@ -3615,7 +3358,150 @@
                 }
             }
             modal.style.display = 'flex';
+            updatePreview(); // 開啟時先預覽一次
         }
+
+        // --- 即時預覽功能 (防抖動優化) ---
+        let _previewDebounceTimer = null;
+
+        function updatePreview() {
+            clearTimeout(_previewDebounceTimer);
+            _previewDebounceTimer = setTimeout(() => {
+                _executePreview();
+            }, 300); // 等待 300 毫秒
+        }
+
+        function _executePreview() {
+            const container = document.getElementById('preview-card-container');
+            if (!container) return;
+
+            const target = document.getElementById('target').value || "全體師生";
+            const content = document.getElementById('content').value || "在這裡寫下溫暖的文字...";
+            const tag = document.getElementById('tag').value;
+            const topicTag = document.getElementById('topicTag').value;
+            const isAnonymous = document.getElementById('isAnonymous').checked;
+            const nickname = document.getElementById('anonymousName').value;
+
+            let displayName = "訪客";
+            if (isAnonymous) {
+                displayName = nickname || "小天使";
+            } else if (currentUserName) {
+                displayName = currentUserName;
+            }
+
+            // 產生物件模擬
+            const msg = {
+                target,
+                content,
+                tag,
+                topicTag,
+                displayName,
+                timestamp: new Date()
+            };
+
+            container.innerHTML = '';
+            const card = createMessageCard(msg, 0, true);
+
+            // 強制設定預覽樣式，避免被電視牆樣式干擾
+            card.style.position = 'relative';
+            card.style.left = 'auto';
+            card.style.top = 'auto';
+            card.style.transform = 'scale(0.8)';
+            card.style.margin = '0';
+            card.style.pointerEvents = 'none';
+            card.style.boxShadow = '0 10px 20px rgba(0,0,0,0.1)';
+
+            container.appendChild(card);
+        }
+
+        // 綁定所有欄位的 input 事件
+        document.addEventListener('DOMContentLoaded', () => {
+            const fields = ['target', 'content', 'tag', 'topicTag', 'isAnonymous', 'anonymousName'];
+            fields.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('input', updatePreview);
+                    el.addEventListener('change', updatePreview);
+                }
+            });
+        });
+
+        // --- VIP 觸發器實作 ---
+        function initVipTrigger() {
+            const area = document.getElementById('vip-trigger-area');
+            if (!area || area.dataset.bound) return;
+            area.dataset.bound = "true";
+
+            // 1. 三連點偵測
+            area.addEventListener('click', () => {
+                _vipClickCount++;
+                clearTimeout(_vipClickTimer);
+                _vipClickTimer = setTimeout(() => { _vipClickCount = 0; }, 500);
+
+                if (_vipClickCount >= 3) {
+                    _vipClickCount = 0;
+                    handleVipTrigger();
+                }
+            });
+
+            // 2. 長按偵測 (相容滑鼠與觸控)
+            const startPress = () => {
+                _vipLongPressTimer = setTimeout(() => {
+                    handleVipTrigger();
+                }, 2000); // 2秒長按
+            };
+            const endPress = () => {
+                clearTimeout(_vipLongPressTimer);
+            };
+
+            area.addEventListener('mousedown', startPress);
+            area.addEventListener('mouseup', endPress);
+            area.addEventListener('mouseleave', endPress);
+            area.addEventListener('touchstart', (e) => {
+                // e.preventDefault(); // 避免觸發點擊，但可能導致無法滾動內容，這裡不使用
+                startPress();
+            });
+            area.addEventListener('touchend', endPress);
+            area.addEventListener('touchcancel', endPress);
+        }
+
+        async function handleVipTrigger() {
+            if (_isVipMode) {
+                showModal('VIP 提示', '免登入模式已經開啟囉！', 'success');
+                return;
+            }
+
+            const { value: code } = await Swal.fire({
+                title: '請輸入通行碼',
+                input: 'password',
+                inputPlaceholder: '請輸入 VIP 通行碼',
+                showCancelButton: true,
+                confirmButtonText: '驗證',
+                cancelButtonText: '取消',
+                customClass: {
+                    input: 'vip-swal-input'
+                },
+                didOpen: () => {
+                    const input = Swal.getInput();
+                    if (input) {
+                        input.style.setProperty('width', '100%', 'important');
+                        input.style.setProperty('box-sizing', 'border-box', 'important');
+                        input.style.setProperty('margin-left', '0', 'important');
+                        input.style.setProperty('margin-right', '0', 'important');
+                    }
+                }
+            });
+
+            if (code === _VIP_CODE) {
+                _isVipMode = true;
+                showModal('VIP 認證成功', '已開啟免登入留言權限', 'success');
+                // 立即刷新介面
+                openPostModal();
+            } else if (code) {
+                showModal('錯誤', '通行碼不正確', 'error');
+            }
+        }
+
         function openAdminModal() {
             const modal = document.getElementById('adminModal');
             modal.style.display = 'flex';
