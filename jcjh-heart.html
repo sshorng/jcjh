@@ -137,6 +137,81 @@
 
         /* 舊版 DOM 粒子動畫已移除 (已由 Canvas 特效引擎取代) */
 
+        /* --- LINE 內置瀏覽器提醒遮罩樣式 --- */
+        .line-browser-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .line-browser-msg {
+            background: white;
+            color: #4a3e3e;
+            padding: 2rem;
+            border-radius: 24px;
+            max-width: 320px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            position: relative;
+            animation: slideUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .line-browser-msg h3 {
+            color: var(--primary-coral);
+            margin-bottom: 1rem;
+            font-size: 1.4rem;
+        }
+
+        .line-browser-msg p {
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .line-browser-msg ol {
+            text-align: left;
+            margin-bottom: 1.5rem;
+            padding-left: 1.5rem;
+        }
+
+        .line-browser-msg li {
+            margin-bottom: 0.8rem;
+        }
+
+        /* 雙向導引箭頭 */
+        .guide-arrow {
+            position: fixed;
+            font-size: 3rem;
+            color: #ff6b6b;
+            z-index: 10000;
+            filter: drop-shadow(0 0 10px rgba(255, 107, 107, 0.8));
+            animation: arrow-bounce 1s infinite alternate ease-in-out;
+            pointer-events: none;
+        }
+
+        .arrow-tr { top: 20px; right: 20px; } /* 右上角 */
+        .arrow-br { bottom: 20px; right: 20px; } /* 右下角 */
+
+        @keyframes arrow-bounce {
+            0% { transform: translate(0, 0) scale(1.1); }
+            100% { transform: translate(10px, -10px) scale(0.9); }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px) scale(0.9); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
         header {
             /* 移除可能干擾固定定位標誌的邊距 */
             z-index: 300;
@@ -1454,6 +1529,25 @@
         <i class="fas fa-info-circle"></i> 內部測試中，請等待正式公告開放
     </div>
 
+    <div id="lineBrowserOverlay" class="line-browser-overlay">
+        <div class="guide-arrow arrow-tr">↗️</div>
+        <div class="guide-arrow arrow-br">↘️</div>
+        <div class="line-browser-msg">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">📢</div>
+            <h3>建議切換瀏覽器</h3>
+            <p>偵測到您正在使用 <b>LINE 內置瀏覽器</b>，這可能會導致 Google 登入功能失效。</p>
+            <ol>
+                <li>點擊右上角或右下角的「<b>⋮</b>」或「<b>...</b>」</li>
+                <li>選擇「<b>使用預設瀏覽器開啟</b>」</li>
+            </ol>
+            <button onclick="closeLineOverlay()"
+                style="background: var(--primary-coral); border: none; padding: 12px 24px; border-radius: 12px; cursor: pointer; color: white; font-weight: bold; width: 100%; font-size: 1rem; box-shadow: 0 4px 12px rgba(230, 103, 103, 0.3);">
+                我知道了，直接進入
+            </button>
+            <p style="font-size: 0.75rem; color: #999; margin-top: 1rem; margin-bottom: 0;">若無法登入請務必切換瀏覽器</p>
+        </div>
+    </div>
+
     <header>
         <div class="header-bar">
             <div class="logo-icon">🌸</div>
@@ -1836,7 +1930,27 @@
         // 全域輪播計時器，確保手動與自動輪播同步，避免同時出卡
         let lastRotateTimestamp = 0;
 
+        // --- LINE 內置瀏覽器偵測功能 ---
+        function checkLineBrowser() {
+            const ua = navigator.userAgent || navigator.vendor || window.opera;
+            const isLine = /Line/i.test(ua);
+            if (isLine) {
+                const overlay = document.getElementById('lineBrowserOverlay');
+                if (overlay) {
+                    overlay.style.display = 'flex';
+                    document.body.style.overflow = 'hidden'; // 禁止背景捲動
+                }
+            }
+        }
+
+        function closeLineOverlay() {
+            const overlay = document.getElementById('lineBrowserOverlay');
+            if (overlay) overlay.style.display = 'none';
+            document.body.style.overflow = 'auto'; // 恢復背景捲動
+        }
+
         window.onload = () => {
+            checkLineBrowser(); // 執行 LINE 偵測
             const urlParams = new URLSearchParams(window.location.search);
             const isDisplayMode = urlParams.has('view') && urlParams.get('view') === 'wall';
             const isAdminMode = urlParams.has('admin');
