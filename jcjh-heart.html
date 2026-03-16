@@ -14,6 +14,7 @@
     <!-- SweetAlert2 & Marked.js -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="icon" href="data:,"> <!-- 預防 favicon.ico 404 錯誤 -->
     <style>
         :root {
             --primary-coral: #e66767;
@@ -1236,13 +1237,28 @@
         .line-browser-msg ol {
             text-align: left;
             padding-left: 20px;
-            margin-bottom: 20px;
         }
 
         .line-browser-msg li {
             margin-bottom: 10px;
         }
+    </style>
 
+    <script>
+        // --- 全域變數與 Google 登入回撥 ---
+        // 確保 Google 一鍵登入 (GSI) 能在全域範圍找到回撥函數
+        window.handleCredentialResponse = function(response) {
+            if (typeof handleCredentialResponseImpl === 'function') {
+                handleCredentialResponseImpl(response);
+            } else {
+                console.warn("GSI 回撥已觸發，但實作函數尚未載入。");
+            }
+        };
+        // 舊版 Google 登入相容別名
+        window.onSignIn = window.handleCredentialResponse;
+    </script>
+
+    <style>
         /* 原有標籤樣式 */
         .tag-pills-container {
             display: flex;
@@ -1947,10 +1963,6 @@
         }
 
 
-
-        // --- 初始化頁面 ---
-        // 全域輪播計時器，確保手動與自動輪播同步，避免同時出卡
-        let lastRotateTimestamp = 0;
 
         // --- 初始化頁面 ---
         // 全域輪播計時器，確保手動與自動輪播同步，避免同時出卡
