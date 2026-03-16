@@ -1484,49 +1484,6 @@
     <!-- 右下角隱藏入口 (位於 adminModal 之前) -->
     <div class="admin-trigger" onclick="openAdminModal()"></div>
 
-    <!-- 專屬通道 Modal (連點 5 次觸發，不打擾學生) -->
-    <div id="special-auth-modal"
-        style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease;">
-        <div
-            style="background: white; width: 90%; max-width: 400px; border-radius: 20px; padding: 2rem; box-shadow: 0 10px 40px rgba(0,0,0,0.15); transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
-            <div style="text-align: center; margin-bottom: 1.5rem;">
-                <div
-                    style="width: 60px; height: 60px; background: #fff0f5; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 1rem;">
-                    <i class="fas fa-id-badge" style="font-size: 1.8rem; color: #e66767;"></i>
-                </div>
-                <h3 style="margin: 0 0 0.5rem; color: #8b5a2b;">專屬登入通道</h3>
-                <p style="margin: 0; font-size: 0.85rem; color: #999;">您好，請輸入驗證資訊以開啟留言權限</p>
-            </div>
-
-            <div style="display: flex; flex-direction: column; gap: 1.2rem;">
-                <div>
-                    <label style="display: block; font-size: 0.85rem; color: #666; margin-bottom: 0.3rem;">專屬認證碼</label>
-                    <input type="password" id="special-auth-code" placeholder="請輸入認證密碼"
-                        style="width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 10px; font-size: 1rem; outline: none; transition: border-color 0.2s;"
-                        onfocus="this.style.borderColor='#e66767'" onblur="this.style.borderColor='#eee'">
-                </div>
-                <div>
-                    <label style="display: block; font-size: 0.85rem; color: #666; margin-bottom: 0.3rem;">您的稱呼</label>
-                    <input type="text" id="special-auth-name" placeholder="例如：校長、王主任 等"
-                        style="width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 10px; font-size: 1rem; outline: none; transition: border-color 0.2s;"
-                        onfocus="this.style.borderColor='#e66767'" onblur="this.style.borderColor='#eee'"
-                        onkeypress="if(event.key === 'Enter') submitSpecialAuth()">
-                </div>
-
-                <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
-                    <button type="button" onclick="closeSpecialAuthModal()"
-                        style="flex: 1; padding: 12px; background: #f5f5f5; color: #666; border: none; border-radius: 10px; font-weight: bold; cursor: pointer;">
-                        取消
-                    </button>
-                    <button type="button" onclick="submitSpecialAuth()"
-                        style="flex: 1; padding: 12px; background: #e66767; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(230, 103, 103, 0.3);">
-                        確認登入
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- 留言 Modal -->
     <div id="postModal" class="modal-overlay" onclick="if(event.target === this) closeModal('postModal')">
         <div class="modal-content">
@@ -1534,15 +1491,12 @@
                 投稿溫暖</h2>
             <form id="postForm" style="display: flex; flex-direction: column; gap: 0.8rem;">
                 <!-- 投稿提醒 (最上方) -->
-                <div class="note-box" id="hidden-auth-trigger" onclick="handleHiddenAuthTrigger()"
-                    style="cursor: default;">
-                    <p
-                        style="font-size: 0.95rem; font-weight: 500; color: #8b5a2b; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-                        💝 投稿前請注意：
-                    </p>
-                    <p style="font-size: 0.85rem; color: #a67c52; margin: 0; line-height: 1.6;">
-                        • 請用正向、溫暖的文字給予身邊的人鼓勵與支持<br>
-                        • 留言將經輔導室老師審核後顯示在電視牆上<br>
+                <div id="vip-trigger-area"
+                    style="background: linear-gradient(135deg, #fff9e6 0%, #fff0f5 100%); padding: 0.8rem 1rem; border-radius: 12px; border-left: 4px solid var(--warm-coral); margin-bottom: 0.2rem; cursor: pointer; user-select: none;">
+                    <p style="font-size: 0.85rem; color: var(--warm-brown); margin: 0; line-height: 1.6; pointer-events: none;">
+                        💝 <strong>投稿前請注意：</strong><br>
+                        • 請用正向、溫暖的文字傳遞心意<br>
+                        • 留言將經輔導室老師審核後公開顯示，兩週後自動下架<br>
                         • 請使用個人學校帳號登入留言，請愛護校園友善環境
                     </p>
                 </div>
@@ -1829,7 +1783,7 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
         // --- 設定與變數 ---
-        const _G = "https://script.google.com/macros/s/AKfycbzZOrUP3veKI5oexCOwUHqLXeduo4bRlpRoglpCF-zl1NxeLuKDTBcJg7o0Acx9qC0R/exec";
+        const _G = "https://script.google.com/macros/s/AKfycbxT1leuogpgKDMLIUeZKxdr6LB3YwsUe3VC1UNnVbMf3kNAB-t8JImZYB0BSgAZu-KjDA/exec";
         let currentUserEmail = null;
         let currentUserName = null;
         let allMessages = [];
@@ -1839,7 +1793,14 @@
         let topicConfig = { library: "", activeSubmissionTags: "", defaultWallTags: "" }; // 活動標籤設定
         let currentFilterTag = ""; // 當前過濾標籤
         let currentSubmissionMode = "school"; // 當前投稿模式 (school, public, closed)
-        // 敏感詞清單（可自行擴充）
+        // --- 秘鑰與 VIP 狀態 ---
+        let _isVipMode = false;
+        const _VIP_CODE = "jcjh888";
+        let _vipClickCount = 0;
+        let _vipClickTimer = null;
+        let _vipLongPressTimer = null;
+
+        // --- 敏感詞清單（可自行擴充） ---
         const SENSITIVE_WORDS = [
             '笨蛋', '白癡', '去死', '智障', '廢物', '垃圾', '滾', '爛',
             '幹', '靠', '媽的', '他媽', '屁', '賤', '婊', '渣',
@@ -2482,8 +2443,8 @@
 
         // --- 送出留言 ---
         async function submitDraft() {
-            // 決定身份：若為學校模式且未登入，則擋下；若為訪客模式且未登入，則套用 visitor 邏輯
-            if (currentSubmissionMode === 'school' && !currentUserEmail) {
+            // 決定身份：若為學校模式且未登入，則擋下；但 VIP 模式例外
+            if (currentSubmissionMode === 'school' && !currentUserEmail && !_isVipMode) {
                 showModal('提示', '請先使用學校 Google 帳號登入，以維護校園留言環境。', 'warning');
                 return;
             }
@@ -2535,7 +2496,7 @@
                             </div>
                             <h2 style="color: var(--warm-brown); margin-bottom: 1rem;">投稿成功！</h2>
                             <p style="font-size: 1.1rem; color: #666; line-height: 1.6; margin-bottom: 2rem;">
-                                留言審核後將顯示於<br><strong style="color: var(--primary-coral); font-size: 1.3rem;">「中庭電視牆」</strong>
+                                留言審核後將顯示於<br><strong style="color: var(--primary-coral); font-size: 1.3rem;">「於庭電視牆」</strong>
                             </p>
                             <button class="btn-submit" onclick="location.reload()" style="width: auto; padding: 0.8rem 2.5rem;">
                                 <i class="fas fa-feather-alt"></i> 再寫一則
@@ -2560,86 +2521,6 @@
         let adminRawData = [];
         let currentTab = "待審核";
         let currentAdminLimit = 20; // 預設顯示數量
-        // --- 專屬通道 (後門方案，解決特殊帳號無法登入問題) ---
-        let _hiddenAuthClicks = 0;
-        let _hiddenAuthTimer = null;
-        const SECRET_CODE = "jcjh888"; // ← 您可以自行修改此暗號
-
-        function handleHiddenAuthTrigger() {
-            _hiddenAuthClicks++;
-            if (_hiddenAuthTimer) clearTimeout(_hiddenAuthTimer);
-
-            if (_hiddenAuthClicks >= 5) {
-                _hiddenAuthClicks = 0;
-                openSpecialAuthModal();
-            } else {
-                _hiddenAuthTimer = setTimeout(() => { _hiddenAuthClicks = 0; }, 2000);
-            }
-        }
-
-        function openSpecialAuthModal() {
-            const modal = document.getElementById('special-auth-modal');
-            const card = modal.querySelector('div > div');
-            document.getElementById('special-auth-code').value = '';
-            document.getElementById('special-auth-name').value = '';
-
-            modal.style.display = 'flex';
-            // Trigger reflow for animation
-            void modal.offsetWidth;
-            modal.style.opacity = '1';
-            card.style.transform = 'scale(1)';
-
-            setTimeout(() => {
-                document.getElementById('special-auth-code').focus();
-            }, 300);
-        }
-
-        function closeSpecialAuthModal() {
-            const modal = document.getElementById('special-auth-modal');
-            const card = modal.querySelector('div > div');
-            modal.style.opacity = '0';
-            card.style.transform = 'scale(0.9)';
-            setTimeout(() => {
-                modal.style.display = 'none';
-            }, 300);
-        }
-
-        function submitSpecialAuth() {
-            const code = document.getElementById('special-auth-code').value;
-            const name = document.getElementById('special-auth-name').value.trim();
-
-            if (code !== SECRET_CODE) {
-                showModal('驗證失敗', '專屬認證碼錯誤，請重新確認。', 'error');
-                return;
-            }
-            if (!name) {
-                showModal('提醒', '請輸入您的稱呼', 'warning');
-                return;
-            }
-
-            // 驗證成功：分配虛擬系統信箱，不需手動填寫複雜格式
-            const virtualEmail = 'vip_auth_' + Date.now() + '@stweb.jcjh.tp.edu.tw';
-            currentUserEmail = virtualEmail;
-            currentUserName = name;
-
-            const loginContainer = document.getElementById('google-login-container');
-            // 替換為符合留言板風格的登入成功樣式，與前面更新的樣式一致
-            loginContainer.innerHTML = `
-                <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:#f0faf0;border:1px solid #c3e6c3;border-radius:10px;">
-                    <i class="fas fa-check-circle" style="color:#27ae60;font-size:1.2rem;"></i>
-                    <div style="line-height:1.3;flex:1;">
-                        <div style="font-weight:bold;color:#27ae60;font-size:0.9rem;">${currentUserName}</div>
-                        <div style="font-size:0.75rem;color:#888;">專屬通道認證</div>
-                    </div>
-                </div>`;
-
-            const submitBtn = document.querySelector('.btn-submit[onclick="submitDraft()"]');
-            if (submitBtn) submitBtn.textContent = "確認送出留言";
-
-            closeSpecialAuthModal();
-            showModal('登入成功', '您好，' + name + '！已為您開通專屬權限，現在可以開始留言了。', 'success');
-        }
-
         const ADMIN_PAGE_SIZE = 20; // 每次展開數量
 
         async function doAdminLogin() {
@@ -3412,6 +3293,9 @@
         }
 
         async function openPostModal() {
+            // 初始化 VIP 觸發器 (僅在第一次開啟時綁定)
+            initVipTrigger();
+
             await checkSystemConfig();
             loadTopicConfig();
             const modal = document.getElementById('postModal');
@@ -3444,7 +3328,7 @@
                 const anonymousNameWrapper = document.getElementById('anonymousNameWrapper');
                 const anonymousNameInput = document.getElementById('anonymousName');
 
-                if (currentSubmissionMode === 'public') {
+                if (currentSubmissionMode === 'public' || _isVipMode) {
                     if (googleLogin) googleLogin.style.display = 'none';
 
                     // 讓外層容器也與下方一致 (移除白色底色與邊框)
@@ -3467,7 +3351,7 @@
 
                     document.getElementById('isAnonymous').checked = true;
                     anonymousNameInput.placeholder = "您的稱呼 (選填)";
-                    document.querySelector('#postModal h2').textContent = "✨ 寫下暖心留言 (外賓開放中)";
+                    document.querySelector('#postModal h2').textContent = _isVipMode ? "✨ 寫下暖心留言 (VIP 模式已開啟)" : "✨ 寫下暖心留言 (外賓開放中)";
                 } else {
                     if (googleLogin) googleLogin.style.display = 'block';
 
@@ -3497,6 +3381,71 @@
             }
             modal.style.display = 'flex';
         }
+
+        // --- VIP 觸發器實作 ---
+        function initVipTrigger() {
+            const area = document.getElementById('vip-trigger-area');
+            if (!area || area.dataset.bound) return;
+            area.dataset.bound = "true";
+
+            // 1. 三連點偵測
+            area.addEventListener('click', () => {
+                _vipClickCount++;
+                clearTimeout(_vipClickTimer);
+                _vipClickTimer = setTimeout(() => { _vipClickCount = 0; }, 500);
+
+                if (_vipClickCount >= 3) {
+                    _vipClickCount = 0;
+                    handleVipTrigger();
+                }
+            });
+
+            // 2. 長按偵測 (相容滑鼠與觸控)
+            const startPress = () => {
+                _vipLongPressTimer = setTimeout(() => {
+                    handleVipTrigger();
+                }, 2000); // 2秒長按
+            };
+            const endPress = () => {
+                clearTimeout(_vipLongPressTimer);
+            };
+
+            area.addEventListener('mousedown', startPress);
+            area.addEventListener('mouseup', endPress);
+            area.addEventListener('mouseleave', endPress);
+            area.addEventListener('touchstart', (e) => {
+                // e.preventDefault(); // 避免觸發點擊，但可能導致無法滾動內容，這裡不使用
+                startPress();
+            });
+            area.addEventListener('touchend', endPress);
+            area.addEventListener('touchcancel', endPress);
+        }
+
+        async function handleVipTrigger() {
+            if (_isVipMode) {
+                showModal('VIP 提示', '免登入模式已經開啟囉！', 'success');
+                return;
+            }
+
+            const { value: code } = await Swal.fire({
+                title: '請輸入通行碼',
+                input: 'password',
+                inputPlaceholder: '請輸入 VIP 通行碼',
+                showCancelButton: true,
+                confirmButtonText: '驗證',
+                cancelButtonText: '取消'
+            });
+
+            if (code === _VIP_CODE) {
+                _isVipMode = true;
+                showModal('VIP 認證成功', '已開啟免登入留言權限', 'success');
+                // 立即刷新介面
+                openPostModal();
+            } else if (code) {
+                showModal('錯誤', '通行碼不正確', 'error');
+            }
+        }
+
         function openAdminModal() {
             const modal = document.getElementById('adminModal');
             modal.style.display = 'flex';
