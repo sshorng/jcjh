@@ -52,7 +52,7 @@
             width: 100vw;
         }
 
-        /* 巔峰質感：流體動態漸層背景 */
+        /* 巔峰質感：流體動態漸層背景 (效能優化版：縮小尺寸、降低 blur 強度) */
         .ambient-glow {
             position: fixed;
             top: 0;
@@ -69,14 +69,14 @@
         .ambient-glow::after {
             content: '';
             position: absolute;
-            width: 60vmax;
-            height: 60vmax;
+            width: 40vmax;
+            height: 40vmax;
             border-radius: 50%;
-            filter: blur(40px);
-            opacity: 0.35;
+            filter: blur(20px);
+            opacity: 0.30;
             z-index: -1;
             animation: drift 25s infinite alternate ease-in-out;
-            will-change: transform;
+            will-change: auto;
         }
 
         .ambient-glow::before {
@@ -1949,6 +1949,54 @@
             document.body.style.overflow = 'auto'; // 恢復背景捲動
         }
 
+        // --- 記憶體安全閥門 (舊硬體保護) ---
+        let _memoryCheckInterval = null;
+        function startMemoryGuard() {
+            if (_memoryCheckInterval) return;
+            _memoryCheckInterval = setInterval(() => {
+                // 1. 強制清理離開畫面的 DOM 碎片
+                const board = document.getElementById('messageBoard');
+                if (board) {
+                    const cards = board.querySelectorAll('.message-card');
+                    // 如果畫面上卡片超過合理最大值，強制移除最舊的
+                    if (cards.length > 20) {
+                        for (let i = 0; i < cards.length - 16; i++) {
+                            cards[i].remove();
+                        }
+                        displayingIndexes.clear();
+                    }
+                }
+
+                // 2. 檢查 Performance.memory (Chrome only)
+                if (performance.memory) {
+                    const usedMB = performance.memory.usedJSHeapSize / 1048576;
+                    const limitMB = performance.memory.jsHeapSizeLimit / 1048576;
+                    // 如果使用超過堆上限的 70%，緊急重刷頁面
+                    if (usedMB > limitMB * 0.7) {
+                        console.warn(`[記憶體警戒] 使用 ${usedMB.toFixed(0)}MB / 上限 ${limitMB.toFixed(0)}MB，自動重刷`);
+                        location.reload();
+                    }
+                }
+
+                // 3. 強制清空粒子引擎的殘留
+                if (typeof effectEngine !== 'undefined' && effectEngine.particles.length > 50) {
+                    effectEngine.particles.length = 0;
+                }
+            }, 30000); // 每 30 秒檢查一次
+        }
+
+        // --- 定時器管理 (分頁不可見時全面暫停，避免無效 fetch 堆積) ---
+        let _intervalIds = [];
+        function managedSetInterval(fn, ms) {
+            const id = setInterval(fn, ms);
+            _intervalIds.push(id);
+            return id;
+        }
+        function pauseAllIntervals() {
+            _intervalIds.forEach(id => clearInterval(id));
+            _intervalIds = [];
+        }
+
         window.onload = () => {
             checkLineBrowser(); // 執行 LINE 偵測
             const urlParams = new URLSearchParams(window.location.search);
@@ -1975,9 +2023,13 @@
 
                 // loadMessages 移除 setTimeout，改由相依資料載入後觸發
                 loadMessages(); // 立即載入，不等待 setInterval
-                setInterval(loadMessages, 20000);
-                setInterval(loadAnnouncements, 45000);
-                setInterval(checkSystemConfig, 60000);
+
+                function startPollingIntervals() {
+                    managedSetInterval(loadMessages, 20000);
+                    managedSetInterval(loadAnnouncements, 45000);
+                    managedSetInterval(checkSystemConfig, 60000);
+                }
+                startPollingIntervals();
 
                 // 使用 rAF 驅動的卡片輪播 (避免 setInterval 的阻塞感)
                 let rotateLoopRunning = true;
@@ -1991,20 +2043,23 @@
                 };
                 requestAnimationFrame(rotateLoop);
 
-                // 效能優化：分頁不可見時暫停 rAF 迴圈，節省 CPU
+                // 效能優化：分頁不可見時暫停所有定時器 + rAF，節省 CPU 與記憶體
                 document.addEventListener('visibilitychange', () => {
                     if (document.hidden) {
                         rotateLoopRunning = false;
+                        pauseAllIntervals(); // 暫停所有 fetch 定時器
                     } else {
                         rotateLoopRunning = true;
                         lastRotateTimestamp = performance.now(); // 重置計時，避免回來瞬間連發
                         requestAnimationFrame(rotateLoop);
+                        startPollingIntervals(); // 恢復定時器
                     }
                 });
 
-                // 電視牆穩定性：每 15 分鐘自動重新整理一次網頁，釋放記憶體 (舊硬體友善)
+                // 電視牆穩定性：每 8 分鐘自動重新整理一次網頁，釋放記憶體 (舊硬體友善)
                 if (isDisplayMode) {
-                    setInterval(() => location.reload(), 900000);
+                    setInterval(() => location.reload(), 480000);
+                    startMemoryGuard(); // 啟動記憶體安全閥門
                 }
             }
 
@@ -2295,9 +2350,13 @@
         // 預計算位置（使用最佳適配演算法）
         let gridPositions = [];
 
-        // 視窗大小改變時，重置網格以重新計算最佳位置
+        // 視窗大小改變時，重置網格以重新計算最佳位置 (防抖動優化)
+        let _resizeDebounce = null;
         window.addEventListener('resize', () => {
-            gridPositions = [];
+            clearTimeout(_resizeDebounce);
+            _resizeDebounce = setTimeout(() => {
+                gridPositions.length = 0; // 原地清空，避免產生 GC 垃圾
+            }, 300);
         });
 
         function calculateGridPositions() {
@@ -2473,21 +2532,29 @@
                 board.appendChild(card);
 
                 if (card.dataset.autoEffect === "true") {
-                    setTimeout(() => {
+                    const effectTimer = setTimeout(() => {
+                        if (!card.isConnected) return; // 卡片已被移除則跳過
                         const contentEl = card.querySelector('.card-content');
                         if (contentEl) createParticles(contentEl, card.dataset.effectMode, card.dataset.effectIcon);
                     }, 1000);
+                    card._timers = [effectTimer];
                 }
 
                 const lifeTime = Math.floor(Math.random() * (20000 - 12000 + 1) + 12000);
-                setTimeout(() => {
+                const lifeTimer = setTimeout(() => {
+                    if (!card.isConnected) return; // 已被移除則跳過
                     card.classList.add('fade-out');
-                    setTimeout(() => {
+                    const fadeTimer = setTimeout(() => {
                         card.remove();
                         displayingIndexes.delete(index);
+                        // 清理所有計時器引用
+                        if (card._timers) { card._timers.length = 0; card._timers = null; }
                         setTimeout(() => rotateMessages(), 4000);
                     }, 1000);
+                    if (card._timers) card._timers.push(fadeTimer);
                 }, lifeTime);
+                if (!card._timers) card._timers = [];
+                card._timers.push(lifeTimer);
             }
 
             return card;
@@ -3157,11 +3224,17 @@
                 this.lastTime = performance.now();
                 this.isRunning = false;
                 this.dpr = window.devicePixelRatio || 1;
-                // 效能優化：對極高解析度進行降採樣
-                this.scale = this.dpr > 2 ? 0.75 : 1.0;
+                // 效能優化：對極高解析度進行降採樣，舊硬體直接用 1x
+                this.scale = this.dpr > 2 ? 0.5 : (this.dpr > 1 ? 0.75 : 1.0);
+                this.MAX_PARTICLES = 80; // 粒子硬上限 (舊硬體保護)
 
                 this.resize();
-                window.addEventListener('resize', () => this.resize());
+                // 防抖 resize
+                let _canvasResizeTimer = null;
+                window.addEventListener('resize', () => {
+                    clearTimeout(_canvasResizeTimer);
+                    _canvasResizeTimer = setTimeout(() => this.resize(), 200);
+                });
                 this.loop = this.loop.bind(this);
             }
 
@@ -3177,8 +3250,8 @@
 
             addParticles(element, mode, icon) {
                 // 效能閥門：限制粒子總數上限，防止記憶體爆炸
-                if (this.particles.length > 200) {
-                    this.particles.length = 100; // 截斷至一半，保留較新的粒子
+                if (this.particles.length > this.MAX_PARTICLES) {
+                    this.particles.length = Math.floor(this.MAX_PARTICLES / 2); // 截斷至一半
                 }
 
                 const rect = element ? element.getBoundingClientRect() : { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight };
@@ -3302,7 +3375,7 @@
                         p.vy += 0.12 * dt;
                     }
 
-                    if (p.life <= 0) {
+                    if (p.life <= 0 || p.y > window.innerHeight + 50 || p.x < -50 || p.x > window.innerWidth + 50) {
                         this.particles.splice(i, 1);
                         continue;
                     }
