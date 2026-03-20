@@ -1513,6 +1513,28 @@
                 opacity: 1;
             }
         }
+        /* 浮水印樣式 */
+        .watermark {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 1.5rem;
+            height: 60px;
+            width: auto;
+            opacity: 1;
+            pointer-events: none;
+            z-index: 10;
+            user-select: none;
+            -webkit-user-drag: none;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+
+        @media (max-width: 600px) {
+            .watermark {
+                height: 40px;
+                bottom: 1rem;
+                left: 1rem;
+            }
+        }
     </style>
 </head>
 
@@ -1523,6 +1545,7 @@
         </div>
     </div>
     <div class="ambient-glow"></div>
+    <img src="https://sshorng.github.io/jcjh/3hou.png" class="watermark" alt="watermark">
 
     <!-- 測試模式提示 -->
     <div id="testModeNotice" class="test-notice-banner" style="display: none;">
