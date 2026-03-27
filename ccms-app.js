@@ -51,7 +51,7 @@ createApp({
       // 當前選取的個案
       currentCase: null,
       // 搜尋與篩選
-      searchQuery: '', userSearchQuery: '',
+      searchQuery: '', searchInputStr: '', userSearchQuery: '',
       filterGrade: '', filterStatus: '', filterCounselor: '',
       // Modal 控制
       showCaseModal: false, showRecordModal: false, showUserModal: false,
@@ -173,14 +173,30 @@ createApp({
         }
       }
     },
+    // 當個案資料變動時，自動儲存至草稿
+    caseForm: {
+      deep: true,
+      handler(val) {
+        if (this.showCaseModal) {
+          const key = this.editingId ? `cms_case_draft_${this.editingId}` : 'cms_case_draft_new';
+          localStorage.setItem(key, JSON.stringify(val));
+        }
+      }
+    },
     // 🎯 狀態持久化：紀錄當前頁面與個案 ID，避免刷新跳回首頁
     page(val) { localStorage.setItem('cms_page', val); },
     currentCase(val) { 
       if (val) localStorage.setItem('cms_case_id', val.id);
       else localStorage.removeItem('cms_case_id');
     },
-    // 篩選變動時重置個案分頁
-    searchQuery() { this.casePage = 1; },
+    // 🎯 效能優化：搜尋防抖 (Debounce)
+    searchInputStr(val) {
+      clearTimeout(this.searchTimeout);
+      this.searchTimeout = setTimeout(() => {
+        this.searchQuery = val;
+        this.casePage = 1;
+      }, 300);
+    },
     filterGrade() { this.casePage = 1; },
     filterStatus() { this.casePage = 1; },
     filterCounselor() { this.casePage = 1; }
@@ -403,25 +419,39 @@ createApp({
       }
     },
     openCaseModal(c) {
+      this.editingId = c ? c.id : null;
+      const key = this.editingId ? `cms_case_draft_${this.editingId}` : 'cms_case_draft_new';
+      const draftStr = localStorage.getItem(key);
+      let draftParams = null;
+      if (draftStr) {
+        try { draftParams = JSON.parse(draftStr); } catch (e) {}
+      }
+
       if (c) {
-        this.editingId = c.id;
+        // 合併來源，草稿優先
+        const base = draftParams || c;
         // 確保以目前系統有的選項為準，避免新舊格式疊加
-        const rawTypes = (c.caseType || '').split(',').map(s => s.trim()).filter(Boolean);
-        const rawService = (c.serviceMethod || '').split(',').map(s => s.trim()).filter(Boolean);
-        const rawIdentity = (c.identity || '').split(',').map(s => s.trim()).filter(Boolean);
+        const rawTypes = (base.caseType || '').split(',').map(s => s.trim()).filter(Boolean);
+        const rawService = (base.serviceMethod || '').split(',').map(s => s.trim()).filter(Boolean);
+        const rawIdentity = (base.identity || '').split(',').map(s => s.trim()).filter(Boolean);
 
         this.caseForm = {
           ...this.emptyCaseForm(),
-          ...c,
-          id: c.id,
+          ...base, // 蓋上草稿或原本的資料
+          id: c.id, // ID 必須要是 c.id 不能被覆蓋
           // 只保留目前系統選單中存在的項，落實重整更新
           caseTypeArr: rawTypes.filter(t => this.CASE_TYPES.includes(t)),
           identityArr: rawIdentity.filter(id => this.IDENTITY_OPTS.includes(id)),
-          counselor: c.counselor || ''
+          counselor: base.counselor || ''
         };
+        if (draftParams) this.showToast('已為您恢復上次編輯的個案草稿', 'info');
       } else {
-        this.editingId = null;
-        this.caseForm = this.emptyCaseForm();
+        if (draftParams) {
+          this.caseForm = { ...this.emptyCaseForm(), ...draftParams };
+          this.showToast('已為您恢復新增個案的草稿', 'info');
+        } else {
+          this.caseForm = this.emptyCaseForm();
+        }
       }
       this.showCaseModal = true;
     },
@@ -497,6 +527,11 @@ createApp({
       if (r?.success) {
         this.showToast(r.message, 'success');
         this.showCaseModal = false;
+        
+        // 🎯 清除草稿
+        const key = this.editingId ? `cms_case_draft_${this.editingId}` : 'cms_case_draft_new';
+        localStorage.removeItem(key);
+
         await this.fetchData();
         // 如果正在詳情頁，同步更新詳情個案資訊
         if (this.page === 'detail' && this.currentCase) {
@@ -1316,6 +1351,7 @@ createApp({
       this.confirm = { show: false, msg: '', callback: null };
     },
     resetFilters() {
+      this.searchInputStr = '';
       this.searchQuery = '';
       this.filterGrade = '';
       this.filterStatus = '';
