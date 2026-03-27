@@ -25,7 +25,7 @@ const SPECIAL_ED_OPTS = [
   '6.腦性麻痺', '7.身體病弱', '8.情緒行為障礙', '9.學習障礙', '10.多重障礙',
   '11.自閉症', '12.發展遲緩', '13.其他障礙'
 ];
-const IDENTITY_OPTS = ['1.新住民子女', '2.低收入戶', '3.中低收入戶', '4.身心障礙', '5.原住民', '6.單親家庭', '7.隔代教養', '8.外配子女', '9.兒少保護', '10.其他'];
+const IDENTITY_OPTS = ['1.新住民子女', '2.低收入戶', '3.中低收入戶', '4.身心障礙', '5.原住民', '6.單親家庭', '7.隔代教養', '8.外配子女', '9.兒少保護', '10.其他', '特教生'];
 const SERVICE_OPTS = [
   '1.團體輔導', '2.入班輔導', '3.家長諮詢', '4.教師諮詢', '5.個案會議',
   '6.心理測驗', '7.安心服務', '8.家庭處遇', '9.資源連結', '10.系統會談',
@@ -52,7 +52,7 @@ createApp({
       currentCase: null,
       // 搜尋與篩選
       searchQuery: '', searchInputStr: '', userSearchQuery: '',
-      filterGrade: '', filterStatus: '', filterCounselor: '',
+      filterGrade: '', filterStatus: '', filterCounselor: '', filterIdentity: '',
       // Modal 控制
       showCaseModal: false, showRecordModal: false, showUserModal: false,
       showSettings: false, showHelp: false, showConfigModal: false, showChangePwd: false,
@@ -88,6 +88,18 @@ createApp({
       if (this.filterStatus) result = result.filter(c => c.status === this.filterStatus);
       if (this.filterCounselor) result = result.filter(c => c.counselor === this.filterCounselor);
 
+      if (this.filterIdentity) {
+        const q = this.filterIdentity.trim();
+        const pureQ = q.replace(/^\d+\./, ''); 
+        if (q === '特教生') {
+          result = result.filter(c => c.specialEdu && String(c.specialEdu).trim() !== '0.以下皆非');
+        } else {
+          result = result.filter(c => {
+            const val = String(c.identity || '');
+            return val.includes(q) || val.includes(pureQ);
+          });
+        }
+      }
       // 2. 關鍵字搜尋
       if (this.searchQuery) {
         const q = this.searchQuery.toLowerCase();
@@ -202,7 +214,8 @@ createApp({
     },
     filterGrade() { this.casePage = 1; },
     filterStatus() { this.casePage = 1; },
-    filterCounselor() { this.casePage = 1; }
+    filterCounselor() { this.casePage = 1; },
+    filterIdentity() { this.casePage = 1; }
   },
 
   methods: {
@@ -342,7 +355,7 @@ createApp({
           // 2. 效能優化：比對資料是否有變動 (簡單的比對，避免無謂的重新渲染)
           const newDataStr = JSON.stringify(r.data);
           const oldDataStr = localStorage.getItem('cms_dash_cache');
-          
+
           if (newDataStr === oldDataStr && this.cases.length > 0) {
             // 資料完全一樣，跳過更新
             return;
@@ -360,7 +373,7 @@ createApp({
               this.openConfigModal('classes');
             }
           }
-          
+
           // 3. 異步寫入快取，不阻塞 UI
           setTimeout(() => {
             try {
@@ -531,9 +544,10 @@ createApp({
       const data = {
         ...this.caseForm,
         '導師提報內容': this.caseForm.teacherReport,
+        '專輔個案摘要': this.caseForm.situation, // 🎯 修正：對應 Code.gs 預期的 key
         caseType: this.caseForm.caseTypeArr.join(','),
         identity: this.caseForm.identityArr.join(','),
-        serviceMethod: this.caseForm.serviceMethod // 已經變為字串手動輸入
+        serviceMethod: this.caseForm.serviceMethod
       };
       this.loading = true;
       let r;
@@ -1376,6 +1390,7 @@ createApp({
       this.filterGrade = '';
       this.filterStatus = '';
       this.filterCounselor = '';
+      this.filterIdentity = ''; // 重置身分篩選
       this.selectedCaseIds = [];
       this.casePage = 1;
     },
