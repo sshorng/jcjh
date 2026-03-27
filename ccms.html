@@ -142,7 +142,7 @@
                   <tr v-for="r in dashData.recentRecords" :key="r.id" @click="viewCaseById(r.caseId)" class="hover-row"
                     style="cursor: pointer">
                     <td>{{ formatDate(r.dateTime) }}</td>
-                    <td>{{ r.studentName }}</td>
+                    <td>{{ r.studentName }} <small style="color:var(--tx2)">({{ r.caseId }})</small></td>
                     <td>{{ r.target }}</td>
                     <td><div class="text-truncate" style="max-width:200px">{{ r.service }}</div></td>
                     <td>{{ r.method }}</td>
@@ -248,7 +248,7 @@
                     <td>{{ c.grade }}</td>
                     <td>{{ c.class }}</td>
                     <td>{{ c.seatNo }}</td>
-                    <td><strong>{{ c.name }}</strong></td>
+                    <td><strong>{{ c.name }}</strong><small style="color:var(--tx2); margin-left:4px; font-weight:normal">({{ c.id }})</small></td>
                     <td>{{ c.gender }}</td>
                     <td>{{ c.reportDate || '-' }}</td>
                     <td><span class="badge badge-active" v-if="c.caseType">{{ c.caseType }}</span></td>
@@ -290,7 +290,7 @@
         <section v-if="page==='detail' && currentCase">
           <a class="back-btn" @click="goBackToCases"><i class="fas fa-arrow-left"></i> 返回個案列表</a>
           <div class="page-header">
-            <h1><i class="fas fa-user"></i> {{ currentCase.name }} 的個案資料</h1>
+            <h1><i class="fas fa-user"></i> {{ currentCase.name }} <small style="color:var(--tx2)">({{ currentCase.id }})</small> 的個案資料</h1>
             <div>
               <button class="btn btn-primary btn-sm" @click="exportToWord" style="margin-right:8px"><i
                   class="fas fa-file-word"></i> 匯出 Word</button>
