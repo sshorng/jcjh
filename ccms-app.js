@@ -58,8 +58,11 @@ createApp({
       showSettings: false, showHelp: false, showConfigModal: false, showChangePwd: false,
       pwdForm: { oldPwd: '', newPwd: '', confirmPwd: '' },
       exportModal: { show: false, yearMonth: '' },
+      feedbackModal: { show: false, targetSem: '', currentSem: '' },
       backupGrade: '全部',
       selectedCaseIds: [], // 用於批次操作勾選
+      // 配置與設定分頁
+      settingsTab: 'export',
       // 配置管理
       configType: 'classes', configItems: [],
       // 分頁
@@ -185,7 +188,7 @@ createApp({
     },
     // 🎯 狀態持久化：紀錄當前頁面與個案 ID，避免刷新跳回首頁
     page(val) { localStorage.setItem('cms_page', val); },
-    currentCase(val) { 
+    currentCase(val) {
       if (val) localStorage.setItem('cms_case_id', val.id);
       else localStorage.removeItem('cms_case_id');
     },
@@ -333,8 +336,12 @@ createApp({
           if (r.data.configs) {
             this.configs = {
               ...this.configs,
-              allCounselors: r.data.configs.allCounselors || []
+              allCounselors: r.data.configs.allCounselors || [],
+              classes: r.data.configs.classes || []
             };
+            if (this.page === 'settings') {
+              this.openConfigModal('classes');
+            }
           }
           // 精簡快取：只存列表知道的小型資料，避免 localStorage 寫入太慢
           try {
@@ -349,7 +356,7 @@ createApp({
               recentRecords: r.data.recentRecords,
               configs: r.data.configs
             }));
-          } catch(e) { /* 超過 localStorage 容量則略過 */ }
+          } catch (e) { /* 超過 localStorage 容量則略過 */ }
           this.selectedCaseIds = [];
         }
       } catch (e) {
@@ -424,7 +431,7 @@ createApp({
       const draftStr = localStorage.getItem(key);
       let draftParams = null;
       if (draftStr) {
-        try { draftParams = JSON.parse(draftStr); } catch (e) {}
+        try { draftParams = JSON.parse(draftStr); } catch (e) { }
       }
 
       if (c) {
@@ -527,7 +534,7 @@ createApp({
       if (r?.success) {
         this.showToast(r.message, 'success');
         this.showCaseModal = false;
-        
+
         // 🎯 清除草稿
         const key = this.editingId ? `cms_case_draft_${this.editingId}` : 'cms_case_draft_new';
         localStorage.removeItem(key);
@@ -1016,21 +1023,21 @@ createApp({
     openRecordModal(rec) {
       if (rec) {
         this.editingRecordId = rec.id;
-        
+
         let rawTarget = rec.target || '';
         let customTxt = '';
         const match = rawTarget.match(/^(.*?)(?:\s*\((.*?)\))?$/);
         let baseTargetsArr = [];
         if (match) {
-            baseTargetsArr = match[1].split(',').map(s => s.trim()).filter(Boolean);
-            if (match[2]) customTxt = match[2];
+          baseTargetsArr = match[1].split(',').map(s => s.trim()).filter(Boolean);
+          if (match[2]) customTxt = match[2];
         }
 
         const targetArr = [];
         const customTargets = customTxt ? [customTxt] : [];
         baseTargetsArr.forEach(t => {
           if (this.TARGET_OPTS.includes(t)) targetArr.push(t);
-          else if (t !== '其他') { 
+          else if (t !== '其他') {
             customTargets.push(t);
           }
         });
@@ -1106,7 +1113,7 @@ createApp({
 
       this.loading = true;
       const methodStr = combinedMethods.join(',');
-      
+
       const servicesToSave = [...this.recordForm.serviceArr];
       if (this.recordForm.excludeFromReport) {
         servicesToSave.push('純紀錄_不計入月報表');
@@ -1372,6 +1379,276 @@ createApp({
       this.page = 'cases';
     },
 
+    openFeedbackModal() {
+      const now = new Date();
+      const sy = now.getFullYear() - 1911;
+      const month = now.getMonth() + 1;
+      const csem = (month >= 8) ? `${sy}-1` : (month >= 2 ? `${sy - 1}-2` : `${sy - 1}-1`);
+
+      const parts = csem.split('-');
+      let ty = parseInt(parts[0], 10);
+      let ts = parseInt(parts[1], 10);
+      if (ts === 1) { ty -= 1; ts = 2; }
+      else { ts = 1; }
+      const tsem = `${ty}-${ts}`;
+
+      this.feedbackModal = { show: true, currentSem: csem, targetSem: tsem };
+    },
+
+    async exportFeedbackForms() {
+      const targetSem = this.feedbackModal.targetSem;
+      const currentSem = this.feedbackModal.currentSem;
+      if (!targetSem || !currentSem) return;
+
+      this.loading = true;
+      try {
+        // 先取得全體學生的各學期綜述
+        const sumRes = await this.api('getBatchSummaries');
+        const summaryMap = {};
+        if (sumRes?.success && sumRes.data) {
+          sumRes.data.forEach(item => { summaryMap[item.id] = item; });
+        } else {
+          this.showToast('無法撈取學生綜述，請確認是否已更新 Code.gs 後重新發布部屬！', 'error');
+          this.loading = false;
+          return;
+        }
+
+        const getSemesterField = (tSem, cSem, gradeStr) => {
+          const [tY, tS] = tSem.split('-').map(Number);
+          const [cY, cS] = cSem.split('-').map(Number);
+          if (!tY || !tS || !cY || !cS) return null;
+          const diff = (cY - tY) * 2 + (cS - tS);
+          const gNum = { '七': 7, '八': 8, '九': 9 }[gradeStr] || parseInt(gradeStr, 10);
+          if (!gNum) return null;
+          const targetAbs = (gNum - 7) * 2 + cS - diff;
+          return ['s_7a', 's_7b', 's_8a', 's_8b', 's_9a', 's_9b'][targetAbs - 1] || null;
+        };
+
+        const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle, VerticalAlign, PageBreak, SectionType } = window.docx;
+        const KAI_FONT = "標楷體";
+        const FONT_SIZE = 24; // 12pt
+        const FONT_SIZE_TITLE = 32; // 16pt
+
+        let targetCases = [];
+        this.cases.forEach(c => {
+          const sumField = getSemesterField(targetSem, currentSem, c.grade);
+          if (sumField) {
+            const caseSums = summaryMap[c.id];
+            const text = caseSums ? caseSums[sumField] : '';
+            if (text && text.trim() !== '') {
+              targetCases.push({
+                ...c,
+                exportSummary: text,
+                counselor: caseSums ? caseSums.counselor : c.counselor,
+                mentorTeacher: caseSums ? caseSums.mentorTeacher : '',
+                specialEduTeacher: caseSums ? caseSums.specialEduTeacher : '',
+                serviceMethod: caseSums ? caseSums.serviceMethod : ''
+              });
+            }
+          }
+        });
+
+        targetCases.sort((a, b) => {
+          if (a.class !== b.class) return String(a.class).localeCompare(String(b.class));
+          return Number(a.seatNo || 0) - Number(b.seatNo || 0);
+        });
+
+        if (targetCases.length === 0) {
+          this.showToast('該學期沒有任何已填寫綜述的學生', 'error');
+          this.loading = false;
+          return;
+        }
+
+        const modernBorders = {
+          top: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+          bottom: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+          left: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+          right: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+        };
+
+        const createCell = (text, widthPct, bold = false, align = "left", shading = null) => {
+          const opts = {
+            width: { size: widthPct, type: WidthType.PERCENTAGE },
+            verticalAlign: VerticalAlign.CENTER,
+            borders: modernBorders,
+            margins: { top: 100, bottom: 100, left: 100, right: 100 },
+            children: []
+          };
+          if (shading) {
+            opts.shading = { fill: shading };
+          }
+          const lines = String(text || '').split('\n');
+          lines.forEach((line) => {
+            opts.children.push(new Paragraph({
+              children: [new TextRun({ text: line, font: KAI_FONT, size: FONT_SIZE, bold: bold })],
+              alignment: align === "center" ? AlignmentType.CENTER : AlignmentType.LEFT
+            }));
+          });
+          return new TableCell(opts);
+        };
+
+        function maskNameVertical(name) {
+          if (!name) return '';
+          let masked = name;
+          if (name.length <= 2) masked = name.charAt(0) + '○';
+          else masked = name.charAt(0) + '○' + name.substring(2);
+          return masked.split('').join('\n');
+        }
+
+        const tParts = targetSem.split('-');
+        const tY = tParts[0];
+        const tS = tParts[1] === '1' ? '第一學期' : '第二學期';
+
+        const classGroups = {};
+        targetCases.forEach(c => {
+          const gStr = { '七': '7', '八': '8', '九': '9' }[c.grade] || c.grade || '';
+          const cStr = String(c.class || '').padStart(2, '0');
+          const cls = (gStr && cStr) ? `${gStr}${cStr}` : '未知班級';
+
+          if (!classGroups[cls]) classGroups[cls] = [];
+          classGroups[cls].push(c);
+        });
+
+        const sortedClasses = Object.keys(classGroups).sort();
+        const docSections = [];
+
+        sortedClasses.forEach((groupClass, index) => {
+          const classChildren = [];
+
+          // 標題
+          classChildren.push(new Paragraph({
+            children: [
+              new TextRun({ text: `臺北市立建成國民中學 ${tY} 學年度 `, font: KAI_FONT, size: FONT_SIZE_TITLE, bold: true }),
+              new TextRun({ text: `${tS}`, font: KAI_FONT, size: FONT_SIZE_TITLE, bold: true, color: "FF0000" }),
+              new TextRun({ text: ` 「優先關懷學生」回覆表`, font: KAI_FONT, size: FONT_SIZE_TITLE, bold: true })
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 150 }
+          }));
+
+          // 副標題
+          classChildren.push(new Paragraph({
+            children: [
+              new TextRun({ text: "         本文件為", font: KAI_FONT, size: 20 }),
+              new TextRun({ text: "保密文件", font: KAI_FONT, size: 24, bold: true, color: "FF0000" }),
+              new TextRun({ text: "，請於填報、密封、交回輔導室，日後若有需求可再提報", font: KAI_FONT, size: 20 })
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 300 }
+          }));
+
+          // 班級與簽名核對行
+          classChildren.push(new Paragraph({
+            children: [
+              new TextRun({ text: `班級：${groupClass}   `, font: KAI_FONT, size: 28, bold: true }),
+              new TextRun({ text: `導師確認簽名：__________________  日期： ${parseInt(tY) + 1} 年   月   日`, font: KAI_FONT, size: 28, bold: true })
+            ],
+            spacing: { after: 200 }
+          }));
+
+          // 建立該班級表格
+          const tableRows = [];
+
+          // 表頭
+          tableRows.push(new TableRow({
+            children: [
+              createCell("", 4, true, "center", "F2F2F2"),
+              createCell("姓名", 8, true, "center", "F2F2F2"),
+              createCell("個案類型", 14, true, "center", "F2F2F2"),
+              createCell("上學期處遇方式", 20, true, "center", "F2F2F2"),
+              createCell("服務評估概述", 30, true, "center", "F2F2F2"),
+              createCell("持續服務評估", 12, true, "center", "F2F2F2"),
+              createCell("導師意見", 12, true, "center", "F2F2F2")
+            ]
+          }));
+
+          // 內容
+          classGroups[groupClass].forEach((c, cIdx) => {
+            const smParagraphs = [];
+            [
+              { title: "個案輔導：", val: c.counselor },
+              { title: "認輔教師：", val: c.mentorTeacher },
+              { title: "特教個管：", val: c.specialEduTeacher },
+              { title: "服務方式：", val: c.serviceMethod }
+            ].forEach(item => {
+              if (item.val && item.val.trim() !== '-') {
+                smParagraphs.push(new Paragraph({
+                  children: [new TextRun({ text: item.title, font: KAI_FONT, size: FONT_SIZE, bold: true })]
+                }));
+                // 內容如有換行則分開處理
+                const vLines = item.val.split('\n');
+                vLines.forEach(vl => {
+                  smParagraphs.push(new Paragraph({
+                    children: [new TextRun({ text: vl, font: KAI_FONT, size: FONT_SIZE })]
+                  }));
+                });
+              }
+            });
+
+            const smCell = new TableCell({
+              width: { size: 20, type: WidthType.PERCENTAGE },
+              verticalAlign: VerticalAlign.CENTER,
+              borders: modernBorders,
+              margins: { top: 100, bottom: 100, left: 100, right: 100 },
+              children: smParagraphs.length ? smParagraphs : [new Paragraph({ children: [new TextRun({ text: "", font: KAI_FONT, size: FONT_SIZE })] })]
+            });
+
+            let evalText = "建議持續二級輔導";
+            if (c.status === "已結案") {
+              evalText = "結案觀察";
+            }
+
+            tableRows.push(new TableRow({
+              children: [
+                createCell(`${cIdx + 1}`, 4, false, "center"),
+                createCell(maskNameVertical(c.name), 8, false, "center"),
+                createCell(c.caseType || '', 14, false, "left"),
+                smCell,
+                createCell(c.exportSummary || '', 30, false, "left"),
+                createCell(evalText, 12, false, "center"),
+                createCell("", 12, false, "left", "EAEAEA")
+              ]
+            }));
+          });
+
+          classChildren.push(new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            rows: tableRows
+          }));
+
+          docSections.push({
+            properties: {
+              type: SectionType ? SectionType.ODD_PAGE : "oddPage",
+              page: {
+                margin: {
+                  top: 720,
+                  right: 720,
+                  bottom: 720,
+                  left: 720
+                }
+              }
+            },
+            children: classChildren
+          });
+        });
+
+        const doc = new Document({
+          sections: docSections
+        });
+
+        const buffer = await Packer.toBlob(doc);
+        window.saveAs(buffer, `導師回覆表_${targetSem}_共${targetCases.length}份.docx`);
+        this.feedbackModal.show = false;
+        this.showToast('導師回覆表產生成功！', 'success');
+
+      } catch (err) {
+        console.error(err);
+        this.showToast('生成 Word 失敗，請重試', 'error');
+      } finally {
+        this.loading = false;
+      }
+    },
+
     async exportToWord() {
       if (!this.currentCase) return;
       this.loading = true;
@@ -1516,7 +1793,7 @@ createApp({
     // ===== 系統備份與維護 =====
     generateWordDocDef(c, records) {
       const { Document, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, VerticalAlign, BorderStyle } = window.docx;
-      
+
       const FONT_SIZE = 24;
       const FONT_SIZE_TITLE = 36;
       const FONT_SIZE_LABEL = 24;
@@ -1606,7 +1883,7 @@ createApp({
       try {
         const res = await this.api('backupData', { grade: this.backupGrade });
         if (!res || !res.success) throw new Error(res?.error || '無法取得備份資料');
-        
+
         const { cases, records } = res.data;
         if (cases.length === 0) {
           this.showToast('該年級無個案可匯出', 'info');
@@ -1622,7 +1899,7 @@ createApp({
         records.forEach(r => {
           const cid = String(r['個案編號']);
           if (!recordMap[cid]) recordMap[cid] = [];
-          
+
           recordMap[cid].push({
             dateTime: r['日期時間'],
             target: r['對象'],
@@ -1641,7 +1918,7 @@ createApp({
             s_7a: c['七上綜述'], s_7b: c['七下綜述'], s_8a: c['八上綜述'], s_8b: c['八下綜述'], s_9a: c['九上綜述'], s_9b: c['九下綜述']
           };
           const rawRecords = recordMap[String(c['個案編號'])] || [];
-          rawRecords.sort((a,b) => new Date(a.dateTime) - new Date(b.dateTime));
+          rawRecords.sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
 
           const doc = this.generateWordDocDef(mappedCase, rawRecords);
           const blob = await Packer.toBlob(doc);
@@ -1673,10 +1950,10 @@ createApp({
       try {
         const res = await this.api('backupData', { grade: '全部' });
         if (!res || !res.success) throw new Error(res?.error || '無法取得資料');
-        
+
         const { cases, records } = res.data;
         const selectedCases = cases.filter(c => this.selectedCaseIds.includes(String(c['個案編號'])));
-        
+
         if (selectedCases.length === 0) {
           this.showToast('找不到所選個案資料', 'info');
           return;
@@ -1705,7 +1982,7 @@ createApp({
             s_7a: c['七上綜述'], s_7b: c['七下綜述'], s_8a: c['八上綜述'], s_8b: c['八下綜述'], s_9a: c['九上綜述'], s_9b: c['九下綜述']
           };
           const rawRecords = recordMap[String(c['個案編號'])] || [];
-          rawRecords.sort((a,b) => new Date(a.dateTime) - new Date(b.dateTime));
+          rawRecords.sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
 
           const doc = this.generateWordDocDef(mappedCase, rawRecords);
           const blob = await Packer.toBlob(doc);
