@@ -9,10 +9,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="ccms-style.css">
-  <!-- Word 匯出元件 -->
-  <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 
 <body>
@@ -245,10 +241,10 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="(c, idx) in filteredCases" :key="c.id" @click="viewCase(c)"
+                  <tr v-for="(c, idx) in paginatedCases" :key="c.id" @click="viewCase(c)"
                     :class="{selected: isSelected(c.id)}">
                     <td @click.stop><input type="checkbox" :value="c.id" v-model="selectedCaseIds"></td>
-                    <td style="text-align:center; opacity:.6; font-size:13px">{{ idx + 1 }}</td>
+                    <td style="text-align:center; opacity:.6; font-size:13px">{{ (casePage - 1) * casePageSize + idx + 1 }}</td>
                     <td>{{ c.grade }}</td>
                     <td>{{ c.class }}</td>
                     <td>{{ c.seatNo }}</td>
@@ -269,6 +265,21 @@
                   </tr>
                 </tbody>
               </table>
+              <!-- 🎯 分頁控制：採膠囊型設計 -->
+              <div v-if="totalCasePages > 1" class="pagination">
+                <button class="btn-page" :disabled="casePage <= 1" @click="casePage--" title="上一頁">
+                  <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="page-info">
+                  <span class="current">{{ casePage }}</span>
+                  <span class="separator">/</span>
+                  <span class="total">{{ totalCasePages }}</span>
+                  <span class="count">共 {{ filteredCases.length }} 筆</span>
+                </div>
+                <button class="btn-page" :disabled="casePage >= totalCasePages" @click="casePage++" title="下一頁">
+                  <i class="fas fa-chevron-right"></i>
+                </button>
+              </div>
             </div>
             <div v-else class="empty-state"><i class="fas fa-inbox"></i>
               <p>尚無個案資料</p>
@@ -425,14 +436,20 @@
                 </div>
               </div>
 
-              <!-- 分頁器 -->
-              <div class="pagination" v-if="totalRecordPages > 1"
-                style="display:flex; justify-content:center; align-items:center; gap:15px; margin-top:20px; padding-bottom:10px;">
-                <button class="btn btn-icon" :disabled="recordPage <= 1" @click="recordPage--"><i
-                    class="fas fa-chevron-left"></i></button>
-                <span style="font-size:14px; color:#666">第 {{ recordPage }} / {{ totalRecordPages }} 頁</span>
-                <button class="btn btn-icon" :disabled="recordPage >= totalRecordPages" @click="recordPage++"><i
-                    class="fas fa-chevron-right"></i></button>
+              <!-- 🎯 分頁器：採膠囊型設計 -->
+              <div class="pagination" v-if="totalRecordPages > 1">
+                <button class="btn-page" :disabled="recordPage <= 1" @click="recordPage--" title="上一頁">
+                  <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="page-info">
+                  <span class="current">{{ recordPage }}</span>
+                  <span class="separator">/</span>
+                  <span class="total">{{ totalRecordPages }}</span>
+                  <span class="count">共 {{ records.length }} 筆</span>
+                </div>
+                <button class="btn-page" :disabled="recordPage >= totalRecordPages" @click="recordPage++" title="下一頁">
+                  <i class="fas fa-chevron-right"></i>
+                </button>
               </div>
             </div>
             <div v-else class="empty-state" style="padding:24px"><i class="fas fa-comments" style="font-size:32px"></i>
@@ -840,8 +857,11 @@
   </div>
 
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <!-- 🎯 效能優化：匯出套件以 defer 方式非阻塞載入，不影響首次渲染 -->
+  <script defer src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
   <script src="ccms-app.js"></script>
 </body>
 
