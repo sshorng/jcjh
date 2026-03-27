@@ -63,6 +63,7 @@ createApp({
       // 配置管理
       configType: 'classes', configItems: [],
       // 分頁
+      casePage: 1, casePageSize: 30,
       recordPage: 1, recordPageSize: 15,
       // 表單
       caseForm: this.emptyCaseForm(),
@@ -152,6 +153,14 @@ createApp({
     paginatedRecords() {
       const start = (this.recordPage - 1) * this.recordPageSize;
       return this.sortedRecords.slice(start, start + this.recordPageSize);
+    },
+    // 🎯 效能優化：個案列表分頁，減少 DOM 節點
+    totalCasePages() {
+      return Math.ceil(this.filteredCases.length / this.casePageSize) || 1;
+    },
+    paginatedCases() {
+      const start = (this.casePage - 1) * this.casePageSize;
+      return this.filteredCases.slice(start, start + this.casePageSize);
     }
   },
   watch: {
@@ -169,7 +178,12 @@ createApp({
     currentCase(val) { 
       if (val) localStorage.setItem('cms_case_id', val.id);
       else localStorage.removeItem('cms_case_id');
-    }
+    },
+    // 篩選變動時重置個案分頁
+    searchQuery() { this.casePage = 1; },
+    filterGrade() { this.casePage = 1; },
+    filterStatus() { this.casePage = 1; },
+    filterCounselor() { this.casePage = 1; }
   },
 
   methods: {
@@ -1307,6 +1321,7 @@ createApp({
       this.filterStatus = '';
       this.filterCounselor = '';
       this.selectedCaseIds = [];
+      this.casePage = 1;
     },
     navigate(p) {
       this.page = p; this.sidebarOpen = false;
