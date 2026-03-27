@@ -90,7 +90,7 @@ createApp({
 
       if (this.filterIdentity) {
         const q = this.filterIdentity.trim();
-        const pureQ = q.replace(/^\d+\./, ''); 
+        const pureQ = q.replace(/^\d+\./, '');
         if (q === '特教生') {
           result = result.filter(c => c.specialEdu && String(c.specialEdu).trim() !== '0.以下皆非');
         } else {
@@ -1720,14 +1720,15 @@ createApp({
           create2ColRow("專輔個案摘要", c.situation),
           create2ColRow("導師提報內容", (c.reportDate ? `(${c.reportDate}) ` : '') + (c.teacherReport || '-')),
           create2ColRow("主要服務方式", c.serviceMethod),
-          create2ColRow("身份背景標籤", c.identity),
+          create2ColRow("特教身分", c.specialEdu),
+          create2ColRow("身分背景", c.identity),
         ];
 
         // 2. 加入學期綜述
         const semesterKeys = [
-          { k: 's_7a', l: '七年級上學期綜述' }, { k: 's_7b', l: '七年級下學期綜述' },
-          { k: 's_8a', l: '八年級上學期綜述' }, { k: 's_8b', l: '八年級下學期綜述' },
-          { k: 's_9a', l: '九年級上學期綜述' }, { k: 's_9b', l: '九年級下學期綜述' }
+          { k: 's_7a', l: '七上綜述' }, { k: 's_7b', l: '七下綜述' },
+          { k: 's_8a', l: '八上綜述' }, { k: 's_8b', l: '八下綜述' },
+          { k: 's_9a', l: '九上綜述' }, { k: 's_9b', l: '九下綜述' }
         ];
         semesterKeys.forEach(s => {
           if (c[s.k]) infoRows.push(create2ColRow(s.l, c[s.k]));
@@ -1802,7 +1803,7 @@ createApp({
 
         const blob = await Packer.toBlob(doc);
         saveAs(blob, `${c.id}${c.name}個案紀錄.docx`);
-        this.showToast("標準 12pt 表格化 Word 文件已匯出", "success");
+        this.showToast("個案紀錄已匯出", "success");
       } catch (e) {
         console.error("Word Export Error:", e);
         this.showToast("匯出 Word 失敗：" + e.message, "error");
@@ -1852,7 +1853,8 @@ createApp({
         create2ColRow("專輔個案摘要", c.situation),
         create2ColRow("導師提報內容", (c.reportDate ? `(${c.reportDate}) ` : '') + (c.teacherReport || '-')),
         create2ColRow("主要服務方式", c.serviceMethod),
-        create2ColRow("身份背景標籤", c.identity),
+        create2ColRow("特教身分", c.specialEdu),
+        create2ColRow("身分背景", c.identity),
       ];
 
       ['s_7a', 's_7b', 's_8a', 's_8b', 's_9a', 's_9b'].forEach(k => {
