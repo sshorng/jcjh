@@ -1,4 +1,4 @@
-/* ===== 變數與基礎 ===== */
+﻿/* ===== 霈?蝷?===== */
 :root {
   --p: #d97757; --ph: #c26547; --pl: #e89578; --p-alpha: 217, 119, 87;
   --acc: #f4a261; --ok: #2a9d8f; --err: #e76f51; --warn: #f4a261;
@@ -8,7 +8,7 @@
   --sidebar-w: 260px;
 }
 
-/* ===== 亮色主題覆蓋 ===== */
+/* ===== 鈭株銝駁?閬? ===== */
 body.light-theme {
   --bg: #faf7f2; --sf: #ffffff; --sf2: #f6eedf; --sf3: #eddcc2;
   --bd: #e6d3ba; --tx: #4a3f35; --tx2: #806e60; --tx3: #a8988a;
@@ -39,8 +39,8 @@ body {
 }
 
 
-/* 舊版切換已移除 */
-/* ===== 骨架屏動畫 ===== */
+/* ????撌脩宏??*/
+/* ===== 撉冽撅???===== */
 @keyframes skeleton-loading {
   0% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
@@ -55,7 +55,7 @@ body {
 .skeleton-title { height: 24px; margin-bottom: 12px; width: 60%; }
 .skeleton-circle { width: 40px; height: 40px; border-radius: 50%; }
 
-/* ===== 登入頁 ===== */
+/* ===== ?餃??===== */
 .login-bg {
   min-height: 100vh; display: flex; align-items: center; justify-content: center;
   background: linear-gradient(135deg, #2d2825 0%, #453630 40%, #5a453f 60%, #453630 80%, #2d2825 100%);
@@ -79,7 +79,7 @@ body {
 }
 .login-card .input-group input:focus { border-color: var(--p); }
 
-/* ===== 按鈕 ===== */
+/* ===== ?? ===== */
 .btn {
   display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px;
   border-radius: var(--r2); border: none; font-size: 14px; font-weight: 500;
@@ -100,7 +100,7 @@ body {
 .btn[disabled] { opacity: .5; cursor: not-allowed; }
 .login-card .btn-primary { margin-top: 8px; padding: 12px; font-size: 16px; }
 
-/* ===== 版面配置 ===== */
+/* ===== ??蔭 ===== */
 .app-layout { display: flex; min-height: 100vh; }
 .sidebar {
   width: var(--sidebar-w); background: var(--sf); border-right: 1px solid var(--bd);
@@ -146,7 +146,7 @@ body {
 .footer-btn.logout:hover { color: var(--err); border-color: var(--err); }
 .main-content { margin-left: var(--sidebar-w); flex: 1; padding: 32px 40px; min-height: 100vh; }
 
-/* ===== 頁面標題 ===== */
+/* ===== ?璅? ===== */
 .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
 .page-header h1 { font-size: 24px; font-weight: 700; }
 .page-header h1 i { margin-right: 8px; color: var(--pl); }
@@ -154,13 +154,13 @@ body {
 .table-wrap tr.hover-row:hover { background: rgba(var(--p-alpha), 0.08); }
 .table-wrap tr.hover-row { transition: background 0.2s; }
 
-/* ===== 統計卡片 ===== */
+/* ===== 蝯梯??∠? ===== */
 .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px; }
 .stat-card {
   background: var(--sf); border: 1px solid var(--bd); border-radius: var(--r);
   padding: 20px; display: flex; align-items: center; gap: 16px;
   transition: transform .2s, box-shadow .2s;
-  min-width: 0; /* 防止內容溢出 */
+  min-width: 0; /* ?脫迫?批捆皞Ｗ */
 }
 .stat-card:hover { transform: translateY(-2px); box-shadow: var(--sh); }
 .stat-card .icon {
@@ -176,7 +176,7 @@ body {
 .stat-card .info h3 { font-size: 24px; font-weight: 700; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; }
 .stat-card .info p { font-size: 12px; color: var(--tx2); white-space: nowrap; }
 
-/* ===== 卡片 ===== */
+/* ===== ?∠? ===== */
 .card {
   background: var(--sf); border: 1px solid var(--bd); border-radius: var(--r);
   padding: 20px; margin-bottom: 16px;
@@ -184,7 +184,7 @@ body {
 .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .card-header h3 { font-size: 16px; font-weight: 600; }
 
-/* ===== 表格 ===== */
+/* ===== 銵冽 ===== */
 .table-wrap { overflow-x: auto; border-radius: var(--r); border: 1px solid var(--bd); }
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
 thead { background: var(--sf2); }
@@ -203,7 +203,7 @@ tbody tr:hover { background: rgba(var(--p-alpha),.06); }
 .badge-counselor { background: rgba(var(--p-alpha),.15); color: var(--p); }
 .badge-type { background: rgba(var(--p-alpha), 0.12); color: var(--p); border: 1px solid rgba(var(--p-alpha), 0.25); font-weight: 600; }
 
-/* ===== 搜尋列 ===== */
+/* ===== ????===== */
 .search-bar {
   display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
 }
@@ -214,7 +214,7 @@ tbody tr:hover { background: rgba(var(--p-alpha),.06); }
 }
 .search-input:focus { border-color: var(--p); }
 
-/* ===== 表單 ===== */
+/* ===== 銵典 ===== */
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .form-grid .full { grid-column: 1 / -1; }
 .fg { display: flex; flex-direction: column; gap: 4px; }
@@ -270,7 +270,7 @@ tbody tr:hover { background: rgba(var(--p-alpha),.06); }
 .toast.error { background: var(--err); color: #fff; }
 .toast.info { background: var(--p); color: #fff; }
 
-/* ===== 載入動畫 ===== */
+/* ===== 頛? ===== */
 .loading-overlay {
   position: fixed; inset: 0; background: rgba(15,23,42,.7); display: flex;
   align-items: center; justify-content: center; z-index: 3000;
@@ -281,14 +281,14 @@ tbody tr:hover { background: rgba(var(--p-alpha),.06); }
 }
 @keyframes spin { to{transform:rotate(360deg)} }
 
-/* ===== 個案詳情 ===== */
+/* ===== ??閰單? ===== */
 .case-info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
 .info-item label { font-size: 12px; color: var(--tx3); display: block; }
 .info-item span { font-size: 14px; font-weight: 500; }
 .back-btn { display: inline-flex; align-items: center; gap: 6px; color: var(--tx2); cursor: pointer; font-size: 14px; margin-bottom: 16px; transition: color .2s; }
 .back-btn:hover { color: var(--tx); }
 
-/* ===== 紀錄時間軸 ===== */
+/* ===== 蝝???遘 ===== */
 .timeline { position: relative; padding-left: 28px; }
 .timeline::before { content:''; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: var(--bd); }
 .timeline-item { position: relative; margin-bottom: 16px; }
@@ -306,12 +306,12 @@ tbody tr:hover { background: rgba(var(--p-alpha),.06); }
 .timeline-content { font-size: 14px; line-height: 1.7; white-space: pre-wrap; }
 .timeline-actions { margin-top: 8px; display: flex; gap: 8px; }
 
-/* ===== 空狀態 ===== */
+/* ===== 蝛箇???===== */
 .empty-state { text-align: center; padding: 48px 20px; color: var(--tx2); }
 .empty-state i { font-size: 48px; margin-bottom: 12px; opacity: .4; }
 .empty-state p { font-size: 14px; }
 
-/* ===== 手機版 ===== */
+/* ===== ????===== */
 .mobile-toggle { display: none; position: fixed; top: 12px; left: 12px; z-index: 150; background: var(--sf); border: 1px solid var(--bd); color: var(--tx); border-radius: 8px; padding: 8px 10px; font-size: 18px; cursor: pointer; }
 .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 99; }
 @media (max-width: 768px) {
@@ -326,7 +326,7 @@ tbody tr:hover { background: rgba(var(--p-alpha),.06); }
   .stat-card .info h3 { font-size: 20px; }
 }
 
-/* 標籤頁與配置表樣式 */
+/* 璅惜???蔭銵冽見撘?*/
 .tabs { display: flex; gap: 8px; border-bottom: 2px solid rgba(255,255,255,0.05); margin-bottom: 20px; }
 .tab-btn {
   background: transparent; border: none; color: var(--tx3); padding: 10px 18px;
@@ -348,7 +348,7 @@ tbody tr:hover { background: rgba(var(--p-alpha),.06); }
   font-size: 16px; padding: 4px; opacity: 0.6; transition: opacity 0.2s;
 }
 .btn-icon-danger:hover { opacity: 1; }
-/* 批次操作工具列 */
+/* ?寞活??撌亙??*/
 .batch-bar {
   background: var(--sf);
   border: 1px solid var(--bd);
@@ -370,14 +370,14 @@ tbody tr:hover { background: rgba(var(--p-alpha),.06); }
 }
 tr.selected td { background: rgba(var(--p-alpha), 0.08) !important; }
 
-/* 內嵌法單與分頁 */
+/* ?批?瘜????*/
 .inline-form {
   background: var(--sf2) !important;
   border: 1px solid var(--bd) !important;
   box-shadow: var(--sh);
 }
 .inline-form label { color: var(--tx2); }
-/* ===== 精美分頁器 ===== */
+/* ===== 蝎曄?????===== */
 .pagination {
   display: flex;
   justify-content: center;
@@ -448,7 +448,7 @@ tr.selected td { background: rgba(var(--p-alpha), 0.08) !important; }
   padding-left: 10px;
 }
 
-/* 詳情摘要區塊 */
+/* 閰單????憛?*/
 .detail-summary-card {
   background: var(--sf) !important;
   border-left: 4px solid var(--p) !important;
@@ -479,7 +479,7 @@ tr.selected td { background: rgba(var(--p-alpha), 0.08) !important; }
 .text-acc { color: var(--p); }
 .text-warn { color: var(--err); }
 
-/* 返回按鈕樣式 */
+/* 餈???璅?? */
 .back-btn {
   display: inline-flex;
   align-items: center;
@@ -499,3 +499,70 @@ tr.selected td { background: rgba(var(--p-alpha), 0.08) !important; }
 .back-btn i {
   font-size: 14px;
 }
+
+/* ===== 簡易富文本編輯器 ===== */
+.rich-editor-container {
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--sf);
+  transition: border-color 0.2s;
+}
+.rich-editor-container:focus-within {
+  border-color: var(--p);
+  box-shadow: 0 0 0 3px rgba(var(--p-alpha), 0.1);
+}
+.rich-editor-toolbar {
+  display: flex;
+  gap: 4px;
+  padding: 8px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--bd);
+}
+.editor-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--tx2);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.editor-btn:hover {
+  background: var(--sf2);
+  color: var(--p);
+}
+.rich-editor-content {
+  min-height: 151px;
+  padding: 12px;
+  outline: none;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--tx);
+  overflow-y: auto;
+}
+.rich-editor-content:empty:before {
+  content: attr(placeholder);
+  color: var(--tx3);
+  pointer-events: none;
+}
+
+/* 列表呈現優化 */
+.rich-text ul, .rich-editor-content ul, .rich-text ol, .rich-editor-content ol {
+  padding-left: 2em;
+  margin: 0.5em 0;
+}
+.rich-text li, .rich-editor-content li {
+  margin-bottom: 2px;
+}
+.rich-text ul li, .rich-editor-content ul li {
+  list-style-type: disc;
+}
+.rich-text ol li, .rich-editor-content ol li {
+  list-style-type: decimal;
+}
+
