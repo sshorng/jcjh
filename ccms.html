@@ -12,6 +12,7 @@
   <!-- Word 匯出元件 -->
   <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 
 <body>
@@ -513,6 +514,30 @@
               </div>
 
               <hr style="margin: 30px 0; border: none; border-top: 1px solid var(--bd);">
+
+              <!-- 批次作業與系統維護 -->
+              <div style="margin-bottom: 20px;">
+                <h3 style="margin-bottom: 12px; font-size: 16px;"><i class="fas fa-toolbox"></i> 學期末作業與備份</h3>
+                
+                <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 15px; padding: 15px; background: rgba(99, 102, 241, 0.05); border-radius: var(--r2); border: 1px solid var(--bd);">
+                  <div style="margin-bottom: 0;">
+                    <label style="display:block; font-size:12px; color:var(--tx2); margin-bottom:4px;">批量選取年級</label>
+                    <select v-model="backupGrade" class="search-input" style="padding:8px">
+                      <option>全部</option>
+                      <option>七</option>
+                      <option>八</option>
+                      <option>九</option>
+                    </select>
+                  </div>
+                  <button class="btn btn-secondary" @click="exportBatchWord" :disabled="loading"><i class="fas fa-file-word"></i> 打包匯出 Word (ZIP)</button>
+                  <button class="btn btn-secondary" @click="exportBatchExcel" :disabled="loading"><i class="fas fa-file-excel"></i> 匯出 Excel 本機備份</button>
+                </div>
+
+                <div style="display: flex; gap: 15px; padding: 15px; background: rgba(239, 68, 68, 0.05); border-radius: var(--r2); border: 1px solid var(--bd);">
+                   <button class="btn btn-danger" @click="archiveGraduates" :disabled="loading"><i class="fas fa-graduation-cap"></i> 執行九年級畢業歸檔</button>
+                   <button class="btn btn-danger" @click="promoteGrades" :disabled="loading"><i class="fas fa-arrow-trend-up"></i> 執行七八年級升級</button>
+                </div>
+              </div>
 
               <div style="display: flex; justify-content: flex-end; align-items: center;">
                 <button class="btn btn-danger btn-sm" @click="clearSettings"><i class="fas fa-rotate-left"></i>
