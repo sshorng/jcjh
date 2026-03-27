@@ -122,6 +122,11 @@
               </div>
             </div>
           </div>
+          
+          <!-- 骨架屏：儀表板載入中且無資料時顯示 -->
+          <div class="stats-row" v-else-if="loading && !dashData">
+            <div class="stat-card skeleton" v-for="i in 5" :key="i" style="height: 100px;"></div>
+          </div>
           <!-- 最近紀錄 -->
           <div class="card" v-if="dashData && dashData.recentRecords && dashData.recentRecords.length">
             <div class="card-header">
@@ -225,6 +230,13 @@
               <button class="btn btn-secondary btn-sm" @click="selectedCaseIds=[]">取消</button>
             </div>
           </div>
+          
+          <!-- 骨架屏：列表載入中且無資料時顯示 -->
+          <div class="card" v-else-if="loading && cases.length===0" style="padding: 20px;">
+            <div class="skeleton skeleton-title" style="width: 200px; margin-bottom: 20px;"></div>
+            <div class="skeleton-text skeleton" v-for="i in 5" :key="i" style="height: 40px; margin-bottom: 10px;"></div>
+          </div>
+
           <div class="table-wrap" v-if="filteredCases.length">
             <table>
               <thead>
@@ -384,14 +396,14 @@
               <div class="form-grid">
                 <div class="fg"><label>日期</label><input v-model="recordForm.date" type="date"></div>
                 <div class="fg full">
-                  <label>服務項目（必選）</label>
+                  <label>服務項目<span v-if="!recordForm.excludeFromReport">（必選）</span></label>
                   <div class="checkbox-group">
                     <label v-for="s in SERVICE_OPTS" :key="s"><input type="checkbox" :value="s"
                         v-model="recordForm.serviceArr"> {{ s }}</label>
                   </div>
                 </div>
                 <div class="fg full">
-                  <label>對象（必選）</label>
+                  <label>對象<span v-if="!recordForm.excludeFromReport">（必選）</span></label>
                   <div class="checkbox-group">
                     <label v-for="t in TARGET_OPTS" :key="t"><input type="checkbox" :value="t"
                         v-model="recordForm.targetArr"> {{ t }}</label>
