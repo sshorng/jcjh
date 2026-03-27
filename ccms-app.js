@@ -163,6 +163,12 @@ createApp({
           localStorage.setItem('cms_record_draft', JSON.stringify(val));
         }
       }
+    },
+    // 🎯 狀態持久化：紀錄當前頁面與個案 ID，避免刷新跳回首頁
+    page(val) { localStorage.setItem('cms_page', val); },
+    currentCase(val) { 
+      if (val) localStorage.setItem('cms_case_id', val.id);
+      else localStorage.removeItem('cms_case_id');
     }
   },
 
@@ -1738,8 +1744,14 @@ createApp({
     if (saved) {
       try {
         this.user = JSON.parse(saved);
-        this.loadDashboard();
-        this.loadCases();
+        // 先載入資料
+        this.fetchData().then(() => {
+          // 資料載入後再恢復頁面狀態
+          const savedPage = localStorage.getItem('cms_page');
+          const savedCaseId = localStorage.getItem('cms_case_id');
+          if (savedPage) this.page = savedPage;
+          if (savedPage === 'detail' && savedCaseId) this.viewCaseById(savedCaseId);
+        });
         if (this.isAdmin) this.loadUsers();
       } catch (e) { localStorage.removeItem('cms_user'); }
     }
