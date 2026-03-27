@@ -138,6 +138,7 @@
                     <th style="width: 120px">日期</th>
                     <th style="width: 100px">學生</th>
                     <th style="width: 150px">對象</th>
+                    <th style="width: 200px">服務項目</th>
                     <th>方式</th>
                   </tr>
                 </thead>
@@ -147,6 +148,7 @@
                     <td>{{ formatDate(r.dateTime) }}</td>
                     <td>{{ r.studentName }}</td>
                     <td>{{ r.target }}</td>
+                    <td><div class="text-truncate" style="max-width:200px">{{ r.service }}</div></td>
                     <td>{{ r.method }}</td>
                   </tr>
                 </tbody>
