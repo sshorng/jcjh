@@ -37,8 +37,10 @@ createApp({
   data() {
     return {
       // 系統狀態
-      gasUrl: '', loading: false, sidebarOpen: false,
+      gasUrl: '', loading: false, loadingMsg: '讀取中...', sidebarOpen: false,
       page: 'dashboard',
+      // 主題 (dark | light)
+      theme: localStorage.getItem('cms_theme') || 'dark',
       // 登入
       user: null, loginForm: { account: '', password: '' },
       // Toast
@@ -80,6 +82,8 @@ createApp({
 
   computed: {
     isAdmin() { return this.user && this.user.role === '管理員'; },
+    // 主題 CSS 統一綁定
+    themeClass() { return this.theme === 'light' ? 'light-theme' : ''; },
     filteredCases() {
       let result = this.cases;
 
@@ -215,10 +219,20 @@ createApp({
     filterGrade() { this.casePage = 1; },
     filterStatus() { this.casePage = 1; },
     filterCounselor() { this.casePage = 1; },
-    filterIdentity() { this.casePage = 1; }
+    filterIdentity() { this.casePage = 1; },
+    // 🎯 主題同步：讓 body 也帶有主題 class
+    theme(val) {
+      document.body.className = val === 'light' ? 'light-theme' : '';
+    }
   },
 
   methods: {
+    // ===== 主題切換 =====
+    toggleTheme() {
+      this.theme = this.theme === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('cms_theme', this.theme);
+    },
+
     // ===== 表單初始化 =====
     emptyCaseForm() {
       // 自動計算當前學期
@@ -306,6 +320,7 @@ createApp({
       if (!this.loginForm.account || !this.loginForm.password) {
         this.showToast('請輸入帳號和密碼', 'error'); return;
       }
+      this.loadingMsg = '登入中...';
       this.loading = true;
       const r = await this.api('login', this.loginForm);
       this.loading = false;
@@ -347,7 +362,10 @@ createApp({
 
       // 只有在完全沒資料或是手動刷新的情況下才顯示全螢幕 loading
       const showLoading = !silent && (!this.cases || this.cases.length === 0);
-      if (showLoading) this.loading = true;
+      if (showLoading) {
+        this.loadingMsg = '同步資料中...';
+        this.loading = true;
+      }
 
       try {
         const r = await this.api('getDashboard');
@@ -417,7 +435,7 @@ createApp({
       this.recordPage = 1;
       this.showRecordModal = false;
 
-      // 優先載入快取中的紀錄 (如果有的話)
+      // 優先載入快取中的紀錄
       const cacheKey = `cms_records_${c.id}`;
       const cachedRecords = localStorage.getItem(cacheKey);
       if (cachedRecords) {
@@ -426,28 +444,44 @@ createApp({
         this.records = [];
       }
 
+      this.loadingMsg = '正在讀取個案詳情...';
       this.loading = true;
-      const tasks = [
-        this.api('getRecords', { caseId: c.id }),
-        this.api('getCaseDetail', { id: c.id })
-      ];
 
-      const results = await Promise.all(tasks);
+      // ⭐ 嘗試使用合併 API：cgetCaseFull 一次回傳個案詳情 + 紀錄
+      const rFull = await this.api('getCaseFull', { caseId: c.id });
       this.loading = false;
 
-      const rRec = results[0];
-      if (rRec?.success) {
-        this.records = rRec.data;
-        localStorage.setItem(cacheKey, JSON.stringify(rRec.data));
-      }
+      if (rFull?.success && rFull.data) {
+        // 後端支援合併 API 成功
+        const { detail, records } = rFull.data;
+        if (records) {
+          this.records = records;
+          localStorage.setItem(cacheKey, JSON.stringify(records));
+        }
+        if (detail) {
+          this.currentCase = { ...c, ...detail };
+          const idx = this.cases.findIndex(x => String(x.id) === String(c.id));
+          if (idx >= 0) this.cases[idx] = this.currentCase;
+        }
+      } else {
+        // 後端尚未支援合併 API，降級把 Promise.all 並行請求
+        this.loadingMsg = '正在同步晤談紀錄...';
+        this.loading = true;
+        const [rRec, rDet] = await Promise.all([
+          this.api('getRecords', { caseId: c.id }),
+          this.api('getCaseDetail', { id: c.id })
+        ]);
+        this.loading = false;
 
-      const rDet = results[1];
-      if (rDet?.success) {
-        // 用完整詳情覆蓋 currentCase
-        this.currentCase = { ...c, ...rDet.data };
-        // 同步更新 cases 陣列中對應的個案
-        const idx = this.cases.findIndex(x => String(x.id) === String(c.id));
-        if (idx >= 0) this.cases[idx] = this.currentCase;
+        if (rRec?.success) {
+          this.records = rRec.data;
+          localStorage.setItem(cacheKey, JSON.stringify(rRec.data));
+        }
+        if (rDet?.success) {
+          this.currentCase = { ...c, ...rDet.data };
+          const idx = this.cases.findIndex(x => String(x.id) === String(c.id));
+          if (idx >= 0) this.cases[idx] = this.currentCase;
+        }
       }
     },
     openCaseModal(c) {
@@ -549,6 +583,7 @@ createApp({
         identity: this.caseForm.identityArr.join(','),
         serviceMethod: this.caseForm.serviceMethod
       };
+      this.loadingMsg = '儲存個案...';
       this.loading = true;
       let r;
       if (this.editingId) {
@@ -1138,6 +1173,7 @@ createApp({
         }
       }
 
+      this.loadingMsg = '正在儲存晤談紀錄...';
       this.loading = true;
       const methodStr = combinedMethods.join(',');
 
@@ -1187,7 +1223,8 @@ createApp({
     },
     async deleteRecord(id) {
       this.confirmAction('確定要刪除此晤談紀錄？', async () => {
-        this.loading = true;
+        this.loadingMsg = '正在刪除晤談紀錄...';
+      this.loading = true;
         const r = await this.api('deleteRecord', { id });
         this.loading = false;
         if (r?.success) {
@@ -1219,6 +1256,7 @@ createApp({
     },
     async saveUserForm() {
       if (!this.userForm.name) { this.showToast('請填寫姓名', 'error'); return; }
+      this.loadingMsg = '正在儲存帳號資訊...';
       this.loading = true;
       let r;
       if (this.editingUserId) {
@@ -1250,7 +1288,8 @@ createApp({
     },
     async deleteUser(account) {
       this.confirmAction(`確定要刪除帳號「${account}」？`, async () => {
-        this.loading = true;
+        this.loadingMsg = '正在刪除帳號...';
+      this.loading = true;
         const r = await this.api('deleteUser', { targetAccount: account });
         this.loading = false;
         if (r?.success) {
@@ -2132,7 +2171,12 @@ createApp({
           }
         });
         if (this.isAdmin) this.loadUsers();
+        // 初始化主題類別
+        document.body.className = this.theme === 'light' ? 'light-theme' : '';
       } catch (e) { localStorage.removeItem('cms_user'); }
+    } else {
+      // 未登入也要初始化主題類別（訪客頁面/登入頁面）
+      document.body.className = this.theme === 'light' ? 'light-theme' : '';
     }
   }
 }).mount('#app');
