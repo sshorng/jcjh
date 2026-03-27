@@ -371,12 +371,12 @@
                   </div>
                 </div>
                 <div class="fg full">
-                  <label>對象</label>
+                  <label>對象（必選）</label>
                   <div class="checkbox-group">
                     <label v-for="t in TARGET_OPTS" :key="t"><input type="checkbox" :value="t"
                         v-model="recordForm.targetArr"> {{ t }}</label>
                   </div>
-                  <input v-model="recordForm.customTarget" placeholder="其他對象..." style="margin-top:8px">
+                  <input v-model="recordForm.customTarget" placeholder="補充說明（將顯示在選項後方：例如 爸爸）..." style="margin-top:8px;">
                 </div>
                 <div class="fg full">
                   <label>方式</label>
@@ -385,6 +385,12 @@
                         v-model="recordForm.methodArr"> {{ m }}</label>
                   </div>
                   <input v-model="recordForm.customMethod" placeholder="其他方式..." style="margin-top:8px">
+                </div>
+                <div class="fg full" style="margin-bottom: 5px;">
+                  <label style="cursor: pointer; display: inline-flex; align-items: center; justify-content: flex-start; gap: 8px;">
+                    <input type="checkbox" v-model="recordForm.excludeFromReport" style="margin: 0;"> 
+                    <span style="color: var(--tx2); font-weight: normal;">純屬個人紀錄，不計入月報表統計次數</span>
+                  </label>
                 </div>
                 <div class="fg full"><label>內容</label><textarea v-model="recordForm.content" rows="6"
                     placeholder="請輸入服務內容..."></textarea></div>
