@@ -1573,6 +1573,70 @@ createApp({
       }
     },
 
+    async exportSelectedWord() {
+      if (!window.docx || !window.JSZip || !window.saveAs) {
+        this.showToast('需要載入 docx 或 JSZip 套件', 'error');
+        return;
+      }
+      if (this.selectedCaseIds.length === 0) {
+        this.showToast('請先勾選要匯出的個案', 'warning');
+        return;
+      }
+      this.loading = true;
+      try {
+        const res = await this.api('backupData', { grade: '全部' });
+        if (!res || !res.success) throw new Error(res?.error || '無法取得資料');
+        
+        const { cases, records } = res.data;
+        const selectedCases = cases.filter(c => this.selectedCaseIds.includes(String(c['個案編號'])));
+        
+        if (selectedCases.length === 0) {
+          this.showToast('找不到所選個案資料', 'info');
+          return;
+        }
+
+        this.showToast('正在產生 Word 檔案...', 'info');
+        const zip = new JSZip();
+        const Packer = window.docx.Packer;
+
+        const recordMap = {};
+        records.forEach(r => {
+          const cid = String(r['個案編號']);
+          if (!recordMap[cid]) recordMap[cid] = [];
+          recordMap[cid].push({
+            dateTime: r['日期時間'], target: r['對象'], method: r['方式'],
+            recorderName: r['記錄者姓名'] || r['記錄者帳號'],
+            content: r['輔導服務紀錄']
+          });
+        });
+
+        for (const c of selectedCases) {
+          const mappedCase = {
+            id: c['個案編號'], name: c['姓名'], grade: c['年級'], class: c['班級'], seatNo: c['座號'], gender: c['性別'],
+            caseType: c['個案類別(主)'] || c['個案類型'] || '-', situation: c['遭遇情況'], teacherReport: c['導師提報內容'],
+            serviceMethod: c['個案服務方式'], identity: c['身分背景'], specialEdu: c['特教身分'], reportDate: c['提報學期'],
+            s_7a: c['七上綜述'], s_7b: c['七下綜述'], s_8a: c['八上綜述'], s_8b: c['八下綜述'], s_9a: c['九上綜述'], s_9b: c['九下綜述']
+          };
+          const rawRecords = recordMap[String(c['個案編號'])] || [];
+          rawRecords.sort((a,b) => new Date(a.dateTime) - new Date(b.dateTime));
+
+          const doc = this.generateWordDocDef(mappedCase, rawRecords);
+          const blob = await Packer.toBlob(doc);
+          zip.file(`${mappedCase.id}${mappedCase.name}個案紀錄.docx`, blob);
+        }
+
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        saveAs(zipBlob, `CCMS_勾選個案匯出_${this.formatDate(new Date())}.zip`);
+        this.showToast('打包下載完成！', 'success');
+
+      } catch (e) {
+        console.error(e);
+        this.showToast('匯出失敗：' + e.message, 'error');
+      } finally {
+        this.loading = false;
+      }
+    },
+
     async exportBatchExcel() {
       if (!window.ExcelJS || !window.saveAs) {
         this.showToast('需要載入 ExcelJS', 'error');
