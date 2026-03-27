@@ -62,11 +62,8 @@ createApp({
       selectedCaseIds: [], // 用於批次操作勾選
       // 配置管理
       configType: 'classes', configItems: [],
-      // 分頁與效能優化
+      // 分頁
       recordPage: 1, recordPageSize: 15,
-      casesPage: 1, casesPageSize: 50, casesTotal: 0,
-      hasMoreCases: true, casesLoading: false,
-      dashLoading: false,
       // 表單
       caseForm: this.emptyCaseForm(),
       recordForm: this.emptyRecordForm(),
@@ -80,14 +77,40 @@ createApp({
   computed: {
     isAdmin() { return this.user && this.user.role === '管理員'; },
     filteredCases() {
-      // 🎯 效能優化：主要過濾與排序由後端 API (getCases) 處理。
-      // 這裡僅提供極速的「局部」本地搜尋，直到伺服器結果返回。
-      if (!this.searchQuery) return this.cases;
-      const q = this.searchQuery.toLowerCase();
-      return this.cases.filter(c =>
-        (c.name || '').toLowerCase().includes(q) ||
-        (c.id || '').toLowerCase().includes(q)
-      );
+      let result = this.cases;
+
+      // 1. 下拉篩選
+      if (this.filterGrade) result = result.filter(c => c.grade === this.filterGrade);
+      if (this.filterStatus) result = result.filter(c => c.status === this.filterStatus);
+      if (this.filterCounselor) result = result.filter(c => c.counselor === this.filterCounselor);
+
+      // 2. 關鍵字搜尋
+      if (this.searchQuery) {
+        const q = this.searchQuery.toLowerCase();
+        result = result.filter(c =>
+          (c.name || '').toLowerCase().includes(q) ||
+          (c.class || '').toString().includes(q) ||
+          (c.caseType || '').toLowerCase().includes(q)
+        );
+      }
+
+      // 3. 排序：依年級、班級、座號順序排列
+      const gradeMap = { '七': 7, '八': 8, '九': 9 };
+      result.sort((a, b) => {
+        const gA = gradeMap[a.grade] || 99;
+        const gB = gradeMap[b.grade] || 99;
+        if (gA !== gB) return gA - gB;
+
+        const cA = parseInt(a.class) || 999;
+        const cB = parseInt(b.class) || 999;
+        if (cA !== cB) return cA - cB;
+
+        const sA = parseInt(a.seatNo) || 999;
+        const sB = parseInt(b.seatNo) || 999;
+        return sA - sB;
+      });
+
+      return result;
     },
     filteredUsers() {
       if (!this.userSearchQuery) return this.users;
@@ -146,17 +169,6 @@ createApp({
     currentCase(val) { 
       if (val) localStorage.setItem('cms_case_id', val.id);
       else localStorage.removeItem('cms_case_id');
-    },
-    // 過濾器變動時自動重載首頁個案
-    filterGrade() { this.loadCases(1); },
-    filterStatus() { this.loadCases(1); },
-    filterCounselor() { this.loadCases(1); },
-    searchQuery() {
-       // 實作簡單的防抖 (Debounce)
-       clearTimeout(this._searchTimer);
-       this._searchTimer = setTimeout(() => {
-          this.loadCases(1);
-       }, 500);
     }
   },
 
@@ -269,11 +281,7 @@ createApp({
         try {
           const data = JSON.parse(cached);
           this.dashData = data;
-          // 若快取中有個案清單（舊版或完整回傳時），優先顯示
-          if (data.cases) {
-             this.cases = data.cases;
-             this.casesTotal = data.totalCases || data.cases.length;
-          }
+          this.cases = data.cases || [];
           if (data.configs) this.configs = data.configs;
         } catch (e) { }
       }
@@ -284,19 +292,14 @@ createApp({
       this.cases = []; this.records = []; this.users = []; this.dashData = null;
     },
 
-    // ===== 整合資料讀取 (SWR 優化版) =====
+    // ===== 整合資料讀取 =====
     async fetchData(silent = false) {
-      if (!this.user) return;
-      
-      // 1. 優先嘗試讀取快取 (Stale-While-Revalidate)
-      if (!this.dashData) this.loadCache();
-
-      // 2. 背景同步儀表板數據 (統計數、配置、最近紀錄)
-      this.dashLoading = true;
+      if (!silent) this.loading = true;
       try {
-        const r = await this.api('getDashboard', { includeCases: false });
+        const r = await this.api('getDashboard');
         if (r?.success && r.data) {
           this.dashData = r.data;
+          this.cases = r.data.cases || [];
           if (r.data.configs) {
             this.configs = {
               classes: r.data.configs.classes || [],
@@ -304,63 +307,14 @@ createApp({
               allCounselors: r.data.configs.allCounselors || []
             };
           }
-          this.casesTotal = r.data.totalCases || 0;
+          // 存入快取
           localStorage.setItem('cms_dash_cache', JSON.stringify(r.data));
+          this.selectedCaseIds = [];
         }
       } catch (e) {
-        console.error('Dash fetch error:', e);
+        console.error('Fetch error:', e);
       } finally {
-        this.dashLoading = false;
-      }
-
-      // 3. 載入首屏個案清單
-      await this.loadCases(1, false, silent);
-    },
-
-    /**
-     * 分頁載入個案清單
-     * @param {number} page 頁碼
-     * @param {boolean} append 是否為追加 (用於載入更多)
-     * @param {boolean} silent 是否不顯示全螢幕 loading
-     */
-    async loadCases(page = 1, append = false, silent = false) {
-      if (this.casesLoading) return;
-      
-      this.casesLoading = true;
-      if (!silent && !append) this.loading = true;
-
-      try {
-        const r = await this.api('getCases', {
-          page: page,
-          pageSize: this.casesPageSize,
-          search: this.searchQuery,
-          filterGrade: this.filterGrade,
-          filterStatus: this.filterStatus,
-          filterCounselor: this.filterCounselor
-        });
-
-        if (r?.success && r.data) {
-          const newCases = r.data.cases || [];
-          if (append) {
-            this.cases = [...this.cases, ...newCases];
-          } else {
-            this.cases = newCases;
-          }
-          this.casesPage = r.data.page;
-          this.casesTotal = r.data.total;
-          this.hasMoreCases = (this.cases.length < this.casesTotal);
-        }
-      } catch (e) {
-        console.error('Load cases error:', e);
-      } finally {
-        this.casesLoading = false;
         if (!silent) this.loading = false;
-      }
-    },
-
-    async loadMoreCases() {
-      if (this.hasMoreCases && !this.casesLoading) {
-        await this.loadCases(this.casesPage + 1, true, true);
       }
     },
     // 為了相容性保留舊名稱，但直接轉發至 fetchData
