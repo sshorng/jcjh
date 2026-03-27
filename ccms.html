@@ -90,35 +90,35 @@
             <h1><i class="fas fa-chart-pie"></i> 系統儀表板</h1>
           </div>
           <div class="stats-row" v-if="dashData">
-            <div class="stat-card" :class="{loading: dashLoading}">
+            <div class="stat-card">
               <div class="icon purple"><i class="fas fa-users"></i></div>
               <div class="info">
                 <h3>{{ dashData.totalCases }}</h3>
                 <p>個案總數</p>
               </div>
             </div>
-            <div class="stat-card" :class="{loading: dashLoading}">
+            <div class="stat-card">
               <div class="icon green"><i class="fas fa-heart-pulse"></i></div>
               <div class="info">
                 <h3>{{ dashData.activeCases }}</h3>
                 <p>進行中</p>
               </div>
             </div>
-            <div class="stat-card" :class="{loading: dashLoading}">
+            <div class="stat-card">
               <div class="icon blue"><i class="fas fa-eye"></i></div>
               <div class="info">
                 <h3>{{ dashData.observingCases }}</h3>
                 <p>觀察中</p>
               </div>
             </div>
-            <div class="stat-card" :class="{loading: dashLoading}">
+            <div class="stat-card">
               <div class="icon gray"><i class="fas fa-circle-check"></i></div>
               <div class="info">
                 <h3>{{ dashData.closedCases }}</h3>
                 <p>已結案</p>
               </div>
             </div>
-            <div class="stat-card" :class="{loading: dashLoading}">
+            <div class="stat-card">
               <div class="icon amber"><i class="fas fa-pen-to-square"></i></div>
               <div class="info">
                 <h3>{{ dashData.monthlyRecords }}</h3>
@@ -172,9 +172,7 @@
         <!-- ========== 個案管理 ========== -->
         <section v-if="page==='cases'">
           <div class="page-header">
-            <h1><i class="fas fa-users"></i> 優先關懷個案名單
-               <span v-if="casesLoading" class="inline-spinner" style="margin-left:10px"></span>
-            </h1>
+            <h1><i class="fas fa-users"></i> 優先關懷個案名單</h1>
             <button class="btn btn-primary" @click="openCaseModal(null)"><i class="fas fa-plus"></i> 新增個案</button>
           </div>
           <div class="search-bar" style="margin-bottom:12px; display:flex; gap:10px; flex-wrap:wrap;">
@@ -196,12 +194,6 @@
             </select>
             <button class="btn btn-secondary btn-sm" @click="resetFilters" title="清除篩選"><i
                 class="fas fa-rotate-left"></i></button>
-          </div>
-
-          <!-- 資料摘要 -->
-          <div style="margin-bottom:10px; font-size:14px; color:#666; display:flex; justify-content:space-between; align-items:center;">
-             <span>目前顯示 {{ cases.length }} 筆個案 (總計 {{ casesTotal }} 筆)</span>
-             <span v-if="casesLoading" style="color:var(--primary);"><i class="fas fa-sync fa-spin"></i> 載入中...</span>
           </div>
 
           <!-- 批次操作工具列 -->
@@ -278,21 +270,8 @@
                 </tbody>
               </table>
             </div>
-            
-            <!-- 載入更多按鈕 -->
-            <div v-if="hasMoreCases" style="margin: 20px 0; text-align: center;">
-              <button class="btn btn-secondary" @click="loadMoreCases" :disabled="casesLoading">
-                <i v-if="casesLoading" class="fas fa-spinner fa-spin"></i>
-                <i v-else class="fas fa-chevron-down"></i>
-                載入更多 (剩餘 {{ casesTotal - cases.length }} 筆)
-              </button>
-            </div>
-
-            <div v-else-if="!filteredCases.length" class="empty-state"><i class="fas fa-inbox"></i>
+            <div v-else class="empty-state"><i class="fas fa-inbox"></i>
               <p>尚無個案資料</p>
-            </div>
-            <div v-else style="text-align:center; padding: 20px; color:#999; font-size:14px;">
-               --- 已顯示全部資料 ---
             </div>
         </section>
 
