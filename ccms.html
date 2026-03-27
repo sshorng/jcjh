@@ -12,10 +12,14 @@
 </head>
 
 <body>
-  <div id="app">
+  <div id="app" :class="themeClass">
     <!-- 載入動畫 -->
     <div v-if="loading" class="loading-overlay">
-      <div class="spinner"></div>
+      <div style="text-align: center;">
+        <div class="spinner"></div>
+        <div style="margin-top: 15px; color: #fff; font-size: 14px; font-weight: 500; letter-spacing: 1px;">{{
+          loadingMsg }}</div>
+      </div>
     </div>
 
     <!-- Toast 通知 -->
@@ -65,15 +69,25 @@
           <a v-if="isAdmin" :class="{active: page==='settings'}" @click="navigate('settings')"><i
               class="fas fa-gear"></i> 系統配置</a>
         </nav>
-        <div class="user-info">
-          <div class="name"><i class="fas fa-user-circle"></i> {{ user.name }}</div>
-          <div class="role">{{ user.role }}</div>
-          <button class="btn btn-secondary btn-sm" style="margin-top:8px;width:100%" @click="showChangePwd=true">
-            <i class="fas fa-key"></i> 修改密碼
-          </button>
-          <button class="btn btn-secondary btn-sm" style="margin-top:6px;width:100%" @click="logout">
-            <i class="fas fa-right-from-bracket"></i> 登出
-          </button>
+        <div class="sidebar-footer">
+          <div class="user-profile">
+            <div class="user-avatar">{{ user.name.charAt(0) }}</div>
+            <div class="user-info">
+              <div class="name">{{ user.name }}</div>
+              <div class="role">{{ user.role }}</div>
+            </div>
+          </div>
+          <div class="footer-actions">
+            <button class="footer-btn" @click="toggleTheme" :title="theme==='dark'?'開燈':'關燈'">
+              <i :class="theme==='dark'?'fas fa-moon':'fas fa-sun'"></i>
+            </button>
+            <button class="footer-btn" @click="showChangePwd=true" title="修改密碼">
+              <i class="fas fa-key"></i>
+            </button>
+            <button class="footer-btn logout" @click="logout" title="登出">
+              <i class="fas fa-right-from-bracket"></i>
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -164,7 +178,7 @@
               <h3><i class="fas fa-chart-bar"></i> 個案類型分布 </h3>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:10px">
-              <div v-for="stat in dashData.typeStats" :key="stat.type" class="badge badge-active"
+              <div v-for="stat in dashData.typeStats" :key="stat.type" class="badge badge-type"
                 style="font-size:14px;padding:6px 14px">
                 {{ stat.type }}: {{ stat.count }}
               </div>
@@ -273,7 +287,7 @@
                   <td><strong>{{ c.name }}</strong></td>
                   <td>{{ c.gender }}</td>
                   <td>{{ c.reportDate || '-' }}</td>
-                  <td><span class="badge badge-active" v-if="c.caseType">{{ c.caseType }}</span></td>
+                  <td><span class="badge badge-type" v-if="c.caseType">{{ c.caseType }}</span></td>
                   <td>{{ c.counselor }}</td>
                   <td><span
                       :class="['badge', c.status==='進行中'?'badge-active':(c.status==='觀察中'?'badge-obs':'badge-closed')]">{{
@@ -582,7 +596,7 @@
             <div class="card-body fade-in">
               <h3 style="margin-bottom: 12px; font-size: 16px;"><i class="fas fa-print"></i> 報表與表單列印</h3>
               <div
-                style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 24px; padding: 15px; background: rgba(99, 102, 241, 0.05); border-radius: var(--r2); border: 1px solid var(--bd);">
+                style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 24px; padding: 15px; background: rgba(var(--p-alpha), 0.06); border-radius: var(--r2); border: 1px solid var(--bd);">
                 <button class="btn btn-primary" @click="openExportModal"><i class="fas fa-file-excel"></i>
                   匯出月報表資料</button>
                 <button class="btn btn-secondary" @click="openFeedbackModal"><i class="fas fa-file-export"></i> 匯出導師回饋表
@@ -591,7 +605,7 @@
 
               <h3 style="margin-bottom: 12px; font-size: 16px;"><i class="fas fa-archive"></i> 學期末整理匯出</h3>
               <div
-                style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; padding: 15px; background: rgba(99, 102, 241, 0.05); border-radius: var(--r2); border: 1px solid var(--bd);">
+                style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; padding: 15px; background: rgba(var(--p-alpha), 0.06); border-radius: var(--r2); border: 1px solid var(--bd);">
                 <div style="margin-bottom: 0;">
                   <label style="display:block; font-size:12px; color:var(--tx2); margin-bottom:4px;">批量選取年級</label>
                   <select v-model="backupGrade" class="search-input" style="padding:8px">
