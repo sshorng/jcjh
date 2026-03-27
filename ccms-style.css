@@ -9,10 +9,20 @@
 }
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: 'Noto Sans TC', system-ui, sans-serif; background: var(--bg); color: var(--tx); min-height: 100vh; line-height: 1.6; }
-a { color: var(--pl); text-decoration: none; }
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--sf); }
-::-webkit-scrollbar-thumb { background: var(--sf3); border-radius: 3px; }
+/* ===== 骨架屏動畫 ===== */
+@keyframes skeleton-loading {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--sf2) 25%, var(--sf3) 37%, var(--sf2) 63%);
+  background-size: 400% 100%;
+  animation: skeleton-loading 1.4s ease infinite;
+  border-radius: 4px;
+}
+.skeleton-text { height: 16px; margin-bottom: 8px; width: 100%; }
+.skeleton-title { height: 24px; margin-bottom: 12px; width: 60%; }
+.skeleton-circle { width: 40px; height: 40px; border-radius: 50%; }
 
 /* ===== 登入頁 ===== */
 .login-bg {
