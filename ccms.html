@@ -122,7 +122,7 @@
               </div>
             </div>
           </div>
-          
+
           <!-- 骨架屏：儀表板載入中且無資料時顯示 -->
           <div class="stats-row" v-else-if="loading && !dashData">
             <div class="stat-card skeleton" v-for="i in 5" :key="i" style="height: 100px;"></div>
@@ -234,11 +234,12 @@
               <button class="btn btn-secondary btn-sm" @click="selectedCaseIds=[]">取消</button>
             </div>
           </div>
-          
+
           <!-- 骨架屏：列表載入中且無資料時顯示 -->
           <div class="card" v-else-if="loading && cases.length===0" style="padding: 20px;">
             <div class="skeleton skeleton-title" style="width: 200px; margin-bottom: 20px;"></div>
-            <div class="skeleton-text skeleton" v-for="i in 5" :key="i" style="height: 40px; margin-bottom: 10px;"></div>
+            <div class="skeleton-text skeleton" v-for="i in 5" :key="i" style="height: 40px; margin-bottom: 10px;">
+            </div>
           </div>
 
           <div class="table-wrap" v-if="filteredCases.length">
@@ -327,8 +328,10 @@
               <h3>📋 基本資料</h3>
             </div>
             <div class="case-info-grid">
-              <div class="info-item"><label>年級班級</label><span>{{ currentCase.grade }}年{{ currentCase.class }}班</span></div>
-              <div class="info-item"><label>座號姓名</label><span>{{ currentCase.seatNo }}號 {{ currentCase.name }}</span></div>
+              <div class="info-item"><label>年級班級</label><span>{{ currentCase.grade }}年{{ currentCase.class }}班</span>
+              </div>
+              <div class="info-item"><label>座號姓名</label><span>{{ currentCase.seatNo }}號 {{ currentCase.name }}</span>
+              </div>
               <div class="info-item"><label>性別</label><span>{{ currentCase.gender }}</span></div>
               <div class="info-item"><label>個案類型</label><span>{{ currentCase.caseType || '-' }}</span></div>
               <div class="info-item"><label>提報/建立日期</label><span>{{ currentCase.reportDate || '-' }}</span></div>
