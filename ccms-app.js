@@ -58,6 +58,7 @@ createApp({
       showSettings: false, showHelp: false, showConfigModal: false, showChangePwd: false,
       pwdForm: { oldPwd: '', newPwd: '', confirmPwd: '' },
       exportModal: { show: false, yearMonth: '' },
+      backupGrade: '全部',
       selectedCaseIds: [], // 用於批次操作勾選
       // 配置管理
       configType: 'classes', configItems: [],
@@ -1379,7 +1380,7 @@ createApp({
           title: `個案紀錄-${c.name}`,
           styles: {
             default: {
-              document: { run: { font: "Microsoft JhengHei", size: FONT_SIZE, color: "1E293B" } },
+              document: { run: { font: "微軟正黑體", size: FONT_SIZE, color: "1E293B" } },
             },
           },
           sections: [{
@@ -1408,7 +1409,7 @@ createApp({
         });
 
         const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${c.id}-${c.name}-輔導報告.docx`);
+        saveAs(blob, `${c.id}${c.name}個案紀錄.docx`);
         this.showToast("標準 12pt 表格化 Word 文件已匯出", "success");
       } catch (e) {
         console.error("Word Export Error:", e);
@@ -1423,6 +1424,227 @@ createApp({
       const s = String(d);
       if (s.length === 10) return s;
       return s.slice(0, 10);
+    },
+
+    // ===== 系統備份與維護 =====
+    generateWordDocDef(c, records) {
+      const { Document, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, VerticalAlign, BorderStyle } = window.docx;
+      
+      const FONT_SIZE = 24;
+      const FONT_SIZE_TITLE = 36;
+      const FONT_SIZE_LABEL = 24;
+      const lightBorder = { style: BorderStyle.SINGLE, size: 1, color: "E2E8F0" };
+      const modernBorders = { top: lightBorder, bottom: lightBorder, left: lightBorder, right: lightBorder };
+
+      const create2ColRow = (label, value) => new TableRow({
+        children: [
+          new TableCell({
+            width: { size: 25, type: WidthType.PERCENTAGE },
+            shading: { fill: "F8FAFC" }, verticalAlign: VerticalAlign.CENTER, borders: modernBorders,
+            children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, size: FONT_SIZE_LABEL, color: "475569" })], alignment: AlignmentType.CENTER })],
+          }),
+          new TableCell({
+            width: { size: 75, type: WidthType.PERCENTAGE },
+            verticalAlign: VerticalAlign.CENTER, borders: modernBorders,
+            children: [new Paragraph({ children: [new TextRun({ text: String(value || '-'), size: FONT_SIZE, color: "1E293B" })], spacing: { before: 200, after: 200 }, indent: { left: 240, right: 240 } })],
+          }),
+        ],
+      });
+
+      const infoRows = [
+        create2ColRow("個案姓名", c.name),
+        create2ColRow("學生性別", c.gender),
+        create2ColRow("年/班/座號", `${c.grade}年 ${c.class}班 ${c.seatNo}號`),
+        create2ColRow("個案編號", c.id),
+        create2ColRow("個案類別", c.caseType),
+        create2ColRow("專輔個案摘要", c.situation),
+        create2ColRow("導師提報內容", (c.reportDate ? `(${c.reportDate}) ` : '') + (c.teacherReport || '-')),
+        create2ColRow("主要服務方式", c.serviceMethod),
+        create2ColRow("身份背景標籤", c.identity),
+      ];
+
+      ['s_7a', 's_7b', 's_8a', 's_8b', 's_9a', 's_9b'].forEach(k => {
+        const l = { 's_7a': '七年級上學期綜述', 's_7b': '七年級下學期綜述', 's_8a': '八年級上學期綜述', 's_8b': '八年級下學期綜述', 's_9a': '九年級上學期綜述', 's_9b': '九年級下學期綜述' }[k];
+        if (c[k]) infoRows.push(create2ColRow(l, c[k]));
+      });
+
+      const recordRows = [
+        new TableRow({
+          tableHeader: true,
+          children: [
+            new TableCell({ width: { size: 5, type: WidthType.PERCENTAGE }, shading: { fill: "F8FAFC" }, borders: modernBorders, children: [new Paragraph({ children: [new TextRun({ text: "項次", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ width: { size: 10, type: WidthType.PERCENTAGE }, shading: { fill: "F8FAFC" }, borders: modernBorders, children: [new Paragraph({ children: [new TextRun({ text: "日期", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ width: { size: 8, type: WidthType.PERCENTAGE }, shading: { fill: "F8FAFC" }, borders: modernBorders, children: [new Paragraph({ children: [new TextRun({ text: "對象", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ width: { size: 8, type: WidthType.PERCENTAGE }, shading: { fill: "F8FAFC" }, borders: modernBorders, children: [new Paragraph({ children: [new TextRun({ text: "方式", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ width: { size: 62, type: WidthType.PERCENTAGE }, shading: { fill: "F8FAFC" }, borders: modernBorders, children: [new Paragraph({ children: [new TextRun({ text: "紀錄內容", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ width: { size: 7, type: WidthType.PERCENTAGE }, shading: { fill: "F8FAFC" }, borders: modernBorders, children: [new Paragraph({ children: [new TextRun({ text: "記錄者", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
+          ]
+        })
+      ];
+
+      records.forEach((r, idx) => {
+        recordRows.push(new TableRow({
+          children: [
+            new TableCell({ borders: modernBorders, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: String(idx + 1), size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ borders: modernBorders, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: this.formatDate(r.dateTime), size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ borders: modernBorders, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: String(r.target || '-'), size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ borders: modernBorders, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: String(r.method || '-'), size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ borders: modernBorders, children: [new Paragraph({ children: [new TextRun({ text: r.content, size: FONT_SIZE })], spacing: { before: 160, after: 160 }, indent: { left: 160, right: 160 } })] }),
+            new TableCell({ borders: modernBorders, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: String(r.recorderName || '-'), size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
+          ]
+        }));
+      });
+
+      return new Document({
+        creator: "輔導個案管理系統", title: `個案紀錄-${c.name}`,
+        styles: { default: { document: { run: { font: "微軟正黑體", size: FONT_SIZE, color: "1E293B" } } } },
+        sections: [{
+          properties: { page: { margin: { top: 720, bottom: 720, left: 720, right: 720 } } },
+          children: [
+            new Paragraph({ children: [new TextRun({ text: "學生輔導紀錄總表", bold: true, size: FONT_SIZE_TITLE, color: "0F172A" })], alignment: AlignmentType.CENTER, spacing: { after: 600 } }),
+            new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: infoRows }),
+            new Paragraph({ children: [new TextRun({ text: "【 輔導歷程與服務紀錄回顧 】", bold: true, size: FONT_SIZE + 6, color: "1E293B" })], spacing: { before: 800, after: 300 } }),
+            new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: recordRows })
+          ],
+        }],
+      });
+    },
+
+    async exportBatchWord() {
+      if (!window.docx || !window.JSZip || !window.saveAs) {
+        this.showToast('需要載入 docx 或 JSZip 套件', 'error');
+        return;
+      }
+      this.loading = true;
+      try {
+        const res = await this.api('backupData', { grade: this.backupGrade });
+        if (!res || !res.success) throw new Error(res?.error || '無法取得備份資料');
+        
+        const { cases, records } = res.data;
+        if (cases.length === 0) {
+          this.showToast('該年級無個案可匯出', 'info');
+          return;
+        }
+
+        this.showToast('正在產生 Word 檔案...', 'info');
+        const zip = new JSZip();
+        const Packer = window.docx.Packer;
+
+        // Group records
+        const recordMap = {};
+        records.forEach(r => {
+          const cid = String(r['個案編號']);
+          if (!recordMap[cid]) recordMap[cid] = [];
+          
+          recordMap[cid].push({
+            dateTime: r['日期時間'],
+            target: r['對象'],
+            method: r['方式'],
+            recorderName: r['記錄者姓名'] || r['記錄者帳號'],
+            content: r['輔導服務紀錄']
+          });
+        });
+
+        for (const c of cases) {
+          // Normalize formatting mapping
+          const mappedCase = {
+            id: c['個案編號'], name: c['姓名'], grade: c['年級'], class: c['班級'], seatNo: c['座號'], gender: c['性別'],
+            caseType: c['個案類別(主)'] || c['個案類型'] || '-', situation: c['遭遇情況'], teacherReport: c['導師提報內容'],
+            serviceMethod: c['個案服務方式'], identity: c['身分背景'], specialEdu: c['特教身分'], reportDate: c['提報學期'],
+            s_7a: c['七上綜述'], s_7b: c['七下綜述'], s_8a: c['八上綜述'], s_8b: c['八下綜述'], s_9a: c['九上綜述'], s_9b: c['九下綜述']
+          };
+          const rawRecords = recordMap[String(c['個案編號'])] || [];
+          rawRecords.sort((a,b) => new Date(a.dateTime) - new Date(b.dateTime));
+
+          const doc = this.generateWordDocDef(mappedCase, rawRecords);
+          const blob = await Packer.toBlob(doc);
+          zip.file(`${mappedCase.id}${mappedCase.name}個案紀錄.docx`, blob);
+        }
+
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        saveAs(zipBlob, `CCMS_個案匯出_${this.backupGrade}年級_${this.formatDate(new Date())}.zip`);
+        this.showToast('打包下載完成！', 'success');
+
+      } catch (e) {
+        console.error(e);
+        this.showToast('批次匯出失敗：' + e.message, 'error');
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async exportBatchExcel() {
+      if (!window.ExcelJS || !window.saveAs) {
+        this.showToast('需要載入 ExcelJS', 'error');
+        return;
+      }
+      this.loading = true;
+      try {
+        const res = await this.api('backupData', { grade: this.backupGrade });
+        if (!res || !res.success) throw new Error(res?.error || '無法取得備份資料');
+
+        const { cases, records } = res.data;
+        if (cases.length === 0) {
+          this.showToast('無資料可匯出', 'info');
+          return;
+        }
+
+        const workbook = new ExcelJS.Workbook();
+        workbook.creator = 'CCMS';
+
+        const createSheet = (name, rows) => {
+          const sheet = workbook.addWorksheet(name);
+          if (rows.length > 0) {
+            const headers = Object.keys(rows[0]).filter(k => k !== '_rowIndex');
+            sheet.addRow(headers).font = { bold: true };
+            rows.forEach(r => {
+              const rowData = [];
+              headers.forEach(h => rowData.push(r[h]));
+              sheet.addRow(rowData);
+            });
+          }
+        };
+
+        createSheet('個案總表', cases);
+        createSheet('服務紀錄總表', records);
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        saveAs(new Blob([buffer]), `CCMS_原始資料備份_${this.backupGrade}年級_${this.formatDate(new Date())}.xlsx`);
+        this.showToast('Excel 資料匯出成功', 'success');
+      } catch (e) {
+        console.error(e);
+        this.showToast('Excel 匯出失敗：' + e.message, 'error');
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async archiveGraduates() {
+      this.confirmAction('確定要將九年級資料移轉至畢業封存並刪除目前紀錄嗎？建議執行前先進行備份！', async () => {
+        this.loading = true;
+        const r = await this.api('archiveGraduates');
+        this.loading = false;
+        if (r?.success) {
+          this.showToast(r.message, 'success');
+          await this.fetchData();
+        } else {
+          this.showToast(r?.error || '歸檔失敗', 'error');
+        }
+      });
+    },
+
+    async promoteGrades() {
+      this.confirmAction('即將執行全校升級 (七升八、八升九、刪除九年級)。此操作強烈建議於新學年暑假執行。確認升級？', async () => {
+        this.loading = true;
+        const r = await this.api('promoteGrades');
+        this.loading = false;
+        if (r?.success) {
+          this.showToast(r.message, 'success');
+          await this.fetchData();
+        } else {
+          this.showToast(r?.error || '升級失敗', 'error');
+        }
+      });
     }
   },
 
