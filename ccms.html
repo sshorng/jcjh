@@ -56,8 +56,8 @@
       <aside :class="['sidebar', {open: sidebarOpen}]">
         <div class="brand">
           <div class="logo">🏫</div>
-          <h2>個案管理系統</h2>
-          <small>School Counseling CMS</small>
+          <h2>建成國中輔導個案管理系統</h2>
+          <small>JCJH CCMS</small>
         </div>
         <nav>
           <a :class="{active: page==='dashboard'}" @click="navigate('dashboard')"><i class="fas fa-chart-pie"></i>
@@ -142,8 +142,8 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="r in dashData.recentRecords" :key="r.id" @click="viewCaseById(r.caseId)"
-                    class="hover-row" style="cursor: pointer">
+                  <tr v-for="r in dashData.recentRecords" :key="r.id" @click="viewCaseById(r.caseId)" class="hover-row"
+                    style="cursor: pointer">
                     <td>{{ formatDate(r.dateTime) }}</td>
                     <td>{{ r.studentName }}</td>
                     <td>{{ r.target }}</td>
@@ -218,57 +218,59 @@
                   <option v-for="s in STATUS_OPTS" :key="s">{{ s }}</option>
                 </select>
               </div>
-              <button class="btn btn-danger btn-sm" @click="batchDelete"><i class="fas fa-trash"></i> 批次刪除</button>
+              <button class="btn btn-primary btn-sm" @click="exportSelectedWord" :disabled="loading"><i class="fas fa-file-word"></i> 批次匯出 Word</button>
+              <button class="btn btn-danger btn-sm" @click="batchDelete" :disabled="loading"><i class="fas fa-trash"></i> 批次刪除</button>
               <button class="btn btn-secondary btn-sm" @click="selectedCaseIds=[]">取消</button>
             </div>
           </div>
           <div class="table-wrap" v-if="filteredCases.length">
             <table>
-              <thead>
-                <tr>
-                  <th style="width: 40px"><input type="checkbox" :checked="isAllSelected" @click="toggleSelectAll"></th>
-                  <th style="width: 50px">序號</th>
-                  <th style="width: 60px">年級</th>
-                  <th style="width: 60px">班級</th>
-                  <th style="width: 60px">座號</th>
-                  <th style="width: 120px">姓名</th>
-                  <th style="width: 60px">性別</th>
-                  <th style="width: 100px">提報學期</th>
-                  <th style="width: 150px">個案類型</th>
-                  <th style="width: 100px">負責專輔</th>
-                  <th style="width: 100px">狀態</th>
-                  <th style="width: 100px">操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(c, idx) in filteredCases" :key="c.id" @click="viewCase(c)"
-                  :class="{selected: isSelected(c.id)}">
-                  <td @click.stop><input type="checkbox" :value="c.id" v-model="selectedCaseIds"></td>
-                  <td style="text-align:center; opacity:.6; font-size:13px">{{ idx + 1 }}</td>
-                  <td>{{ c.grade }}</td>
-                  <td>{{ c.class }}</td>
-                  <td>{{ c.seatNo }}</td>
-                  <td><strong>{{ c.name }}</strong></td>
-                  <td>{{ c.gender }}</td>
-                  <td>{{ c.reportDate || '-' }}</td>
-                  <td><span class="badge badge-active" v-if="c.caseType">{{ c.caseType }}</span></td>
-                  <td>{{ c.counselor }}</td>
-                  <td><span
-                      :class="['badge', c.status==='進行中'?'badge-active':(c.status==='觀察中'?'badge-obs':'badge-closed')]">{{
-                      c.status }}</span></td>
-                  <td @click.stop>
-                    <button v-if="canEditCase(c)" class="btn btn-icon btn-sm" @click="openCaseModal(c)" title="編輯"><i
-                        class="fas fa-pen"></i></button>
-                    <button v-if="isAdmin" class="btn btn-icon btn-sm" @click="deleteCase(c.id)" title="刪除"><i
-                        class="fas fa-trash" style="color:var(--err)"></i></button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div v-else class="empty-state"><i class="fas fa-inbox"></i>
-            <p>尚無個案資料</p>
-          </div>
+                <thead>
+                  <tr>
+                    <th style="width: 40px"><input type="checkbox" :checked="isAllSelected" @click="toggleSelectAll">
+                    </th>
+                    <th style="width: 50px">序號</th>
+                    <th style="width: 60px">年級</th>
+                    <th style="width: 60px">班級</th>
+                    <th style="width: 60px">座號</th>
+                    <th style="width: 120px">姓名</th>
+                    <th style="width: 60px">性別</th>
+                    <th style="width: 100px">提報學期</th>
+                    <th style="width: 150px">個案類型</th>
+                    <th style="width: 100px">負責專輔</th>
+                    <th style="width: 100px">狀態</th>
+                    <th style="width: 100px">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(c, idx) in filteredCases" :key="c.id" @click="viewCase(c)"
+                    :class="{selected: isSelected(c.id)}">
+                    <td @click.stop><input type="checkbox" :value="c.id" v-model="selectedCaseIds"></td>
+                    <td style="text-align:center; opacity:.6; font-size:13px">{{ idx + 1 }}</td>
+                    <td>{{ c.grade }}</td>
+                    <td>{{ c.class }}</td>
+                    <td>{{ c.seatNo }}</td>
+                    <td><strong>{{ c.name }}</strong></td>
+                    <td>{{ c.gender }}</td>
+                    <td>{{ c.reportDate || '-' }}</td>
+                    <td><span class="badge badge-active" v-if="c.caseType">{{ c.caseType }}</span></td>
+                    <td>{{ c.counselor }}</td>
+                    <td><span
+                        :class="['badge', c.status==='進行中'?'badge-active':(c.status==='觀察中'?'badge-obs':'badge-closed')]">{{
+                        c.status }}</span></td>
+                    <td @click.stop>
+                      <button v-if="canEditCase(c)" class="btn btn-icon btn-sm" @click="openCaseModal(c)" title="編輯"><i
+                          class="fas fa-pen"></i></button>
+                      <button v-if="isAdmin" class="btn btn-icon btn-sm" @click="deleteCase(c.id)" title="刪除"><i
+                          class="fas fa-trash" style="color:var(--err)"></i></button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div v-else class="empty-state"><i class="fas fa-inbox"></i>
+              <p>尚無個案資料</p>
+            </div>
         </section>
 
         <!-- ========== 個案詳情 ========== -->
@@ -518,8 +520,9 @@
               <!-- 批次作業與系統維護 -->
               <div style="margin-bottom: 20px;">
                 <h3 style="margin-bottom: 12px; font-size: 16px;"><i class="fas fa-toolbox"></i> 學期末作業與備份</h3>
-                
-                <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 15px; padding: 15px; background: rgba(99, 102, 241, 0.05); border-radius: var(--r2); border: 1px solid var(--bd);">
+
+                <div
+                  style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 15px; padding: 15px; background: rgba(99, 102, 241, 0.05); border-radius: var(--r2); border: 1px solid var(--bd);">
                   <div style="margin-bottom: 0;">
                     <label style="display:block; font-size:12px; color:var(--tx2); margin-bottom:4px;">批量選取年級</label>
                     <select v-model="backupGrade" class="search-input" style="padding:8px">
@@ -529,13 +532,18 @@
                       <option>九</option>
                     </select>
                   </div>
-                  <button class="btn btn-secondary" @click="exportBatchWord" :disabled="loading"><i class="fas fa-file-word"></i> 打包匯出 Word (ZIP)</button>
-                  <button class="btn btn-secondary" @click="exportBatchExcel" :disabled="loading"><i class="fas fa-file-excel"></i> 匯出 Excel 本機備份</button>
+                  <button class="btn btn-secondary" @click="exportBatchWord" :disabled="loading"><i
+                      class="fas fa-file-word"></i> 打包匯出 Word (ZIP)</button>
+                  <button class="btn btn-secondary" @click="exportBatchExcel" :disabled="loading"><i
+                      class="fas fa-file-excel"></i> 匯出 Excel 本機備份</button>
                 </div>
 
-                <div style="display: flex; gap: 15px; padding: 15px; background: rgba(239, 68, 68, 0.05); border-radius: var(--r2); border: 1px solid var(--bd);">
-                   <button class="btn btn-danger" @click="archiveGraduates" :disabled="loading"><i class="fas fa-graduation-cap"></i> 執行九年級畢業歸檔</button>
-                   <button class="btn btn-danger" @click="promoteGrades" :disabled="loading"><i class="fas fa-arrow-trend-up"></i> 執行七八年級升級</button>
+                <div
+                  style="display: flex; gap: 15px; padding: 15px; background: rgba(239, 68, 68, 0.05); border-radius: var(--r2); border: 1px solid var(--bd);">
+                  <button class="btn btn-danger" @click="archiveGraduates" :disabled="loading"><i
+                      class="fas fa-graduation-cap"></i> 執行九年級畢業歸檔</button>
+                  <button class="btn btn-danger" @click="promoteGrades" :disabled="loading"><i
+                      class="fas fa-arrow-trend-up"></i> 執行七八年級升級</button>
                 </div>
               </div>
 
