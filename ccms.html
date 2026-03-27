@@ -219,32 +219,32 @@
 
           <!-- 批次操作工具列 -->
           <div v-if="selectedCaseIds.length" class="batch-bar fade-in">
-            <span>已選取 <strong>{{ selectedCaseIds.length }}</strong> 筆個案</span>
+            <span>已選取 <strong>{{ selectedCaseIds.length }}</strong> 筆</span>
             <div class="batch-actions">
               <div class="action-group">
                 <label>專輔</label>
                 <select @change="batchUpdateField('專輔', $event.target.value); $event.target.value=''">
-                  <option value="">--請選擇人員--</option>
+                  <option value="">--請選擇--</option>
                   <option v-for="name in configs.allCounselors" :key="name" :value="name">{{ name }}</option>
                 </select>
               </div>
               <div class="action-group">
                 <label>特教個管</label>
-                <input type="text" placeholder="直接輸入按 Enter"
+                <input type="text" placeholder="輸入姓名"
                   @change="batchUpdateField('特教個管老師', $event.target.value); $event.target.value=''"
-                  style="width: 140px; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+                  style="width: 80px; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
               </div>
               <div class="action-group">
                 <label>狀態</label>
                 <select @change="batchUpdateField('狀態', $event.target.value); $event.target.value=''">
-                  <option value="">--請選擇狀態--</option>
+                  <option value="">--請選擇--</option>
                   <option v-for="s in STATUS_OPTS" :key="s">{{ s }}</option>
                 </select>
               </div>
               <button class="btn btn-primary btn-sm" @click="exportSelectedWord" :disabled="loading"><i
-                  class="fas fa-file-word"></i> 批次匯出 Word</button>
+                  class="fas fa-file-word"></i> 匯出 Word</button>
               <button class="btn btn-danger btn-sm" @click="batchDelete" :disabled="loading"><i
-                  class="fas fa-trash"></i> 批次刪除</button>
+                  class="fas fa-trash"></i> 刪除</button>
               <button class="btn btn-secondary btn-sm" @click="selectedCaseIds=[]">取消</button>
             </div>
           </div>
