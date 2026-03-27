@@ -144,7 +144,9 @@
                     <td>{{ formatDate(r.dateTime) }}</td>
                     <td>{{ r.studentName }} <small style="color:var(--tx2)">({{ r.caseId }})</small></td>
                     <td>{{ r.target }}</td>
-                    <td><div class="text-truncate" style="max-width:200px">{{ r.service }}</div></td>
+                    <td>
+                      <div class="text-truncate" style="max-width:200px">{{ r.service }}</div>
+                    </td>
                     <td>{{ r.method }}</td>
                   </tr>
                 </tbody>
@@ -216,81 +218,86 @@
                   <option v-for="s in STATUS_OPTS" :key="s">{{ s }}</option>
                 </select>
               </div>
-              <button class="btn btn-primary btn-sm" @click="exportSelectedWord" :disabled="loading"><i class="fas fa-file-word"></i> 批次匯出 Word</button>
-              <button class="btn btn-danger btn-sm" @click="batchDelete" :disabled="loading"><i class="fas fa-trash"></i> 批次刪除</button>
+              <button class="btn btn-primary btn-sm" @click="exportSelectedWord" :disabled="loading"><i
+                  class="fas fa-file-word"></i> 批次匯出 Word</button>
+              <button class="btn btn-danger btn-sm" @click="batchDelete" :disabled="loading"><i
+                  class="fas fa-trash"></i> 批次刪除</button>
               <button class="btn btn-secondary btn-sm" @click="selectedCaseIds=[]">取消</button>
             </div>
           </div>
           <div class="table-wrap" v-if="filteredCases.length">
             <table>
-                <thead>
-                  <tr>
-                    <th style="width: 40px"><input type="checkbox" :checked="isAllSelected" @click="toggleSelectAll">
-                    </th>
-                    <th style="width: 50px">序號</th>
-                    <th style="width: 60px">年級</th>
-                    <th style="width: 60px">班級</th>
-                    <th style="width: 60px">座號</th>
-                    <th style="width: 120px">姓名</th>
-                    <th style="width: 60px">性別</th>
-                    <th style="width: 100px">提報學期</th>
-                    <th style="width: 150px">個案類型</th>
-                    <th style="width: 100px">負責專輔</th>
-                    <th style="width: 100px">狀態</th>
-                    <th style="width: 100px">操作</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(c, idx) in paginatedCases" :key="c.id" @click="viewCase(c)"
-                    :class="{selected: isSelected(c.id)}">
-                    <td @click.stop><input type="checkbox" :value="c.id" v-model="selectedCaseIds"></td>
-                    <td style="text-align:center; opacity:.6; font-size:13px">{{ (casePage - 1) * casePageSize + idx + 1 }}</td>
-                    <td>{{ c.grade }}</td>
-                    <td>{{ c.class }}</td>
-                    <td>{{ c.seatNo }}</td>
-                    <td><strong>{{ c.name }}</strong><small style="color:var(--tx2); margin-left:4px; font-weight:normal">({{ c.id }})</small></td>
-                    <td>{{ c.gender }}</td>
-                    <td>{{ c.reportDate || '-' }}</td>
-                    <td><span class="badge badge-active" v-if="c.caseType">{{ c.caseType }}</span></td>
-                    <td>{{ c.counselor }}</td>
-                    <td><span
-                        :class="['badge', c.status==='進行中'?'badge-active':(c.status==='觀察中'?'badge-obs':'badge-closed')]">{{
-                        c.status }}</span></td>
-                    <td @click.stop>
-                      <button v-if="canEditCase(c)" class="btn btn-icon btn-sm" @click="openCaseModal(c)" title="編輯"><i
-                          class="fas fa-pen"></i></button>
-                      <button v-if="isAdmin" class="btn btn-icon btn-sm" @click="deleteCase(c.id)" title="刪除"><i
-                          class="fas fa-trash" style="color:var(--err)"></i></button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <!-- 🎯 分頁控制：採膠囊型設計 -->
-              <div v-if="totalCasePages > 1" class="pagination">
-                <button class="btn-page" :disabled="casePage <= 1" @click="casePage--" title="上一頁">
-                  <i class="fas fa-chevron-left"></i>
-                </button>
-                <div class="page-info">
-                  <span class="current">{{ casePage }}</span>
-                  <span class="separator">/</span>
-                  <span class="total">{{ totalCasePages }}</span>
-                  <span class="count">共 {{ filteredCases.length }} 筆</span>
-                </div>
-                <button class="btn-page" :disabled="casePage >= totalCasePages" @click="casePage++" title="下一頁">
-                  <i class="fas fa-chevron-right"></i>
-                </button>
+              <thead>
+                <tr>
+                  <th style="width: 40px"><input type="checkbox" :checked="isAllSelected" @click="toggleSelectAll">
+                  </th>
+                  <th style="width: 50px">序號</th>
+                  <th style="width: 60px">年級</th>
+                  <th style="width: 60px">班級</th>
+                  <th style="width: 60px">座號</th>
+                  <th style="width: 120px">姓名</th>
+                  <th style="width: 60px">性別</th>
+                  <th style="width: 100px">提報學期</th>
+                  <th style="width: 150px">個案類型</th>
+                  <th style="width: 100px">負責專輔</th>
+                  <th style="width: 100px">狀態</th>
+                  <th style="width: 100px">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(c, idx) in paginatedCases" :key="c.id" @click="viewCase(c)"
+                  :class="{selected: isSelected(c.id)}">
+                  <td @click.stop><input type="checkbox" :value="c.id" v-model="selectedCaseIds"></td>
+                  <td style="text-align:center; opacity:.6; font-size:13px">{{ (casePage - 1) * casePageSize + idx + 1
+                    }}</td>
+                  <td>{{ c.grade }}</td>
+                  <td>{{ c.class }}</td>
+                  <td>{{ c.seatNo }}</td>
+                  <td><strong>{{ c.name }}</strong><small
+                      style="color:var(--tx2); margin-left:4px; font-weight:normal">({{ c.id }})</small></td>
+                  <td>{{ c.gender }}</td>
+                  <td>{{ c.reportDate || '-' }}</td>
+                  <td><span class="badge badge-active" v-if="c.caseType">{{ c.caseType }}</span></td>
+                  <td>{{ c.counselor }}</td>
+                  <td><span
+                      :class="['badge', c.status==='進行中'?'badge-active':(c.status==='觀察中'?'badge-obs':'badge-closed')]">{{
+                      c.status }}</span></td>
+                  <td @click.stop>
+                    <button v-if="canEditCase(c)" class="btn btn-icon btn-sm" @click="openCaseModal(c)" title="編輯"><i
+                        class="fas fa-pen"></i></button>
+                    <button v-if="isAdmin" class="btn btn-icon btn-sm" @click="deleteCase(c.id)" title="刪除"><i
+                        class="fas fa-trash" style="color:var(--err)"></i></button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <!-- 🎯 分頁控制：採膠囊型設計 -->
+            <div v-if="totalCasePages > 1" class="pagination">
+              <button class="btn-page" :disabled="casePage <= 1" @click="casePage--" title="上一頁">
+                <i class="fas fa-chevron-left"></i>
+              </button>
+              <div class="page-info">
+                <span class="current">{{ casePage }}</span>
+                <span class="separator">/</span>
+                <span class="total">{{ totalCasePages }}</span>
+                <span class="count">共 {{ filteredCases.length }} 筆</span>
               </div>
+              <button class="btn-page" :disabled="casePage >= totalCasePages" @click="casePage++" title="下一頁">
+                <i class="fas fa-chevron-right"></i>
+              </button>
             </div>
-            <div v-else class="empty-state"><i class="fas fa-inbox"></i>
-              <p>尚無個案資料</p>
-            </div>
+          </div>
+          <div v-else class="empty-state"><i class="fas fa-inbox"></i>
+            <p>尚無個案資料</p>
+          </div>
         </section>
 
         <!-- ========== 個案詳情 ========== -->
         <section v-if="page==='detail' && currentCase">
           <a class="back-btn" @click="goBackToCases"><i class="fas fa-arrow-left"></i> 返回個案列表</a>
           <div class="page-header">
-            <h1><i class="fas fa-user"></i> {{ currentCase.name }} <small style="color:var(--tx2)">({{ currentCase.id }})</small> 的個案資料</h1>
+            <h1><i class="fas fa-user"></i> {{ currentCase.name }} <small style="color:var(--tx2)">({{ currentCase.id
+                }})</small> 的個案資料</h1>
             <div>
               <button class="btn btn-primary btn-sm" @click="exportToWord" style="margin-right:8px"><i
                   class="fas fa-file-word"></i> 匯出 Word</button>
@@ -389,7 +396,8 @@
                     <label v-for="t in TARGET_OPTS" :key="t"><input type="checkbox" :value="t"
                         v-model="recordForm.targetArr"> {{ t }}</label>
                   </div>
-                  <input v-model="recordForm.customTarget" placeholder="補充說明（將顯示在選項後方：例如 爸爸）..." style="margin-top:8px;">
+                  <input v-model="recordForm.customTarget" placeholder="補充說明（將顯示在選項後方：例如 爸爸）..."
+                    style="margin-top:8px;">
                 </div>
                 <div class="fg full">
                   <label>方式</label>
@@ -400,8 +408,9 @@
                   <input v-model="recordForm.customMethod" placeholder="其他方式..." style="margin-top:8px">
                 </div>
                 <div class="fg full" style="margin-bottom: 5px;">
-                  <label style="cursor: pointer; display: inline-flex; align-items: center; justify-content: flex-start; gap: 8px;">
-                    <input type="checkbox" v-model="recordForm.excludeFromReport" style="margin: 0;"> 
+                  <label
+                    style="cursor: pointer; display: inline-flex; align-items: center; justify-content: flex-start; gap: 8px;">
+                    <input type="checkbox" v-model="recordForm.excludeFromReport" style="margin: 0;">
                     <span style="color: var(--tx2); font-weight: normal;">純屬個人紀錄，不計入月報表統計次數</span>
                   </label>
                 </div>
@@ -498,14 +507,23 @@
         <!-- ========== 系統配置 (頁面模式) ========== -->
         <section v-if="page==='settings' && isAdmin">
           <div class="page-header" style="justify-content: space-between;">
-            <h1><i class="fas fa-gear"></i> 系統配置與標籤管理</h1>
-            <button class="btn btn-primary" @click="openExportModal"><i class="fas fa-file-excel"></i> 匯出月報表</button>
+            <h1><i class="fas fa-gear"></i> 系統配置與工具</h1>
           </div>
 
-          <div class="card">
+          <!-- 分頁籤 -->
+          <div class="tabs" style="margin-bottom: 20px;">
+            <button class="tab-btn" :class="{active: settingsTab === 'export'}" @click="settingsTab = 'export'"><i
+                class="fas fa-file-export"></i> 匯出與報表</button>
+            <button class="tab-btn" :class="{active: settingsTab === 'config'}" @click="settingsTab = 'config'"><i
+                class="fas fa-sitemap"></i> 班級配置</button>
+            <button class="tab-btn" :class="{active: settingsTab === 'maintenance'}"
+              @click="settingsTab = 'maintenance'"><i class="fas fa-toolbox"></i> 系統維護</button>
+          </div>
+
+          <!-- 1. 表格與班級配置 -->
+          <div class="card" v-if="settingsTab === 'config'">
             <div class="card-body">
-              <!-- 班級配置表格 -->
-              <div class="fade-in" style="margin-top:20px">
+              <div class="fade-in" style="margin-top:10px">
                 <p style="margin-bottom:10px; font-size:13px; color:var(--tx3)">* 設定各班級對應的人員，新增個案時會自動帶入。</p>
                 <div class="table-wrap">
                   <table class="table">
@@ -533,48 +551,66 @@
                   </table>
                 </div>
               </div>
-
               <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
                 <button class="btn btn-secondary" @click="addConfigRow"><i class="fas fa-plus"></i> 新增一行</button>
                 <button class="btn btn-primary" @click="saveConfigs" :disabled="loading"><i class="fas fa-save"></i>
                   儲存配置</button>
               </div>
+            </div>
+          </div>
 
-              <hr style="margin: 30px 0; border: none; border-top: 1px solid var(--bd);">
-
-              <!-- 批次作業與系統維護 -->
-              <div style="margin-bottom: 20px;">
-                <h3 style="margin-bottom: 12px; font-size: 16px;"><i class="fas fa-toolbox"></i> 學期末作業與備份</h3>
-
-                <div
-                  style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 15px; padding: 15px; background: rgba(99, 102, 241, 0.05); border-radius: var(--r2); border: 1px solid var(--bd);">
-                  <div style="margin-bottom: 0;">
-                    <label style="display:block; font-size:12px; color:var(--tx2); margin-bottom:4px;">批量選取年級</label>
-                    <select v-model="backupGrade" class="search-input" style="padding:8px">
-                      <option>全部</option>
-                      <option>七</option>
-                      <option>八</option>
-                      <option>九</option>
-                    </select>
-                  </div>
-                  <button class="btn btn-secondary" @click="exportBatchWord" :disabled="loading"><i
-                      class="fas fa-file-word"></i> 打包匯出 Word (ZIP)</button>
-                  <button class="btn btn-secondary" @click="exportBatchExcel" :disabled="loading"><i
-                      class="fas fa-file-excel"></i> 匯出 Excel 本機備份</button>
-                </div>
-
-                <div
-                  style="display: flex; gap: 15px; padding: 15px; background: rgba(239, 68, 68, 0.05); border-radius: var(--r2); border: 1px solid var(--bd);">
-                  <button class="btn btn-danger" @click="archiveGraduates" :disabled="loading"><i
-                      class="fas fa-graduation-cap"></i> 執行九年級畢業歸檔</button>
-                  <button class="btn btn-danger" @click="promoteGrades" :disabled="loading"><i
-                      class="fas fa-arrow-trend-up"></i> 執行七八年級升級</button>
-                </div>
+          <!-- 2. 匯出與報表 -->
+          <div class="card" v-if="settingsTab === 'export'">
+            <div class="card-body fade-in">
+              <h3 style="margin-bottom: 12px; font-size: 16px;"><i class="fas fa-print"></i> 報表與表單列印</h3>
+              <div
+                style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 24px; padding: 15px; background: rgba(99, 102, 241, 0.05); border-radius: var(--r2); border: 1px solid var(--bd);">
+                <button class="btn btn-primary" @click="openExportModal"><i class="fas fa-file-excel"></i>
+                  匯出月報表資料</button>
+                <button class="btn btn-secondary" @click="openFeedbackModal"><i class="fas fa-file-export"></i> 匯出導師回饋表
+                  (Word)</button>
               </div>
 
-              <div style="display: flex; justify-content: flex-end; align-items: center;">
+              <h3 style="margin-bottom: 12px; font-size: 16px;"><i class="fas fa-archive"></i> 學期末整理匯出</h3>
+              <div
+                style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; padding: 15px; background: rgba(99, 102, 241, 0.05); border-radius: var(--r2); border: 1px solid var(--bd);">
+                <div style="margin-bottom: 0;">
+                  <label style="display:block; font-size:12px; color:var(--tx2); margin-bottom:4px;">批量選取年級</label>
+                  <select v-model="backupGrade" class="search-input" style="padding:8px">
+                    <option>全部</option>
+                    <option>七</option>
+                    <option>八</option>
+                    <option>九</option>
+                  </select>
+                </div>
+                <button class="btn btn-secondary" @click="exportBatchWord" :disabled="loading"><i
+                    class="fas fa-file-word"></i> 打包匯出所有書面個案紀錄 (ZIP)</button>
+                <button class="btn btn-secondary" @click="exportBatchExcel" :disabled="loading"><i
+                    class="fas fa-file-excel"></i> 匯出 Excel 本機全檔備份</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. 系統維護 -->
+          <div class="card" v-if="settingsTab === 'maintenance'">
+            <div class="card-body fade-in">
+              <h3 style="margin-bottom: 12px; font-size: 16px; color: var(--err);"><i
+                  class="fas fa-triangle-exclamation"></i> 系統敏感操作區</h3>
+              <p style="margin-bottom:15px; font-size:13px; color:var(--tx3)">注意：升級與歸檔操作不可逆，執行前請確認已下載上述的 Excel 本機全檔備份。
+              </p>
+
+              <div
+                style="display: flex; gap: 15px; padding: 15px; margin-bottom: 30px; background: rgba(239, 68, 68, 0.05); border-radius: var(--r2); border: 1px solid rgba(239, 68, 68, 0.3);">
+                <button class="btn btn-danger" @click="archiveGraduates" :disabled="loading"><i
+                    class="fas fa-graduation-cap"></i> 執行九年級畢業歸檔</button>
+                <button class="btn btn-danger" @click="promoteGrades" :disabled="loading"><i
+                    class="fas fa-arrow-trend-up"></i> 執行七八年級升級</button>
+              </div>
+
+              <div
+                style="display: flex; justify-content: flex-end; align-items: center; border-top: 1px solid var(--bd); padding-top: 15px;">
                 <button class="btn btn-danger btn-sm" @click="clearSettings"><i class="fas fa-rotate-left"></i>
-                  清除緩存並登出</button>
+                  清除系統快取並強制登出</button>
               </div>
             </div>
           </div>
@@ -849,6 +885,36 @@
           <button class="btn btn-primary" @click="exportMonthlyReport" :disabled="loading">
             <i class="fas fa-download" v-if="!loading"></i>
             <i class="fas fa-spinner fa-spin" v-else></i> 匯出
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 匯出導師回饋表 Modal -->
+    <div v-if="feedbackModal.show" class="modal-mask" @click.self="feedbackModal.show=false">
+      <div class="modal modal-sm fade-in">
+        <div class="modal-header">
+          <h2><i class="fas fa-file-export"></i> 匯出導師回覆表</h2>
+          <button class="btn btn-icon" @click="feedbackModal.show=false"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+          <p style="margin-bottom:15px;color:var(--tx2);font-size:14px;line-height:1.5;">
+            系統自動根據您指定的「目前學期」推算各年級學生在「目標學期」時的綜述進行匯出 (一張一頁)。</p>
+          <div class="fg" style="margin-bottom:14px">
+            <label>目前系統所在學期</label>
+            <input type="text" v-model="feedbackModal.currentSem" class="form-control" placeholder="例：114-1">
+          </div>
+          <div class="fg" style="margin-bottom:14px">
+            <label>報表標題顯示之目標學期</label>
+            <input type="text" v-model="feedbackModal.targetSem" class="form-control" placeholder="例：113-2">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="feedbackModal.show=false">取消</button>
+          <button class="btn btn-primary" @click="exportFeedbackForms"
+            :disabled="loading || !feedbackModal.targetSem || !feedbackModal.currentSem">
+            <i class="fas fa-download" v-if="!loading"></i>
+            <i class="fas fa-spinner fa-spin" v-else></i> 確定匯出
           </button>
         </div>
       </div>
