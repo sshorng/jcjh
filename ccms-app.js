@@ -18,7 +18,7 @@ const CASE_TYPES = [
 const METHOD_OPTS = ['面談', '電聯', '訊息', '校訪', '其他'];
 const TARGET_OPTS = ['學生', '教職員', '家長', '專業人員'];
 const STATUS_OPTS = ['進行中', '已結案', '觀察中'];
-const SOURCE_OPTS = ['學生主動前來', '導師轉介', '輔導教師發現', '行政轉介', '家長轉介', '轉銜', '其他'];
+const SOURCE_OPTS = ['導師轉介', '輔導教師發現', '行政轉介', '家長轉介', '國小轉銜', '他校轉銜', '其他'];
 
 const SPECIAL_ED_OPTS = [
   '0.以下皆非', '1.智能障礙', '2.視覺障礙', '3.聽覺障礙', '4.語言障礙', '5.肢體障礙',
@@ -327,10 +327,27 @@ createApp({
 
     // ===== 整合資料讀取 =====
     async fetchData(silent = false) {
-      if (!silent) this.loading = true;
+      // 1. 如果不是靜默更新，且目前沒有資料，先從快取載入（秒開）
+      if (!silent && (!this.cases || this.cases.length === 0)) {
+        this.loadCache();
+      }
+
+      // 只有在完全沒資料或是手動刷新的情況下才顯示全螢幕 loading
+      const showLoading = !silent && (!this.cases || this.cases.length === 0);
+      if (showLoading) this.loading = true;
+
       try {
         const r = await this.api('getDashboard');
         if (r?.success && r.data) {
+          // 2. 效能優化：比對資料是否有變動 (簡單的比對，避免無謂的重新渲染)
+          const newDataStr = JSON.stringify(r.data);
+          const oldDataStr = localStorage.getItem('cms_dash_cache');
+          
+          if (newDataStr === oldDataStr && this.cases.length > 0) {
+            // 資料完全一樣，跳過更新
+            return;
+          }
+
           this.dashData = r.data;
           this.cases = r.data.cases || [];
           if (r.data.configs) {
@@ -343,26 +360,21 @@ createApp({
               this.openConfigModal('classes');
             }
           }
-          // 精簡快取：只存列表知道的小型資料，避免 localStorage 寫入太慢
-          try {
-            localStorage.setItem('cms_dash_cache', JSON.stringify({
-              cases: r.data.cases,
-              totalCases: r.data.totalCases,
-              activeCases: r.data.activeCases,
-              observingCases: r.data.observingCases,
-              closedCases: r.data.closedCases,
-              monthlyRecords: r.data.monthlyRecords,
-              typeStats: r.data.typeStats,
-              recentRecords: r.data.recentRecords,
-              configs: r.data.configs
-            }));
-          } catch (e) { /* 超過 localStorage 容量則略過 */ }
+          
+          // 3. 異步寫入快取，不阻塞 UI
+          setTimeout(() => {
+            try {
+              localStorage.setItem('cms_dash_cache', newDataStr);
+            } catch (e) { }
+          }, 0);
+
           this.selectedCaseIds = [];
         }
       } catch (e) {
         console.error('Fetch error:', e);
       } finally {
-        if (!silent) this.loading = false;
+        if (showLoading) this.loading = true; // 這裡改為 true 是為了配合下一步的整體流程，但其實下方會關掉
+        this.loading = false;
       }
     },
     // 為了相容性保留舊名稱，但直接轉發至 fetchData
@@ -1103,12 +1115,13 @@ createApp({
         custom.forEach(m => { if (!combinedMethods.includes(m)) combinedMethods.push(m); });
       }
 
-      if (!targetStr) {
-        this.showToast('請務必選取或填寫對象', 'error'); return;
-      }
-
-      if (!this.recordForm.serviceArr.length) {
-        this.showToast('請勾選服務項目', 'error'); return;
+      if (!this.recordForm.excludeFromReport) {
+        if (!targetStr) {
+          this.showToast('請務必選取或填寫對象', 'error'); return;
+        }
+        if (!this.recordForm.serviceArr.length) {
+          this.showToast('請勾選服務項目', 'error'); return;
+        }
       }
 
       this.loading = true;
