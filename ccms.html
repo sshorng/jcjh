@@ -172,7 +172,7 @@
             <button class="btn btn-primary" @click="openCaseModal(null)"><i class="fas fa-plus"></i> 新增個案</button>
           </div>
           <div class="search-bar" style="margin-bottom:12px; display:flex; gap:10px; flex-wrap:wrap;">
-            <input class="search-input" v-model="searchQuery" placeholder="搜尋學生姓名或關鍵字..."
+            <input class="search-input" v-model="searchInputStr" placeholder="搜尋學生姓名或關鍵字..."
               style="flex:2; min-width:200px">
             <select v-model="filterGrade" class="search-input" style="flex:1; min-width:100px">
               <option value="">--年級篩選--</option>
