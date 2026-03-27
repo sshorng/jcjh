@@ -327,12 +327,11 @@
               <h3>📋 基本資料</h3>
             </div>
             <div class="case-info-grid">
-              <div class="info-item"><label>年級</label><span>{{ currentCase.grade }}</span></div>
-              <div class="info-item"><label>班級</label><span>{{ currentCase.class }}</span></div>
-              <div class="info-item"><label>座號</label><span>{{ currentCase.seatNo }}</span></div>
-              <div class="info-item"><label>姓名</label><span>{{ currentCase.name }}</span></div>
+              <div class="info-item"><label>年級班級</label><span>{{ currentCase.grade }}年{{ currentCase.class }}班</span></div>
+              <div class="info-item"><label>座號姓名</label><span>{{ currentCase.seatNo }}號 {{ currentCase.name }}</span></div>
               <div class="info-item"><label>性別</label><span>{{ currentCase.gender }}</span></div>
-              <div class="info-item"><label>提報學期</label><span>{{ currentCase.reportDate || '-' }}</span></div>
+              <div class="info-item"><label>個案類型</label><span>{{ currentCase.caseType || '-' }}</span></div>
+              <div class="info-item"><label>提報/建立日期</label><span>{{ currentCase.reportDate || '-' }}</span></div>
               <div class="info-item"><label>導師</label><span>{{ currentCase.homeroom || '-' }}</span></div>
               <div class="info-item"><label>班輔</label><span>{{ currentCase.classGuidance || '-' }}</span></div>
               <div class="info-item"><label>專輔</label><span>{{ currentCase.counselor || '-' }}</span></div>
@@ -341,7 +340,7 @@
               <div class="info-item"><label>特教身分</label><span>{{ currentCase.specialEdu || '-' }}</span></div>
               <div class="info-item"><label>身分背景</label><span>{{ currentCase.identity || '-' }}</span></div>
               <div class="info-item"><label>個案來源</label><span>{{ currentCase.caseSource || '-' }}</span></div>
-              <div class="info-item"><label>個案服務方式</label><span>{{ currentCase.serviceMethod || '-' }}</span></div>
+              <div class="info-item"><label>服務方式</label><span>{{ currentCase.serviceMethod || '-' }}</span></div>
               <div class="info-item"><label>狀態</label><span
                   :class="['badge', currentCase.status==='進行中'?'badge-active':(currentCase.status==='觀察中'?'badge-obs':'badge-closed')]">{{
                   currentCase.status }}</span></div>
