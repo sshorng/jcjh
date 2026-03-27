@@ -302,13 +302,24 @@ createApp({
           this.cases = r.data.cases || [];
           if (r.data.configs) {
             this.configs = {
-              classes: r.data.configs.classes || [],
-              specialStaff: r.data.configs.specialStaff || [],
+              ...this.configs,
               allCounselors: r.data.configs.allCounselors || []
             };
           }
-          // 存入快取
-          localStorage.setItem('cms_dash_cache', JSON.stringify(r.data));
+          // 精簡快取：只存列表知道的小型資料，避免 localStorage 寫入太慢
+          try {
+            localStorage.setItem('cms_dash_cache', JSON.stringify({
+              cases: r.data.cases,
+              totalCases: r.data.totalCases,
+              activeCases: r.data.activeCases,
+              observingCases: r.data.observingCases,
+              closedCases: r.data.closedCases,
+              monthlyRecords: r.data.monthlyRecords,
+              typeStats: r.data.typeStats,
+              recentRecords: r.data.recentRecords,
+              configs: r.data.configs
+            }));
+          } catch(e) { /* 超過 localStorage 容量則略過 */ }
           this.selectedCaseIds = [];
         }
       } catch (e) {
@@ -354,13 +365,10 @@ createApp({
       }
 
       this.loading = true;
-      const tasks = [this.api('getRecords', { caseId: c.id })];
-
-      // 💡 效能優化：若尚未載入重型內容(綜述、內容)，則在此時補抓 (並行執行)
-      const needsDetail = !c.s_7a && !c.situation;
-      if (needsDetail) {
-        tasks.push(this.api('getCaseDetail', { id: c.id }));
-      }
+      const tasks = [
+        this.api('getRecords', { caseId: c.id }),
+        this.api('getCaseDetail', { id: c.id })
+      ];
 
       const results = await Promise.all(tasks);
       this.loading = false;
@@ -371,11 +379,13 @@ createApp({
         localStorage.setItem(cacheKey, JSON.stringify(rRec.data));
       }
 
-      if (needsDetail) {
-        const rDet = results[1];
-        if (rDet?.success) {
-          Object.assign(c, rDet.data);
-        }
+      const rDet = results[1];
+      if (rDet?.success) {
+        // 用完整詳情覆蓋 currentCase
+        this.currentCase = { ...c, ...rDet.data };
+        // 同步更新 cases 陣列中對應的個案
+        const idx = this.cases.findIndex(x => String(x.id) === String(c.id));
+        if (idx >= 0) this.cases[idx] = this.currentCase;
       }
     },
     openCaseModal(c) {
@@ -1744,13 +1754,24 @@ createApp({
     if (saved) {
       try {
         this.user = JSON.parse(saved);
-        // 先載入資料
-        this.fetchData().then(() => {
-          // 資料載入後再恢復頁面狀態
-          const savedPage = localStorage.getItem('cms_page');
-          const savedCaseId = localStorage.getItem('cms_case_id');
-          if (savedPage) this.page = savedPage;
-          if (savedPage === 'detail' && savedCaseId) this.viewCaseById(savedCaseId);
+
+        // 🎯 效能優化：先載入快取讓畫面立即顯示
+        this.loadCache();
+        const savedPage = localStorage.getItem('cms_page');
+        const savedCaseId = localStorage.getItem('cms_case_id');
+        if (savedPage) this.page = savedPage;
+        if (savedPage === 'detail' && savedCaseId) {
+          const cached = this.cases.find(c => String(c.id) === String(savedCaseId));
+          if (cached) { this.currentCase = cached; this.page = 'detail'; }
+        }
+
+        // 背景靜默刷新（不顯示 loading）
+        this.fetchData(true).then(() => {
+          // 資料刷新後同步更新 currentCase
+          if (this.page === 'detail' && savedCaseId) {
+            const updated = this.cases.find(c => String(c.id) === String(savedCaseId));
+            if (updated) this.currentCase = updated;
+          }
         });
         if (this.isAdmin) this.loadUsers();
       } catch (e) { localStorage.removeItem('cms_user'); }
