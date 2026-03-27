@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>輔導室個案管理系統</title>
+  <meta name="description" content="國中輔導室個案管理系統 - 優先關懷個案名單與晤談紀錄管理">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="ccms-style.css">
+  <!-- Word 匯出元件 -->
+  <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+</head>
+
+<body>
+  <div id="app">
+    <!-- 載入動畫 -->
+    <div v-if="loading" class="loading-overlay">
+      <div class="spinner"></div>
+    </div>
+
+    <!-- Toast 通知 -->
+    <div v-if="toast.show" :class="['toast', toast.type]">{{ toast.msg }}</div>
+
+    <!-- ==================== 登入頁面 ==================== -->
+    <div v-if="!user" class="login-bg">
+      <div class="login-card">
+        <div class="logo">🏫</div>
+        <h1>輔導室個案管理系統</h1>
+        <p>請輸入帳號密碼登入系統</p>
+        <div class="input-group">
+          <label>帳號</label>
+          <input v-model="loginForm.account" placeholder="請輸入帳號" @keyup.enter="login">
+        </div>
+        <div class="input-group">
+          <label>密碼</label>
+          <input v-model="loginForm.password" type="password" placeholder="請輸入密碼" @keyup.enter="login">
+        </div>
+        <button class="btn btn-primary btn-block" @click="login" :disabled="loading">
+          <i class="fas fa-sign-in-alt"></i> 登入
+        </button>
+        <!-- 移除設定與說明按鈕 -->
+      </div>
+    </div>
+
+    <!-- ==================== 主應用程式 ==================== -->
+    <div v-else class="app-layout">
+      <!-- 手機選單按鈕 -->
+      <button class="mobile-toggle" @click="sidebarOpen=!sidebarOpen"><i class="fas fa-bars"></i></button>
+      <div :class="['sidebar-overlay', {show: sidebarOpen}]" @click="sidebarOpen=false"></div>
+
+      <!-- 側邊欄 -->
+      <aside :class="['sidebar', {open: sidebarOpen}]">
+        <div class="brand">
+          <div class="logo">🏫</div>
+          <h2>個案管理系統</h2>
+          <small>School Counseling CMS</small>
+        </div>
+        <nav>
+          <a :class="{active: page==='dashboard'}" @click="navigate('dashboard')"><i class="fas fa-chart-pie"></i>
+            儀表板</a>
+          <a :class="{active: page==='cases'||page==='detail'}" @click="navigate('cases')"><i class="fas fa-users"></i>
+            個案管理</a>
+          <a v-if="isAdmin" :class="{active: page==='users'}" @click="navigate('users')"><i class="fas fa-user-cog"></i>
+            帳號管理</a>
+          <a v-if="isAdmin" :class="{active: page==='settings'}" @click="navigate('settings')"><i
+              class="fas fa-gear"></i> 系統配置</a>
+        </nav>
+        <div class="user-info">
+          <div class="name"><i class="fas fa-user-circle"></i> {{ user.name }}</div>
+          <div class="role">{{ user.role }}</div>
+          <button class="btn btn-secondary btn-sm" style="margin-top:8px;width:100%" @click="showChangePwd=true">
+            <i class="fas fa-key"></i> 修改密碼
+          </button>
+          <button class="btn btn-secondary btn-sm" style="margin-top:6px;width:100%" @click="logout">
+            <i class="fas fa-right-from-bracket"></i> 登出
+          </button>
+        </div>
+      </aside>
+
+      <!-- 主內容區 -->
+      <main class="main-content">
+
+        <!-- ========== 儀表板 ========== -->
+        <section v-if="page==='dashboard'" class="fade-in">
+          <div class="page-header">
+            <h1><i class="fas fa-chart-pie"></i> 系統儀表板</h1>
+          </div>
+          <div class="stats-row" v-if="dashData">
+            <div class="stat-card">
+              <div class="icon purple"><i class="fas fa-users"></i></div>
+              <div class="info">
+                <h3>{{ dashData.totalCases }}</h3>
+                <p>個案總數</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="icon green"><i class="fas fa-heart-pulse"></i></div>
+              <div class="info">
+                <h3>{{ dashData.activeCases }}</h3>
+                <p>進行中</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="icon blue"><i class="fas fa-eye"></i></div>
+              <div class="info">
+                <h3>{{ dashData.observingCases }}</h3>
+                <p>觀察中</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="icon gray"><i class="fas fa-circle-check"></i></div>
+              <div class="info">
+                <h3>{{ dashData.closedCases }}</h3>
+                <p>已結案</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="icon amber"><i class="fas fa-pen-to-square"></i></div>
+              <div class="info">
+                <h3>{{ dashData.monthlyRecords }}</h3>
+                <p>本月服務次數</p>
+              </div>
+            </div>
+          </div>
+          <!-- 最近紀錄 -->
+          <div class="card" v-if="dashData && dashData.recentRecords && dashData.recentRecords.length">
+            <div class="card-header">
+              <h3><i class="fas fa-clock-rotate-left"></i> 最近服務紀錄</h3>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width: 120px">日期</th>
+                    <th style="width: 100px">學生</th>
+                    <th style="width: 150px">對象</th>
+                    <th>方式</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="r in dashData.recentRecords" :key="r.id" @click="viewCaseById(r.caseId)"
+                    class="hover-row" style="cursor: pointer">
+                    <td>{{ formatDate(r.dateTime) }}</td>
+                    <td>{{ r.studentName }}</td>
+                    <td>{{ r.target }}</td>
+                    <td>{{ r.method }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <!-- 個案類型統計 -->
+          <div class="card" v-if="dashData && dashData.typeStats && dashData.typeStats.length">
+            <div class="card-header">
+              <h3><i class="fas fa-chart-bar"></i> 個案類型分布 </h3>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px">
+              <div v-for="stat in dashData.typeStats" :key="stat.type" class="badge badge-active"
+                style="font-size:14px;padding:6px 14px">
+                {{ stat.type }}: {{ stat.count }}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== 個案管理 ========== -->
+        <section v-if="page==='cases'">
+          <div class="page-header">
+            <h1><i class="fas fa-users"></i> 優先關懷個案名單</h1>
+            <button class="btn btn-primary" @click="openCaseModal(null)"><i class="fas fa-plus"></i> 新增個案</button>
+          </div>
+          <div class="search-bar" style="margin-bottom:12px; display:flex; gap:10px; flex-wrap:wrap;">
+            <input class="search-input" v-model="searchQuery" placeholder="搜尋學生姓名或關鍵字..."
+              style="flex:2; min-width:200px">
+            <select v-model="filterGrade" class="search-input" style="flex:1; min-width:100px">
+              <option value="">--年級篩選--</option>
+              <option>七</option>
+              <option>八</option>
+              <option>九</option>
+            </select>
+            <select v-model="filterStatus" class="search-input" style="flex:1; min-width:100px">
+              <option value="">--狀態篩選--</option>
+              <option v-for="s in STATUS_OPTS" :key="s">{{ s }}</option>
+            </select>
+            <select v-model="filterCounselor" class="search-input" style="flex:1; min-width:120px">
+              <option value="">--負責專輔--</option>
+              <option v-for="name in configs.allCounselors" :key="name" :value="name">{{ name }}</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" @click="resetFilters" title="清除篩選"><i
+                class="fas fa-rotate-left"></i></button>
+          </div>
+
+          <!-- 批次操作工具列 -->
+          <div v-if="selectedCaseIds.length" class="batch-bar fade-in">
+            <span>已選取 <strong>{{ selectedCaseIds.length }}</strong> 筆個案</span>
+            <div class="batch-actions">
+              <div class="action-group">
+                <label>專輔</label>
+                <select @change="batchUpdateField('專輔', $event.target.value); $event.target.value=''">
+                  <option value="">--請選擇人員--</option>
+                  <option v-for="name in configs.allCounselors" :key="name" :value="name">{{ name }}</option>
+                </select>
+              </div>
+              <div class="action-group">
+                <label>特教個管</label>
+                <input type="text" placeholder="直接輸入按 Enter"
+                  @change="batchUpdateField('特教個管老師', $event.target.value); $event.target.value=''"
+                  style="width: 140px; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+              </div>
+              <div class="action-group">
+                <label>狀態</label>
+                <select @change="batchUpdateField('狀態', $event.target.value); $event.target.value=''">
+                  <option value="">--請選擇狀態--</option>
+                  <option v-for="s in STATUS_OPTS" :key="s">{{ s }}</option>
+                </select>
+              </div>
+              <button class="btn btn-danger btn-sm" @click="batchDelete"><i class="fas fa-trash"></i> 批次刪除</button>
+              <button class="btn btn-secondary btn-sm" @click="selectedCaseIds=[]">取消</button>
+            </div>
+          </div>
+          <div class="table-wrap" v-if="filteredCases.length">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 40px"><input type="checkbox" :checked="isAllSelected" @click="toggleSelectAll"></th>
+                  <th style="width: 50px">序號</th>
+                  <th style="width: 60px">年級</th>
+                  <th style="width: 60px">班級</th>
+                  <th style="width: 60px">座號</th>
+                  <th style="width: 120px">姓名</th>
+                  <th style="width: 60px">性別</th>
+                  <th style="width: 100px">提報學期</th>
+                  <th style="width: 150px">個案類型</th>
+                  <th style="width: 100px">負責專輔</th>
+                  <th style="width: 100px">狀態</th>
+                  <th style="width: 100px">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(c, idx) in filteredCases" :key="c.id" @click="viewCase(c)"
+                  :class="{selected: isSelected(c.id)}">
+                  <td @click.stop><input type="checkbox" :value="c.id" v-model="selectedCaseIds"></td>
+                  <td style="text-align:center; opacity:.6; font-size:13px">{{ idx + 1 }}</td>
+                  <td>{{ c.grade }}</td>
+                  <td>{{ c.class }}</td>
+                  <td>{{ c.seatNo }}</td>
+                  <td><strong>{{ c.name }}</strong></td>
+                  <td>{{ c.gender }}</td>
+                  <td>{{ c.reportDate || '-' }}</td>
+                  <td><span class="badge badge-active" v-if="c.caseType">{{ c.caseType }}</span></td>
+                  <td>{{ c.counselor }}</td>
+                  <td><span
+                      :class="['badge', c.status==='進行中'?'badge-active':(c.status==='觀察中'?'badge-obs':'badge-closed')]">{{
+                      c.status }}</span></td>
+                  <td @click.stop>
+                    <button v-if="canEditCase(c)" class="btn btn-icon btn-sm" @click="openCaseModal(c)" title="編輯"><i
+                        class="fas fa-pen"></i></button>
+                    <button v-if="isAdmin" class="btn btn-icon btn-sm" @click="deleteCase(c.id)" title="刪除"><i
+                        class="fas fa-trash" style="color:var(--err)"></i></button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div v-else class="empty-state"><i class="fas fa-inbox"></i>
+            <p>尚無個案資料</p>
+          </div>
+        </section>
+
+        <!-- ========== 個案詳情 ========== -->
+        <section v-if="page==='detail' && currentCase">
+          <a class="back-btn" @click="goBackToCases"><i class="fas fa-arrow-left"></i> 返回個案列表</a>
+          <div class="page-header">
+            <h1><i class="fas fa-user"></i> {{ currentCase.name }} 的個案資料</h1>
+            <div>
+              <button class="btn btn-primary btn-sm" @click="exportToWord" style="margin-right:8px"><i
+                  class="fas fa-file-word"></i> 匯出 Word</button>
+              <button v-if="canEditCase(currentCase)" class="btn btn-secondary btn-sm"
+                @click="openCaseModal(currentCase)"><i class="fas fa-pen"></i> 編輯</button>
+            </div>
+          </div>
+          <!-- 基本資料卡片 -->
+          <div class="card">
+            <div class="card-header">
+              <h3>📋 基本資料</h3>
+            </div>
+            <div class="case-info-grid">
+              <div class="info-item"><label>年級</label><span>{{ currentCase.grade }}</span></div>
+              <div class="info-item"><label>班級</label><span>{{ currentCase.class }}</span></div>
+              <div class="info-item"><label>座號</label><span>{{ currentCase.seatNo }}</span></div>
+              <div class="info-item"><label>姓名</label><span>{{ currentCase.name }}</span></div>
+              <div class="info-item"><label>性別</label><span>{{ currentCase.gender }}</span></div>
+              <div class="info-item"><label>提報學期</label><span>{{ currentCase.reportDate || '-' }}</span></div>
+              <div class="info-item"><label>導師</label><span>{{ currentCase.homeroom || '-' }}</span></div>
+              <div class="info-item"><label>班輔</label><span>{{ currentCase.classGuidance || '-' }}</span></div>
+              <div class="info-item"><label>專輔</label><span>{{ currentCase.counselor || '-' }}</span></div>
+              <div class="info-item"><label>認輔教師</label><span>{{ currentCase.mentorTeacher || '-' }}</span></div>
+              <div class="info-item"><label>特教個管</label><span>{{ currentCase.specialEduTeacher || '-' }}</span></div>
+              <div class="info-item"><label>身分背景</label><span>{{ currentCase.identity || '-' }}</span></div>
+              <div class="info-item"><label>個案來源</label><span>{{ currentCase.caseSource || '-' }}</span></div>
+              <div class="info-item"><label>個案服務方式</label><span>{{ currentCase.serviceMethod || '-' }}</span></div>
+              <div class="info-item"><label>狀態</label><span
+                  :class="['badge', currentCase.status==='進行中'?'badge-active':(currentCase.status==='觀察中'?'badge-obs':'badge-closed')]">{{
+                  currentCase.status }}</span></div>
+            </div>
+          </div>
+          <!-- 提報內容與遭遇情況 (全寬度) -->
+          <div class="card detail-summary-card" v-if="currentCase.teacherReport || currentCase.situation">
+            <div class="report-section" v-if="currentCase.teacherReport">
+              <h4 class="report-title"><i class="fas fa-file-lines text-acc"></i> 導師提報內容</h4>
+              <div class="report-body">{{ currentCase.teacherReport }}</div>
+            </div>
+            <div class="report-section"
+              :style="currentCase.teacherReport ? 'margin-top:20px; border-top:1px solid var(--bd); padding-top:20px' : ''"
+              v-if="currentCase.situation">
+              <h4 class="report-title"><i class="fas fa-triangle-exclamation text-warn"></i> 專輔個案摘要</h4>
+              <div class="report-body">{{ currentCase.situation }}</div>
+            </div>
+          </div>
+
+          <!-- 學期結束綜述 -->
+          <div class="card"
+            v-if="currentCase.s_7a || currentCase.s_7b || currentCase.s_8a || currentCase.s_8b || currentCase.s_9a || currentCase.s_9b">
+            <div class="card-header">
+              <h3>🎓 學期綜述</h3>
+            </div>
+            <div class="case-info-grid" style="grid-template-columns: 1fr 1fr">
+              <div class="info-item" v-if="currentCase.s_7a"><label>七上綜述</label><span style="white-space:pre-wrap">{{
+                  currentCase.s_7a }}</span></div>
+              <div class="info-item" v-if="currentCase.s_7b"><label>七下綜述</label><span style="white-space:pre-wrap">{{
+                  currentCase.s_7b }}</span></div>
+              <div class="info-item" v-if="currentCase.s_8a"><label>八上綜述</label><span style="white-space:pre-wrap">{{
+                  currentCase.s_8a }}</span></div>
+              <div class="info-item" v-if="currentCase.s_8b"><label>八下綜述</label><span style="white-space:pre-wrap">{{
+                  currentCase.s_8b }}</span></div>
+              <div class="info-item" v-if="currentCase.s_9a"><label>九上綜述</label><span style="white-space:pre-wrap">{{
+                  currentCase.s_9a }}</span></div>
+              <div class="info-item" v-if="currentCase.s_9b"><label>九下綜述</label><span style="white-space:pre-wrap">{{
+                  currentCase.s_9b }}</span></div>
+            </div>
+          </div>
+
+          <!-- 晤談紀錄 -->
+          <div class="card">
+            <div class="card-header">
+              <h3><i class="fas fa-comments"></i> 服務紀錄 ({{ records.length }})</h3>
+              <button v-if="canEditCase(currentCase) && !showRecordModal" class="btn btn-primary btn-sm"
+                @click="openRecordModal(null)"><i class="fas fa-plus"></i> 新增紀錄</button>
+            </div>
+
+            <!-- 內嵌新增/編輯表單 -->
+            <div v-if="showRecordModal" class="inline-form fade-in"
+              style="margin: 0 20px 20px; padding: 20px; background: #f9f9f9; border-radius: 8px; border: 1px solid var(--bd);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h4 style="margin:0">{{ editingRecordId ? '編輯紀錄' : '新增紀錄' }}</h4>
+                <button class="btn btn-icon btn-sm" @click="showRecordModal=false"><i class="fas fa-times"></i></button>
+              </div>
+              <div class="form-grid">
+                <div class="fg"><label>日期</label><input v-model="recordForm.date" type="date"></div>
+                <div class="fg full">
+                  <label>服務項目（必選）</label>
+                  <div class="checkbox-group">
+                    <label v-for="s in SERVICE_OPTS" :key="s"><input type="checkbox" :value="s"
+                        v-model="recordForm.serviceArr"> {{ s }}</label>
+                  </div>
+                </div>
+                <div class="fg full">
+                  <label>對象</label>
+                  <div class="checkbox-group">
+                    <label v-for="t in TARGET_OPTS" :key="t"><input type="checkbox" :value="t"
+                        v-model="recordForm.targetArr"> {{ t }}</label>
+                  </div>
+                  <input v-model="recordForm.customTarget" placeholder="其他對象..." style="margin-top:8px">
+                </div>
+                <div class="fg full">
+                  <label>方式</label>
+                  <div class="checkbox-group">
+                    <label v-for="m in METHOD_OPTS" :key="m"><input type="checkbox" :value="m"
+                        v-model="recordForm.methodArr"> {{ m }}</label>
+                  </div>
+                  <input v-model="recordForm.customMethod" placeholder="其他方式..." style="margin-top:8px">
+                </div>
+                <div class="fg full"><label>內容</label><textarea v-model="recordForm.content" rows="6"
+                    placeholder="請輸入服務內容..."></textarea></div>
+              </div>
+              <div style="margin-top:15px; text-align:right">
+                <button class="btn btn-secondary btn-sm" @click="showRecordModal=false"
+                  style="margin-right:10px">取消</button>
+                <button class="btn btn-primary btn-sm" @click="saveRecordForm" :disabled="loading"><i
+                    class="fas fa-check"></i> 儲存</button>
+              </div>
+            </div>
+
+            <div class="timeline" v-if="records.length">
+              <div class="timeline-item" v-for="r in paginatedRecords" :key="r.id">
+                <div class="timeline-card">
+                  <div class="timeline-meta">
+                    <span><i class="fas fa-calendar"></i> {{ formatDate(r.dateTime) }}</span>
+                    <span v-if="r.service" class="badge badge-active" style="margin-left:10px">{{ r.service }}</span>
+                    <span><i class="fas fa-user-tag"></i> {{ r.target }}</span>
+                    <span><i class="fas fa-bullseye"></i> {{ r.method }}</span>
+                    <span><i class="fas fa-pen-nib"></i> {{ r.recorderName }}</span>
+                  </div>
+                  <div class="timeline-content">{{ r.content }}</div>
+                  <div class="timeline-actions" v-if="canEditRecord(r)">
+                    <button class="btn btn-icon btn-sm" @click="openRecordModal(r)" title="編輯"><i
+                        class="fas fa-pen"></i></button>
+                    <button class="btn btn-icon btn-sm" @click="deleteRecord(r.id)" title="刪除"><i class="fas fa-trash"
+                        style="color:var(--err)"></i></button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 分頁器 -->
+              <div class="pagination" v-if="totalRecordPages > 1"
+                style="display:flex; justify-content:center; align-items:center; gap:15px; margin-top:20px; padding-bottom:10px;">
+                <button class="btn btn-icon" :disabled="recordPage <= 1" @click="recordPage--"><i
+                    class="fas fa-chevron-left"></i></button>
+                <span style="font-size:14px; color:#666">第 {{ recordPage }} / {{ totalRecordPages }} 頁</span>
+                <button class="btn btn-icon" :disabled="recordPage >= totalRecordPages" @click="recordPage++"><i
+                    class="fas fa-chevron-right"></i></button>
+              </div>
+            </div>
+            <div v-else class="empty-state" style="padding:24px"><i class="fas fa-comments" style="font-size:32px"></i>
+              <p>尚無服務紀錄</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== 帳號管理 ========== -->
+        <section v-if="page==='users' && isAdmin">
+          <div class="page-header">
+            <h1><i class="fas fa-user-cog"></i> 帳號管理</h1>
+            <button class="btn btn-primary" @click="openUserModal(null)"><i class="fas fa-plus"></i> 新增帳號</button>
+          </div>
+          <div class="search-bar" style="margin-bottom:16px">
+            <input class="search-input" v-model="userSearchQuery" placeholder="搜尋帳號或姓名...">
+          </div>
+          <div class="table-wrap" v-if="filteredUsers.length">
+            <table>
+              <thead>
+                <tr>
+                  <th>帳號</th>
+                  <th>姓名</th>
+                  <th>身份</th>
+                  <th>狀態</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="u in filteredUsers" :key="u.account">
+                  <td>{{ u.account }}</td>
+                  <td>{{ u.name }}</td>
+                  <td><span :class="['badge', u.role==='行政'?'badge-admin':'badge-counselor']">{{ u.role }}</span></td>
+                  <td><span :class="['badge', u.status==='啟用'?'badge-active':'badge-closed']">{{ u.status }}</span></td>
+                  <td>
+                    <button class="btn btn-icon btn-sm" @click="openUserModal(u)"><i class="fas fa-pen"></i></button>
+                    <button v-if="u.account!=='admin'" class="btn btn-icon btn-sm" @click="deleteUser(u.account)"><i
+                        class="fas fa-trash" style="color:var(--err)"></i></button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ========== 系統配置 (頁面模式) ========== -->
+        <section v-if="page==='settings' && isAdmin">
+          <div class="page-header" style="justify-content: space-between;">
+            <h1><i class="fas fa-gear"></i> 系統配置與標籤管理</h1>
+            <button class="btn btn-primary" @click="openExportModal"><i class="fas fa-file-excel"></i> 匯出月報表</button>
+          </div>
+
+          <div class="card">
+            <div class="card-body">
+              <!-- 班級配置表格 -->
+              <div class="fade-in" style="margin-top:20px">
+                <p style="margin-bottom:10px; font-size:13px; color:var(--tx3)">* 設定各班級對應的人員，新增個案時會自動帶入。</p>
+                <div class="table-wrap">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th width="80">年級</th>
+                        <th width="80">班級</th>
+                        <th>導師</th>
+                        <th>班輔</th>
+                        <th>專輔</th>
+                        <th width="50"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="(item, idx) in configItems" :key="idx">
+                        <td><input v-model="item.grade" class="table-input" placeholder="年級"></td>
+                        <td><input v-model="item.class" class="table-input" placeholder="班級"></td>
+                        <td><input v-model="item.homeroom" class="table-input"></td>
+                        <td><input v-model="item.classGuidance" class="table-input"></td>
+                        <td><input v-model="item.counselor" class="table-input"></td>
+                        <td><button class="btn btn-icon-danger" @click="removeConfigRow(idx)"><i
+                              class="fas fa-trash"></i></button></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                <button class="btn btn-secondary" @click="addConfigRow"><i class="fas fa-plus"></i> 新增一行</button>
+                <button class="btn btn-primary" @click="saveConfigs" :disabled="loading"><i class="fas fa-save"></i>
+                  儲存配置</button>
+              </div>
+
+              <hr style="margin: 30px 0; border: none; border-top: 1px solid var(--bd);">
+
+              <div style="display: flex; justify-content: flex-end; align-items: center;">
+                <button class="btn btn-danger btn-sm" @click="clearSettings"><i class="fas fa-rotate-left"></i>
+                  清除緩存並登出</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+
+    <!-- ==================== 個案表單 Modal ==================== -->
+    <div v-if="showCaseModal" class="modal-mask" @click.self="showCaseModal=false">
+      <div class="modal">
+        <div class="modal-header">
+          <h2>{{ editingId ? '編輯個案' : '新增個案' }}</h2>
+          <button class="btn btn-icon" @click="showCaseModal=false"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-section">
+            <h4>👤 基本資料</h4>
+            <div class="form-grid">
+              <div class="fg"><label>個案編號</label><input v-model="caseForm.id" :disabled="!!editingId"
+                  placeholder="輸入唯一編號" required></div>
+              <div class="fg"></div>
+              <div class="fg"><label>年級</label><select v-model="caseForm.grade" @change="autoFillStaff">
+                  <option value="">--</option>
+                  <option>七</option>
+                  <option>八</option>
+                  <option>九</option>
+                </select></div>
+              <div class="fg"><label>班級</label><input v-model="caseForm.class" placeholder="例：1"
+                  @change="autoFillStaff"></div>
+              <div class="fg"><label>座號</label><input v-model="caseForm.seatNo" type="number" placeholder="例：5"
+                  @input="autoFillGender"></div>
+              <div class="fg"><label>姓名</label><input v-model="caseForm.name" placeholder="學生姓名" required></div>
+              <div class="fg"><label>性別</label><select v-model="caseForm.gender">
+                  <option value="">--</option>
+                  <option>男</option>
+                  <option>女</option>
+                </select></div>
+              <div class="fg"><label>提報學期</label><input v-model="caseForm.reportDate" placeholder="例：114-1"></div>
+            </div>
+          </div>
+          <div class="form-section">
+            <h4>📂 個案類型（可複選）</h4>
+            <div class="form-grid">
+              <div class="fg full">
+                <div class="checkbox-group">
+                  <label v-for="t in CASE_TYPES" :key="t"><input type="checkbox" :value="t"
+                      v-model="caseForm.caseTypeArr"> {{ t }}</label>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="form-section">
+            <h4>📝 狀況與提報內容</h4>
+            <div class="form-grid">
+              <div class="fg full"><label>導師提報內容</label><textarea v-model="caseForm.teacherReport" rows="3"
+                  placeholder="導師整合提報之問題與期望內容"></textarea></div>
+              <div class="fg full"><label>專輔個案摘要</label><textarea v-model="caseForm.situation" rows="3"
+                  placeholder="請輸入專輔個案摘要"></textarea></div>
+              <div class="fg full"><label>個案服務方式（手動輸入）</label>
+                <input v-model="caseForm.serviceMethod" placeholder="例：小團體、學扶、定期晤談">
+              </div>
+            </div>
+          </div>
+          <div class="form-section">
+            <h4>🏷️ 身份身分背景</h4>
+            <div class="form-grid">
+              <div class="fg"><label>特教身分</label>
+                <select v-model="caseForm.specialEdu">
+                  <option v-for="o in SPECIAL_ED_OPTS" :key="o" :value="o">{{ o }}</option>
+                </select>
+              </div>
+              <div class="fg full"><label>身分背景（可複選）</label>
+                <div class="checkbox-group">
+                  <label v-for="id in IDENTITY_OPTS" :key="id"><input type="checkbox" :value="id"
+                      v-model="caseForm.identityArr"> {{ id }}</label>
+                </div>
+              </div>
+              <div class="fg"><label>個案來源</label><select v-model="caseForm.caseSource">
+                  <option value="">--</option>
+                  <option v-for="o in SOURCE_OPTS" :key="o">{{ o }}</option>
+                </select></div>
+            </div>
+          </div>
+          <div class="form-section">
+            <h4>👨‍🏫 相關人員 (依班級自動帶入)</h4>
+            <div class="form-grid">
+              <div class="fg"><label>導師</label><input v-model="caseForm.homeroom" disabled placeholder="系統自動帶入"></div>
+              <div class="fg"><label>班輔</label><input v-model="caseForm.classGuidance" disabled placeholder="系統自動帶入">
+              </div>
+              <div class="fg"><label>專輔</label>
+                <select v-model="caseForm.counselor">
+                  <option value="">--請選擇專輔人員--</option>
+                  <option v-for="name in configs.allCounselors" :key="name" :value="name">{{ name }}</option>
+                </select>
+              </div>
+              <div class="fg"><label>特教個管老師</label><input v-model="caseForm.specialEduTeacher" placeholder="直接輸入特教個管姓名">
+              </div>
+              <div class="fg"><label>認輔教師</label><input v-model="caseForm.mentorTeacher"></div>
+            </div>
+          </div>
+          <div class="form-section">
+            <h4>🎓 學期結束綜述</h4>
+            <div class="form-grid" style="grid-template-columns: 1fr 1fr">
+              <div class="fg"><label>七上綜述</label><textarea v-model="caseForm.s_7a" rows="3"
+                  placeholder="七年級上學期輔導總結..."></textarea></div>
+              <div class="fg"><label>七下綜述</label><textarea v-model="caseForm.s_7b" rows="3"
+                  placeholder="七年級下學期輔導總結..."></textarea></div>
+              <div class="fg"><label>八上綜述</label><textarea v-model="caseForm.s_8a" rows="3"
+                  placeholder="八年級上學期輔導總結..."></textarea></div>
+              <div class="fg"><label>八下綜述</label><textarea v-model="caseForm.s_8b" rows="3"
+                  placeholder="八年級下學期輔導總結..."></textarea></div>
+              <div class="fg"><label>九上綜述</label><textarea v-model="caseForm.s_9a" rows="3"
+                  placeholder="九年級上學期輔導總結..."></textarea></div>
+              <div class="fg"><label>九下綜述</label><textarea v-model="caseForm.s_9b" rows="3"
+                  placeholder="九年級下學期輔導總結..."></textarea></div>
+            </div>
+          </div>
+          <div class="form-section" v-if="editingId">
+            <h4>📊 狀態</h4>
+            <div class="form-grid">
+              <div class="fg"><label>個案狀態</label>
+                <select v-model="caseForm.status">
+                  <option v-for="s in STATUS_OPTS" :key="s">{{ s }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="showCaseModal=false">取消</button>
+          <button class="btn btn-primary" @click="saveCaseForm" :disabled="loading"><i class="fas fa-check"></i>
+            儲存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 使用者表單 Modal 已保留（保持點點選操作習慣） -->
+
+    <!-- ==================== 使用者表單 Modal ==================== -->
+    <div v-if="showUserModal" class="modal-mask" @click.self="showUserModal=false">
+      <div class="modal modal-sm">
+        <div class="modal-header">
+          <h2>{{ editingUserId ? '編輯帳號' : '新增帳號' }}</h2>
+          <button class="btn btn-icon" @click="showUserModal=false"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="fg" style="margin-bottom:14px"><label>帳號</label><input v-model="userForm.account"
+              :disabled="!!editingUserId" placeholder="登入帳號"></div>
+          <div class="fg" style="margin-bottom:14px"><label>密碼{{ editingUserId ? '（留空不修改）' : '' }}</label><input
+              v-model="userForm.password" type="password" placeholder="登入密碼"></div>
+          <div class="fg" style="margin-bottom:14px"><label>姓名</label><input v-model="userForm.name"
+              placeholder="使用者姓名"></div>
+          <div class="fg" style="margin-bottom:14px"><label>身份</label>
+            <select v-model="userForm.role">
+              <option>管理員</option>
+              <option>行政</option>
+              <option>專輔教師</option>
+            </select>
+          </div>
+          <div class="fg" style="margin-bottom:14px" v-if="userForm.role === '專輔教師'">
+            <label>教師編碼 <small style="color:var(--text-muted)">(月報表用，如：1)</small></label>
+            <input v-model="userForm.teacherCode" placeholder="輸入教師編碼數字">
+          </div>
+          <div class="fg" v-if="editingUserId"><label>狀態</label>
+            <select v-model="userForm.status">
+              <option>啟用</option>
+              <option>停用</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="showUserModal=false">取消</button>
+          <button class="btn btn-primary" @click="saveUserForm" :disabled="loading"><i class="fas fa-check"></i>
+            儲存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 修改密碼 Modal ==================== -->
+    <div v-if="showChangePwd" class="modal-mask" @click.self="showChangePwd=false">
+      <div class="modal modal-sm">
+        <div class="modal-header">
+          <h2><i class="fas fa-key"></i> 修改密碼</h2>
+          <button class="btn btn-icon" @click="showChangePwd=false"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="fg" style="margin-bottom:14px"><label>舊密碼</label>
+            <input v-model="pwdForm.oldPwd" type="password" placeholder="請輸入目前密碼">
+          </div>
+          <div class="fg" style="margin-bottom:14px"><label>新密碼</label>
+            <input v-model="pwdForm.newPwd" type="password" placeholder="請輸入新密碼">
+          </div>
+          <div class="fg" style="margin-bottom:14px"><label>確認新密碼</label>
+            <input v-model="pwdForm.confirmPwd" type="password" placeholder="再次輸入新密碼">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="showChangePwd=false">取消</button>
+          <button class="btn btn-primary" @click="changePassword" :disabled="loading"><i class="fas fa-check"></i>
+            確認修改</button>
+        </div>
+      </div>
+    </div>
+
+
+
+    <!-- ==================== 說明 Modal ==================== -->
+    <div v-if="showHelp" class="modal-mask" @click.self="showHelp=false">
+      <div class="modal">
+        <div class="modal-header">
+          <h2><i class="fas fa-circle-info"></i> 使用說明</h2>
+          <button class="btn btn-icon" @click="showHelp=false"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div class="modal-body" style="line-height:1.8">
+          <h3 style="margin-bottom:12px">📖 部署教學</h3>
+          <ol style="padding-left:20px;margin-bottom:20px">
+            <li>前往 <a href="https://script.google.com" target="_blank">Google Apps Script</a> 建立新專案</li>
+            <li>將 <strong>Code.gs</strong> 程式碼貼入編輯器</li>
+            <li>點選「部署」→「新增部署作業」</li>
+            <li>類型選擇「網頁應用程式」</li>
+            <li>執行身分：<strong>我自己</strong></li>
+            <li>誰可以存取：<strong>任何人</strong></li>
+            <li>點選「部署」，複製產生的網址</li>
+            <li>回到本系統，點擊 ⚙️ 設定，貼上網址</li>
+          </ol>
+          <h3 style="margin-bottom:12px">👥 預設帳號</h3>
+          <p>帳號：<strong>admin</strong> ／ 密碼：<strong>admin123</strong></p>
+          <p style="color:var(--acc);margin-top:8px">⚠️ 請登入後立即修改預設密碼！</p>
+          <h3 style="margin:16px 0 12px">🔐 權限說明</h3>
+          <ul style="padding-left:20px">
+            <li><strong>管理員</strong>：全權限（可看/編輯所有個案、帳號管理、系統配置）</li>
+            <li><strong>行政</strong>：可看/編輯所有個案，但不具備帳號管理權限</li>
+            <li><strong>專輔教師</strong>：僅能看/編輯自己負責的個案</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ==================== 確認對話框 ==================== -->
+    <div v-if="confirm.show" class="modal-mask">
+      <div class="modal modal-sm">
+        <div class="modal-header">
+          <h2>⚠️ 確認操作</h2>
+        </div>
+        <div class="modal-body">
+          <p style="font-size:15px">{{ confirm.msg }}</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="cancelConfirm">取消</button>
+          <button class="btn btn-danger" @click="doConfirm"><i class="fas fa-check"></i> 確定</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 匯出月報表 Modal -->
+    <div v-if="exportModal.show" class="modal-mask" @click.self="exportModal.show=false">
+      <div class="modal modal-sm fade-in">
+        <div class="modal-header">
+          <h2><i class="fas fa-file-excel"></i> 匯出月報表</h2>
+          <button class="btn btn-icon" @click="exportModal.show=false"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="fg" style="margin-bottom:14px">
+            <label>選擇匯出月份</label>
+            <input type="month" v-model="exportModal.yearMonth" class="form-control" style="width: 100%; padding: 8px;">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="exportModal.show=false">取消</button>
+          <button class="btn btn-primary" @click="exportMonthlyReport" :disabled="loading">
+            <i class="fas fa-download" v-if="!loading"></i>
+            <i class="fas fa-spinner fa-spin" v-else></i> 匯出
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script src="ccms-app.js"></script>
+</body>
+
+</html>
