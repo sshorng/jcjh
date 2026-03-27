@@ -195,6 +195,10 @@
               <option value="">--負責專輔--</option>
               <option v-for="name in configs.allCounselors" :key="name" :value="name">{{ name }}</option>
             </select>
+            <select v-model="filterIdentity" class="search-input" style="flex:1; min-width:120px">
+              <option value="">--身分篩選--</option>
+              <option v-for="id in IDENTITY_OPTS" :key="id" :value="id">{{ id }}</option>
+            </select>
             <button class="btn btn-secondary btn-sm" @click="resetFilters" title="清除篩選"><i
                 class="fas fa-rotate-left"></i></button>
           </div>
@@ -334,6 +338,7 @@
               <div class="info-item"><label>專輔</label><span>{{ currentCase.counselor || '-' }}</span></div>
               <div class="info-item"><label>認輔教師</label><span>{{ currentCase.mentorTeacher || '-' }}</span></div>
               <div class="info-item"><label>特教個管</label><span>{{ currentCase.specialEduTeacher || '-' }}</span></div>
+              <div class="info-item"><label>特教身分</label><span>{{ currentCase.specialEdu || '-' }}</span></div>
               <div class="info-item"><label>身分背景</label><span>{{ currentCase.identity || '-' }}</span></div>
               <div class="info-item"><label>個案來源</label><span>{{ currentCase.caseSource || '-' }}</span></div>
               <div class="info-item"><label>個案服務方式</label><span>{{ currentCase.serviceMethod || '-' }}</span></div>
@@ -351,7 +356,7 @@
             <div class="report-section"
               :style="currentCase.teacherReport ? 'margin-top:20px; border-top:1px solid var(--bd); padding-top:20px' : ''"
               v-if="currentCase.situation">
-              <h4 class="report-title"><i class="fas fa-triangle-exclamation text-warn"></i> 專輔個案摘要</h4>
+              <h4 class="report-title"><i class="fas fa-file-signature text-acc"></i> 專輔個案摘要</h4>
               <div class="report-body">{{ currentCase.situation }}</div>
             </div>
           </div>
