@@ -16,7 +16,7 @@ const CASE_TYPES = [
   '16.中離(輟)拒學', '17.藥物濫用', '18.精神疾患', '19.其他'
 ];
 const METHOD_OPTS = ['面談', '電聯', '訊息', '校訪', '其他'];
-const TARGET_OPTS = ['個案', '家長', '導師', '任課教師', '社工', '其他'];
+const TARGET_OPTS = ['學生', '教職員', '家長', '專業人員'];
 const STATUS_OPTS = ['進行中', '已結案', '觀察中'];
 const SOURCE_OPTS = ['學生主動前來', '導師轉介', '輔導教師發現', '行政轉介', '家長轉介', '轉銜', '其他'];
 
@@ -197,7 +197,8 @@ createApp({
         methodArr: [],
         customMethod: '',
         serviceArr: [],
-        content: ''
+        content: '',
+        excludeFromReport: false
       };
     },
 
@@ -720,6 +721,8 @@ createApp({
       }
 
       const tCode = parseInt(teacherCode) || 1;
+      // 過濾掉註記為不計入月報表的紀錄
+      records = records.filter(r => !(r.service || '').includes('純紀錄_不計入月報表'));
 
       const workbook = new ExcelJS.Workbook();
       workbook.creator = '個案管理系統';
@@ -729,8 +732,8 @@ createApp({
       cases.forEach(c => { caseMap[String(c.id)] = c; });
 
       const gradeMap = {
-        '一年級': 1, '二年級': 2, '三年級': 3, '四年級': 4, '五年級': 5, '六年級': 6,
-        '七年級': 7, '八年級': 8, '九年級': 9, '七': 7, '八': 8, '九': 9
+        '一年級': 2, '二年級': 3, '三年級': 4, '四年級': 5, '五年級': 6, '六年級': 7,
+        '七年級': 8, '八年級': 9, '九年級': 10, '七': 8, '八': 9, '九': 10
       };
       const getNum = (s) => s ? parseInt((String(s).match(/^(\d+)/) || ['0'])[0]) : 0;
 
@@ -828,7 +831,7 @@ createApp({
 
         const vals = [
           tCode, 1, formattedId,
-          gradeMap[c.grade] || 7,
+          gradeMap[c.grade] || 8,
           genderText, '', getNum(c.specialEdu),
           isNew, sourceCode, 2,
           mainTypeNum, 0, subTypeNum, 0, count
@@ -890,10 +893,10 @@ createApp({
       // 統計相關服務
       const getTargetCode = (targetStr, gradeStr) => {
         if (targetStr.includes('家長')) return 14;
-        if (targetStr.includes('教師') || targetStr.includes('導師') || targetStr.includes('行政')) return 13;
-        if (targetStr.includes('社工') || targetStr.includes('專業')) return 15;
-        if (targetStr.includes('學生') || targetStr.includes('個案')) {
-          return gradeMap[gradeStr] || 7;
+        if (targetStr.includes('教職員') || targetStr.includes('教師') || targetStr.includes('導師') || targetStr.includes('行政')) return 15;
+        if (targetStr.includes('專業人員') || targetStr.includes('社工') || targetStr.includes('專業')) return 16;
+        if (targetStr.includes('個案') || targetStr.includes('學生')) {
+          return gradeMap[gradeStr] || 8;
         }
         return 17;
       };
@@ -907,7 +910,7 @@ createApp({
         const services = (r.service || '').split(',').map(s => s.trim()).filter(Boolean);
         const targets = (r.target || '').split(',').map(s => s.trim()).filter(Boolean);
         if (services.length === 0) services.push('11.學生諮詢');
-        if (targets.length === 0) targets.push('個案');
+        if (targets.length === 0) targets.push('學生');
 
         services.forEach(s => {
           targets.forEach(t => {
@@ -948,13 +951,23 @@ createApp({
     openRecordModal(rec) {
       if (rec) {
         this.editingRecordId = rec.id;
-        const allTargets = (rec.target || '').split(',').map(s => s.trim()).filter(Boolean);
-        // 將在選項內的分類到 targetArr，不在的放進 customTarget
+        
+        let rawTarget = rec.target || '';
+        let customTxt = '';
+        const match = rawTarget.match(/^(.*?)(?:\s*\((.*?)\))?$/);
+        let baseTargetsArr = [];
+        if (match) {
+            baseTargetsArr = match[1].split(',').map(s => s.trim()).filter(Boolean);
+            if (match[2]) customTxt = match[2];
+        }
+
         const targetArr = [];
-        const customTargets = [];
-        allTargets.forEach(t => {
+        const customTargets = customTxt ? [customTxt] : [];
+        baseTargetsArr.forEach(t => {
           if (this.TARGET_OPTS.includes(t)) targetArr.push(t);
-          else customTargets.push(t);
+          else if (t !== '其他') { 
+            customTargets.push(t);
+          }
         });
 
         const allMethods = (rec.method || '').split(',').map(s => s.trim()).filter(Boolean);
@@ -966,6 +979,8 @@ createApp({
         });
 
         const serviceArr = (rec.service || '').split(',').map(s => s.trim()).filter(Boolean);
+        const excludeFromReport = serviceArr.includes('純紀錄_不計入月報表');
+        const cleanServiceArr = serviceArr.filter(s => s !== '純紀錄_不計入月報表');
 
         this.recordForm = {
           date: rec.dateTime,
@@ -973,8 +988,9 @@ createApp({
           customTarget: customTargets.join(', '),
           methodArr: methodArr,
           customMethod: customMethods.join(', '),
-          serviceArr: serviceArr,
-          content: rec.content
+          serviceArr: cleanServiceArr,
+          content: rec.content,
+          excludeFromReport: excludeFromReport
         };
       } else {
         this.editingRecordId = null;
@@ -1002,10 +1018,10 @@ createApp({
       if (!this.recordForm.content) { this.showToast('請填寫晤談紀錄', 'error'); return; }
 
       // 合併對象
-      const combinedTargets = [...this.recordForm.targetArr];
+      let targetStr = this.recordForm.targetArr.join(', ');
       if (this.recordForm.customTarget && this.recordForm.customTarget.trim()) {
-        const custom = this.recordForm.customTarget.split(',').map(s => s.trim()).filter(Boolean);
-        custom.forEach(c => { if (!combinedTargets.includes(c)) combinedTargets.push(c); });
+        const custom = this.recordForm.customTarget.trim();
+        targetStr = targetStr ? `${targetStr}(${custom})` : `(${custom})`;
       }
 
       // 合併方式
@@ -1015,8 +1031,8 @@ createApp({
         custom.forEach(m => { if (!combinedMethods.includes(m)) combinedMethods.push(m); });
       }
 
-      if (!combinedTargets.length || !combinedMethods.length) {
-        this.showToast('請務必填寫或選取對象與方式', 'error'); return;
+      if (!targetStr) {
+        this.showToast('請務必選取或填寫對象', 'error'); return;
       }
 
       if (!this.recordForm.serviceArr.length) {
@@ -1024,9 +1040,13 @@ createApp({
       }
 
       this.loading = true;
-      const targetStr = combinedTargets.join(',');
       const methodStr = combinedMethods.join(',');
-      const serviceStr = this.recordForm.serviceArr.join(',');
+      
+      const servicesToSave = [...this.recordForm.serviceArr];
+      if (this.recordForm.excludeFromReport) {
+        servicesToSave.push('純紀錄_不計入月報表');
+      }
+      const serviceStr = servicesToSave.join(',');
 
       let r;
       if (this.editingRecordId) {
