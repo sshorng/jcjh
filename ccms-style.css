@@ -1,4 +1,4 @@
-﻿/* ===== 霈?蝷?===== */
+/* ===== 霈?蝷?===== */
 :root {
   --p: #d97757; --ph: #c26547; --pl: #e89578; --p-alpha: 217, 119, 87;
   --acc: #f4a261; --ok: #2a9d8f; --err: #e76f51; --warn: #f4a261;
@@ -299,12 +299,14 @@ tbody tr:hover { background: rgba(var(--p-alpha),.06); }
 .timeline-card {
   background: var(--sf2); border: 1px solid var(--bd); border-radius: var(--r2); padding: 14px;
   transition: border-color .2s;
+  display: flex; flex-direction: column; position: relative;
 }
 .timeline-card:hover { border-color: var(--p); }
-.timeline-meta { display: flex; gap: 16px; font-size: 13px; color: var(--tx2); margin-bottom: 6px; flex-wrap: wrap; }
+.timeline-meta { display: flex; gap: 16px; font-size: 13px; color: var(--tx2); margin-bottom: 6px; flex-wrap: wrap; padding-right: 60px; }
 .timeline-meta span i { margin-right: 4px; }
-.timeline-content { font-size: 14px; line-height: 1.7; white-space: pre-wrap; }
-.timeline-actions { margin-top: 8px; display: flex; gap: 8px; }
+.timeline-content { font-size: 14px; line-height: 1.7; white-space: pre-wrap; padding-right: 20px; }
+.timeline-actions { position: absolute; top: 12px; right: 12px; display: flex; gap: 4px; }
+.align-right { text-align: right !important; }
 
 /* ===== 蝛箇???===== */
 .empty-state { text-align: center; padding: 48px 20px; color: var(--tx2); }
