@@ -272,7 +272,7 @@
                   <th style="width: 150px">個案類型</th>
                   <th style="width: 100px">負責專輔</th>
                   <th style="width: 100px">狀態</th>
-                  <th style="width: 100px">操作</th>
+                  <th class="align-right" style="width: 100px">操作</th>
                 </tr>
               </thead>
               <tbody>
@@ -292,7 +292,7 @@
                   <td><span
                       :class="['badge', c.status==='進行中'?'badge-active':(c.status==='觀察中'?'badge-obs':'badge-closed')]">{{
                       c.status }}</span></td>
-                  <td @click.stop>
+                  <td @click.stop class="align-right">
                     <button v-if="canEditCase(c)" class="btn btn-icon btn-sm" @click="openCaseModal(c)" title="編輯"><i
                         class="fas fa-pen"></i></button>
                     <button v-if="isAdmin" class="btn btn-icon btn-sm" @click="deleteCase(c.id)" title="刪除"><i
@@ -516,7 +516,7 @@
                   <th>姓名</th>
                   <th>身份</th>
                   <th>狀態</th>
-                  <th>操作</th>
+                  <th class="align-right">操作</th>
                 </tr>
               </thead>
               <tbody>
@@ -525,7 +525,7 @@
                   <td>{{ u.name }}</td>
                   <td><span :class="['badge', u.role==='行政'?'badge-admin':'badge-counselor']">{{ u.role }}</span></td>
                   <td><span :class="['badge', u.status==='啟用'?'badge-active':'badge-closed']">{{ u.status }}</span></td>
-                  <td>
+                  <td class="align-right">
                     <button class="btn btn-icon btn-sm" @click="openUserModal(u)"><i class="fas fa-pen"></i></button>
                     <button v-if="u.account!=='admin'" class="btn btn-icon btn-sm" @click="deleteUser(u.account)"><i
                         class="fas fa-trash" style="color:var(--err)"></i></button>
