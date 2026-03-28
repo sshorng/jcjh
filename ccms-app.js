@@ -1915,26 +1915,27 @@ createApp({
 
         // 🎯 效能優化：先載入快取讓畫面立即顯示
         this.loadCache();
+        // 🎯 狀態持久化修復：偵測到目前頁面為 detail 且有個案 ID 時，主動載入完整資料與紀錄
         const savedPage = localStorage.getItem('cms_page');
         const savedCaseId = localStorage.getItem('cms_case_id');
+        
         if (savedPage) this.page = savedPage;
-        if (savedPage === 'detail' && savedCaseId) {
-          const cached = this.cases.find(c => String(c.id) === String(savedCaseId));
-          if (cached) { this.currentCase = cached; this.page = 'detail'; }
+
+        if (this.page === 'detail' && savedCaseId) {
+          // 透過 viewCaseById 觸發 API 請求，獲取最新詳情與紀錄
+          this.viewCaseById(savedCaseId);
         }
 
-        // 背景靜默刷新（不顯示 loading）
-        this.fetchData(true).then(() => {
-          // 資料刷新後同步更新 currentCase
-          if (this.page === 'detail' && savedCaseId) {
-            const updated = this.cases.find(c => String(c.id) === String(savedCaseId));
-            if (updated) this.currentCase = updated;
-          }
-        });
+        // 背景靜默刷新個案列表（不顯示 loading）
+        this.fetchData(true);
+        
         if (this.isAdmin) this.loadUsers();
         // 初始化主題類別
         document.body.className = this.theme === 'light' ? 'light-theme' : '';
-      } catch (e) { localStorage.removeItem('cms_user'); }
+      } catch (e) { 
+        console.error('Mount error:', e);
+        localStorage.removeItem('cms_user'); 
+      }
     } else {
       // 未登入也要初始化主題類別（訪客頁面/登入頁面）
       document.body.className = this.theme === 'light' ? 'light-theme' : '';
