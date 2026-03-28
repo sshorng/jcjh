@@ -192,16 +192,6 @@ createApp({
         }
       }
     },
-    // 當個案資料變動時，自動儲存至草稿
-    caseForm: {
-      deep: true,
-      handler(val) {
-        if (this.showCaseModal) {
-          const key = this.editingId ? `cms_case_draft_${this.editingId}` : 'cms_case_draft_new';
-          localStorage.setItem(key, JSON.stringify(val));
-        }
-      }
-    },
     // 🎯 狀態持久化：紀錄當前頁面與個案 ID，避免刷新跳回首頁
     page(val) { localStorage.setItem('cms_page', val); },
     currentCase(val) {
@@ -486,38 +476,24 @@ createApp({
     },
     openCaseModal(c) {
       this.editingId = c ? c.id : null;
-      const key = this.editingId ? `cms_case_draft_${this.editingId}` : 'cms_case_draft_new';
-      const draftStr = localStorage.getItem(key);
-      let draftParams = null;
-      if (draftStr) {
-        try { draftParams = JSON.parse(draftStr); } catch (e) { }
-      }
 
       if (c) {
-        // 合併來源，草稿優先
-        const base = draftParams || c;
-        // 確保以目前系統有的選項為準，避免新舊格式疊加
+        // 直接使用傳入的資料 c (已經由 fetchData 或 getCaseFull 確保最新)
+        const base = c;
         const rawTypes = (base.caseType || '').split(',').map(s => s.trim()).filter(Boolean);
         const rawService = (base.serviceMethod || '').split(',').map(s => s.trim()).filter(Boolean);
         const rawIdentity = (base.identity || '').split(',').map(s => s.trim()).filter(Boolean);
 
         this.caseForm = {
           ...this.emptyCaseForm(),
-          ...base, // 蓋上草稿或原本的資料
-          id: c.id, // ID 必須要是 c.id 不能被覆蓋
-          // 只保留目前系統選單中存在的項，落實重整更新
+          ...base,
+          id: c.id,
           caseTypeArr: rawTypes.filter(t => this.CASE_TYPES.includes(t)),
           identityArr: rawIdentity.filter(id => this.IDENTITY_OPTS.includes(id)),
           counselor: base.counselor || ''
         };
-        if (draftParams) this.showToast('已為您恢復上次編輯的個案草稿', 'info');
       } else {
-        if (draftParams) {
-          this.caseForm = { ...this.emptyCaseForm(), ...draftParams };
-          this.showToast('已為您恢復新增個案的草稿', 'info');
-        } else {
-          this.caseForm = this.emptyCaseForm();
-        }
+        this.caseForm = this.emptyCaseForm();
       }
       this.showCaseModal = true;
     },
@@ -596,9 +572,7 @@ createApp({
         this.showToast(r.message, 'success');
         this.showCaseModal = false;
 
-        // 🎯 清除草稿
-        const key = this.editingId ? `cms_case_draft_${this.editingId}` : 'cms_case_draft_new';
-        localStorage.removeItem(key);
+        // 🎯 移除草稿清除邏輯 (已不使用草稿)
 
         await this.fetchData();
         // 如果正在詳情頁，同步更新詳情個案資訊
@@ -664,130 +638,31 @@ createApp({
 
     // --- Word 匯出 ---
     async exportToWord() {
-      const docxLib = window.docx || docx;
-      if (!docxLib) {
-        this.showToast("Word 匯出元件尚未載入完成，請稍候或重新整理頁面", "error");
+      if (!window.docx || !window.saveAs) {
+        this.showToast("Word 匯出元件尚未載入完成，請稍候", "error");
         return;
       }
-      const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, HeadingLevel, VerticalAlign, BorderStyle } = docxLib;
-      const c = this.currentCase;
-      const recs = [...this.records].sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
+      this.loading = true;
+      try {
+        // 從伺服器抓取最即時的完整資料 (對齊勾選匯出的邏輯)
+        const r = await this.api('getCaseFull', { id: this.currentCase.id });
+        if (!r?.success) throw new Error(r?.error || '無法取得個案完整資料');
 
-      // 共用樣式設定
-      const KAI_FONT = "標楷體";
-      const TEXT_SIZE = 24; // 12pt
+        const caseData = r.data.detail;
+        const records = (r.data.records || []).sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
 
-      const createCell = (text, widthPercent, isLabel = false) => {
-        return new TableCell({
-          children: [new Paragraph({
-            children: [new TextRun({ text: text || "", font: KAI_FONT, size: TEXT_SIZE, bold: isLabel })],
-            alignment: isLabel ? AlignmentType.CENTER : AlignmentType.LEFT,
-          })],
-          width: { size: widthPercent, type: WidthType.PERCENTAGE },
-          verticalAlign: VerticalAlign.CENTER,
-          shading: isLabel ? { fill: "F5F5F5" } : undefined,
-        });
-      };
+        const doc = this.generateWordDocDef(caseData, records);
+        const Packer = window.docx.Packer;
+        const blob = await Packer.toBlob(doc);
 
-      const doc = new Document({
-        sections: [{
-          properties: {},
-          children: [
-            new Paragraph({
-              children: [new TextRun({ text: "學生輔導紀錄表", font: KAI_FONT, size: 40, bold: true })],
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 400 },
-            }),
-
-            new Table({
-              width: { size: 100, type: WidthType.PERCENTAGE },
-              rows: [
-                new TableRow({
-                  children: [
-                    createCell("姓名", 15, true),
-                    createCell(c.name, 35),
-                    createCell("性別", 15, true),
-                    createCell(c.gender, 35),
-                  ],
-                }),
-                new TableRow({
-                  children: [
-                    createCell("年/班/座號", 15, true),
-                    createCell(`${c.grade}年 ${c.class}班 ${c.seatNo}號`, 35),
-                    createCell("個案編號", 15, true),
-                    createCell(c.id, 35),
-                  ],
-                }),
-                new TableRow({
-                  children: [
-                    createCell("個案類別", 15, true),
-                    createCell(c.caseType, 85),
-                  ],
-                }),
-                new TableRow({
-                  children: [
-                    createCell("專輔個案摘要", 15, true),
-                    createCell(c.situation, 85),
-                  ],
-                }),
-                new TableRow({
-                  children: [
-                    createCell("導師提報內容", 15, true),
-                    createCell(c.teacherReport, 85),
-                  ],
-                }),
-                new TableRow({
-                  children: [
-                    createCell("服務方式", 15, true),
-                    createCell(c.serviceMethod, 85),
-                  ],
-                }),
-                new TableRow({
-                  children: [
-                    createCell("特教/身份", 15, true),
-                    createCell(`${c.specialEdu} / ${c.identity || '無'}`, 85),
-                  ],
-                }),
-              ],
-            }),
-
-            new Paragraph({
-              children: [new TextRun({ text: "【 晤談紀錄回顧 】", font: KAI_FONT, size: 32, bold: true })],
-              spacing: { before: 500, after: 200 },
-            }),
-
-            ...recs.flatMap((r, idx) => [
-              new Paragraph({
-                children: [
-                  new TextRun({ text: `紀錄 ${idx + 1} | 日期：${this.formatDate(r.dateTime)}`, font: KAI_FONT, size: TEXT_SIZE, bold: true }),
-                  new TextRun({ text: `  (對象：${r.target} / 方式：${r.method} / 記錄者：${r.recorderName})`, font: KAI_FONT, size: 20, color: "666666" })
-                ],
-                spacing: { before: 300, after: 100 }
-              }),
-              new Table({
-                width: { size: 100, type: WidthType.PERCENTAGE },
-                rows: [
-                  new TableRow({
-                    children: [
-                      new TableCell({
-                        children: [new Paragraph({
-                          children: [new TextRun({ text: r.content, font: KAI_FONT, size: TEXT_SIZE })],
-                          spacing: { before: 100, after: 100 }
-                        })],
-                        margins: { top: 100, bottom: 100, left: 100, right: 100 }
-                      })
-                    ]
-                  })
-                ]
-              })
-            ])
-          ]
-        }]
-      });
-
-      const buffer = await docxLib.Packer.toBlob(doc);
-      saveAs(buffer, `${c.name}_輔導紀錄.docx`);
-      this.showToast('Word 檔案匯出成功', 'success');
+        saveAs(blob, `${caseData.id}${caseData.name}個案紀錄.docx`);
+        this.showToast("個案紀錄已匯出", "success");
+      } catch (e) {
+        console.error("Single Export Error:", e);
+        this.showToast("匯出失敗：" + e.message, "error");
+      } finally {
+        this.loading = false;
+      }
     },
 
     // --- 開啟匯出 Modal ---
@@ -1224,7 +1099,7 @@ createApp({
     async deleteRecord(id) {
       this.confirmAction('確定要刪除此晤談紀錄？', async () => {
         this.loadingMsg = '正在刪除晤談紀錄...';
-      this.loading = true;
+        this.loading = true;
         const r = await this.api('deleteRecord', { id });
         this.loading = false;
         if (r?.success) {
@@ -1289,7 +1164,7 @@ createApp({
     async deleteUser(account) {
       this.confirmAction(`確定要刪除帳號「${account}」？`, async () => {
         this.loadingMsg = '正在刪除帳號...';
-      this.loading = true;
+        this.loading = true;
         const r = await this.api('deleteUser', { targetAccount: account });
         this.loading = false;
         if (r?.success) {
@@ -1716,140 +1591,6 @@ createApp({
       }
     },
 
-    async exportToWord() {
-      if (!this.currentCase) return;
-      this.loading = true;
-      try {
-        const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, HeadingLevel, BorderStyle, VerticalAlign } = window.docx;
-        const c = this.currentCase;
-
-        // 字體大小設定 (半點，24 = 12pt)
-        const FONT_SIZE = 24;
-        const FONT_SIZE_TITLE = 36;
-        const FONT_SIZE_LABEL = 24;
-        const lightBorder = { style: BorderStyle.SINGLE, size: 1, color: "E2E8F0" };
-        const modernBorders = { top: lightBorder, bottom: lightBorder, left: lightBorder, right: lightBorder };
-
-        // 建立穩定的 2 欄式表格函式 (左標題 25%、右內容 75%)
-        const create2ColRow = (label, value) => new TableRow({
-          children: [
-            new TableCell({
-              width: { size: 25, type: WidthType.PERCENTAGE },
-              shading: { fill: "F8FAFC" },
-              verticalAlign: VerticalAlign.CENTER,
-              borders: modernBorders,
-              children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, size: FONT_SIZE_LABEL, color: "475569" })], alignment: AlignmentType.CENTER })],
-            }),
-            new TableCell({
-              width: { size: 75, type: WidthType.PERCENTAGE },
-              verticalAlign: VerticalAlign.CENTER,
-              borders: modernBorders,
-              children: [new Paragraph({ children: [new TextRun({ text: String(value || '-'), size: FONT_SIZE, color: "1E293B" })], spacing: { before: 200, after: 200 }, indent: { left: 240, right: 240 } })],
-            }),
-          ],
-        });
-
-        // 1. 基本資料表格
-        const infoRows = [
-          create2ColRow("個案姓名", c.name),
-          create2ColRow("學生性別", c.gender),
-          create2ColRow("年/班/座號", `${c.grade}年 ${c.class}班 ${c.seatNo}號`),
-          create2ColRow("個案編號", c.id),
-          create2ColRow("個案類別", c.caseType),
-          create2ColRow("專輔個案摘要", c.situation),
-          create2ColRow("導師提報內容", (c.reportDate ? `(${c.reportDate}) ` : '') + (c.teacherReport || '-')),
-          create2ColRow("主要服務方式", c.serviceMethod),
-          create2ColRow("特教身分", c.specialEdu),
-          create2ColRow("身分背景", c.identity),
-        ];
-
-        // 2. 加入學期綜述
-        const semesterKeys = [
-          { k: 's_7a', l: '七上綜述' }, { k: 's_7b', l: '七下綜述' },
-          { k: 's_8a', l: '八上綜述' }, { k: 's_8b', l: '八下綜述' },
-          { k: 's_9a', l: '九上綜述' }, { k: 's_9b', l: '九下綜述' }
-        ];
-        semesterKeys.forEach(s => {
-          if (c[s.k]) infoRows.push(create2ColRow(s.l, c[s.k]));
-        });
-
-        // 3. 建立服務紀錄表格
-        const recordRows = [
-          // 表格標題行 (再次拆分獨立欄位，記錄者移至最右)
-          new TableRow({
-            tableHeader: true,
-            children: [
-              new TableCell({ width: { size: 5, type: WidthType.PERCENTAGE }, shading: { fill: "F8FAFC" }, borders: modernBorders, children: [new Paragraph({ children: [new TextRun({ text: "項次", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-              new TableCell({ width: { size: 10, type: WidthType.PERCENTAGE }, shading: { fill: "F8FAFC" }, borders: modernBorders, children: [new Paragraph({ children: [new TextRun({ text: "日期", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-              new TableCell({ width: { size: 8, type: WidthType.PERCENTAGE }, shading: { fill: "F8FAFC" }, borders: modernBorders, children: [new Paragraph({ children: [new TextRun({ text: "對象", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-              new TableCell({ width: { size: 8, type: WidthType.PERCENTAGE }, shading: { fill: "F8FAFC" }, borders: modernBorders, children: [new Paragraph({ children: [new TextRun({ text: "方式", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-              new TableCell({ width: { size: 62, type: WidthType.PERCENTAGE }, shading: { fill: "F8FAFC" }, borders: modernBorders, children: [new Paragraph({ children: [new TextRun({ text: "紀錄內容", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-              new TableCell({ width: { size: 7, type: WidthType.PERCENTAGE }, shading: { fill: "F8FAFC" }, borders: modernBorders, children: [new Paragraph({ children: [new TextRun({ text: "記錄者", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-            ]
-          })
-        ];
-
-        this.records.forEach((r, idx) => {
-          recordRows.push(new TableRow({
-            children: [
-              new TableCell({ borders: modernBorders, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: String(idx + 1), size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-              new TableCell({ borders: modernBorders, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: this.formatDate(r.dateTime), size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-              new TableCell({ borders: modernBorders, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: String(r.target || '-'), size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-              new TableCell({ borders: modernBorders, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: String(r.method || '-'), size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-              new TableCell({ borders: modernBorders, children: [new Paragraph({ children: [new TextRun({ text: r.content, size: FONT_SIZE })], spacing: { before: 160, after: 160 }, indent: { left: 160, right: 160 } })] }),
-              new TableCell({ borders: modernBorders, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: String(r.recorderName || '-'), size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-            ]
-          }));
-        });
-
-        const recordTable = new Table({
-          width: { size: 100, type: WidthType.PERCENTAGE },
-          rows: recordRows
-        });
-
-        const doc = new Document({
-          creator: "輔導個案管理系統",
-          title: `個案紀錄-${c.name}`,
-          styles: {
-            default: {
-              document: { run: { font: "微軟正黑體", size: FONT_SIZE, color: "1E293B" } },
-            },
-          },
-          sections: [{
-            properties: {
-              page: {
-                margin: { top: 720, bottom: 720, left: 720, right: 720 },
-              },
-            },
-            children: [
-              new Paragraph({
-                children: [new TextRun({ text: "學生輔導紀錄總表", bold: true, size: FONT_SIZE_TITLE, color: "0F172A" })],
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 600 }
-              }),
-              new Table({
-                width: { size: 100, type: WidthType.PERCENTAGE },
-                rows: infoRows
-              }),
-              new Paragraph({
-                children: [new TextRun({ text: "【 輔導歷程與服務紀錄回顧 】", bold: true, size: FONT_SIZE + 6, color: "1E293B" })],
-                spacing: { before: 800, after: 300 }
-              }),
-              recordTable
-            ],
-          }],
-        });
-
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${c.id}${c.name}個案紀錄.docx`);
-        this.showToast("個案紀錄已匯出", "success");
-      } catch (e) {
-        console.error("Word Export Error:", e);
-        this.showToast("匯出 Word 失敗：" + e.message, "error");
-      } finally {
-        this.loading = false;
-      }
-    },
 
     formatDate(d) {
       if (!d) return '-';
@@ -1981,9 +1722,19 @@ createApp({
         for (const c of cases) {
           // Normalize formatting mapping
           const mappedCase = {
-            id: c['個案編號'], name: c['姓名'], grade: c['年級'], class: c['班級'], seatNo: c['座號'], gender: c['性別'],
-            caseType: c['個案類別(主)'] || c['個案類型'] || '-', situation: c['遭遇情況'], teacherReport: c['導師提報內容'],
-            serviceMethod: c['個案服務方式'], identity: c['身分背景'], specialEdu: c['特教身分'], reportDate: c['提報學期'],
+            id: String(c['個案編號'] || ''),
+            name: String(c['姓名'] || ''),
+            grade: String(c['年級'] || ''),
+            class: String(c['班級'] || ''),
+            seatNo: String(c['座號'] || ''),
+            gender: String(c['性別'] || ''),
+            caseType: String(c['個案類型'] || '-'),
+            situation: String(c['專輔個案摘要'] || ''),
+            teacherReport: String(c['導師提報內容'] || ''),
+            serviceMethod: String(c['個案服務方式'] || ''),
+            identity: String(c['身分背景'] || ''),
+            specialEdu: String(c['特教身分'] || ''),
+            reportDate: String(c['提報學期'] || ''),
             s_7a: c['七上綜述'], s_7b: c['七下綜述'], s_8a: c['八上綜述'], s_8b: c['八下綜述'], s_9a: c['九上綜述'], s_9b: c['九下綜述']
           };
           const rawRecords = recordMap[String(c['個案編號'])] || [];
@@ -2045,9 +1796,19 @@ createApp({
 
         for (const c of selectedCases) {
           const mappedCase = {
-            id: c['個案編號'], name: c['姓名'], grade: c['年級'], class: c['班級'], seatNo: c['座號'], gender: c['性別'],
-            caseType: c['個案類別(主)'] || c['個案類型'] || '-', situation: c['遭遇情況'], teacherReport: c['導師提報內容'],
-            serviceMethod: c['個案服務方式'], identity: c['身分背景'], specialEdu: c['特教身分'], reportDate: c['提報學期'],
+            id: String(c['個案編號'] || ''),
+            name: String(c['姓名'] || ''),
+            grade: String(c['年級'] || ''),
+            class: String(c['班級'] || ''),
+            seatNo: String(c['座號'] || ''),
+            gender: String(c['性別'] || ''),
+            caseType: String(c['個案類型'] || '-'),
+            situation: String(c['專輔個案摘要'] || ''),
+            teacherReport: String(c['導師提報內容'] || ''),
+            serviceMethod: String(c['個案服務方式'] || ''),
+            identity: String(c['身分背景'] || ''),
+            specialEdu: String(c['特教身分'] || ''),
+            reportDate: String(c['提報學期'] || ''),
             s_7a: c['七上綜述'], s_7b: c['七下綜述'], s_8a: c['八上綜述'], s_8b: c['八下綜述'], s_9a: c['九上綜述'], s_9b: c['九下綜述']
           };
           const rawRecords = recordMap[String(c['個案編號'])] || [];
