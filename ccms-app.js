@@ -58,6 +58,7 @@ createApp({
       // Modal 控制
       showCaseModal: false, showRecordModal: false, showUserModal: false,
       showSettings: false, showHelp: false, showConfigModal: false, showChangePwd: false,
+      showHealthModal: false, healthReport: null,
       pwdForm: { oldPwd: '', newPwd: '', confirmPwd: '' },
       exportModal: { show: false, yearMonth: '' },
       feedbackModal: { show: false, targetSem: '', currentSem: '' },
@@ -158,13 +159,12 @@ createApp({
       return [...this.records].sort((a, b) => {
         const tA = parseDate(a.dateTime);
         const tB = parseDate(b.dateTime);
-        const diff = tB - tA;
-        if (diff !== 0) return diff;
-
-        const cA = parseDate(a.createdAt);
-        const cB = parseDate(b.createdAt);
-        return cB - cA;
+        if (tA !== tB) return tB - tA;
+        return parseDate(b.createdAt) - parseDate(a.createdAt);
       });
+    },
+    hasHealthIssues() {
+      return this.healthReport && this.healthReport.hasIssues;
     },
     totalRecordPages() {
       return Math.ceil(this.records.length / this.recordPageSize) || 1;
@@ -355,6 +355,24 @@ createApp({
       localStorage.removeItem('cms_dash_cache');
       this.cases = []; this.records = []; this.users = []; this.dashData = null;
       this.showToast('已安全登出', 'info');
+    },
+
+    // ===== 系統健檢 =====
+    async runHealthCheck() {
+      if (this.loading) return;
+      this.loading = true;
+      this.loadingMsg = '正在執行系統健檢...';
+      const r = await this.api('checkIntegrity');
+      this.loading = false;
+      if (r?.success) {
+        this.healthReport = r.report;
+        this.showHealthModal = true;
+        if (r.hasIssues) {
+          this.showToast('掃描完成，發現資料一致性問題', 'warn');
+        } else {
+          this.showToast('系統狀況良好', 'success');
+        }
+      }
     },
 
     // ===== 整合資料讀取 =====
