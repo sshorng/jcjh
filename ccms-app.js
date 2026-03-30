@@ -76,6 +76,19 @@ createApp({
       recordForm: this.emptyRecordForm(),
       userForm: { account: '', password: '', name: '', role: '專輔教師' },
       editingId: null, editingRecordId: null, editingUserId: null,
+      targetCaseId: null,
+      batchConfig: {
+        grade: '7',
+        sem: '1',
+        semesterStr: '',
+        force: false
+      },
+      batchProgress: {
+        running: false,
+        current: 0,
+        total: 0,
+        lastMsg: ''
+      },
       // 選項
       CASE_TYPES, SOURCE_OPTS, METHOD_OPTS, TARGET_OPTS, STATUS_OPTS, SPECIAL_ED_OPTS, IDENTITY_OPTS, SERVICE_OPTS
     };
@@ -236,8 +249,8 @@ createApp({
         situation: '', specialEdu: '0.以下皆非', foreignLowIncome: '',
         teacherReport: '',
         serviceMethod: '', caseSource: '', caseType: '', identity: '',
-        caseTypeArr: [], identityArr: [],
-        s_7a: '', s_7b: '', s_8a: '', s_8b: '', s_9a: '', s_9b: ''
+        s_7a: '', s_7b: '', s_8a: '', s_8b: '', s_9a: '', s_9b: '',
+        generatingSummary: false // 新增狀態
       };
     },
     emptyRecordForm() {
@@ -293,10 +306,16 @@ createApp({
           throw new Error('服務端回應格式非 JSON，可能是 GAS 腳本出現錯誤。');
         }
 
-        // 🎯 處理 Session 過期 (Code 401)
+        // 🎯 處理 Session 過期 (Code 401) - 增加一次自動重試機制，防範 CacheService 偶發失效
         if (result.code === 401) {
+          if (!payload._retried) {
+             console.warn('Session 偵測失敗，正在嘗試自動重連...');
+             await new Promise(res => setTimeout(res, 500));
+             payload._retried = true;
+             return this.api(action, data, payload);
+          }
           this.showToast('Session 已過期，請重新登入', 'error');
-          this.logout(true); // 強制登出但不跳轉，由頁面邏輯處理
+          this.logout(true); // 強制登出
           return null;
         }
 
@@ -361,17 +380,31 @@ createApp({
     async runHealthCheck() {
       if (this.loading) return;
       this.loading = true;
-      this.loadingMsg = '正在執行系統健檢...';
+      this.loadingMsg = '正在執行全系統通盤診斷...';
       const r = await this.api('checkIntegrity');
       this.loading = false;
       if (r?.success) {
         this.healthReport = r.report;
         this.showHealthModal = true;
         if (r.hasIssues) {
-          this.showToast('掃描完成，發現資料一致性問題', 'warn');
+          this.showToast('掃描完成，系統發現異常狀況', 'warning');
         } else {
-          this.showToast('系統狀況良好', 'success');
+          this.showToast('診斷完畢，系統狀況極佳', 'success');
         }
+      }
+    },
+    async repairData() {
+      if (!confirm('💡 治療方案確認：\n系統將自動修復個案與紀錄的編號格式錯誤。這不會刪除任何資料。確認執行？')) return;
+      
+      this.loading = true;
+      this.loadingMsg = '正在執行一鍵自動醫療程序...';
+      const r = await this.api('repairData');
+      this.loading = false;
+      
+      if (r?.success) {
+        this.showToast(r.message, 'success');
+        // 修復完後自動重新診斷，展現成果
+        this.runHealthCheck();
       }
     },
 
@@ -532,24 +565,10 @@ createApp({
     autoFillStaff() {
       if (!this.caseForm.grade || !this.caseForm.class) return;
 
-      // 1. 自動產生 7 碼個案編號 (入學年+班級+座號)
-      // 計算入學年：當前民國年 (如果是 8 月前算去年學期，如果是 8 月後算今年學期)
+      // 1. 自動填寫學期
       const now = new Date();
       let sy = now.getFullYear() - 1911;
       if (now.getMonth() + 1 < 8) sy -= 1; // 尚未開學，算前一年的學期
-
-      const gradeMap = { '七': 0, '八': 1, '九': 2 };
-      const entryYear = sy - (gradeMap[this.caseForm.grade] || 0);
-
-      const c = String(this.caseForm.class || '').padStart(2, '0');
-      const s = String(this.caseForm.seatNo || '').padStart(2, '0');
-
-      // 只有在還沒填 ID 或正在新增時才自動覆蓋，避免誤改
-      if (!this.editingId) {
-        this.caseForm.id = `${entryYear}${c}${s}`;
-      }
-
-      // 自動帶入當前學期 (如果還沒填)
       if (!this.caseForm.reportDate) {
         const month = now.getMonth() + 1;
         this.caseForm.reportDate = (month >= 8) ? `${sy}-1` : (month >= 2 ? `${sy - 1}-2` : `${sy - 1}-1`);
@@ -561,7 +580,7 @@ createApp({
         this.caseForm.homeroom = cfg['導師'] || '';
         this.caseForm.classGuidance = cfg['班輔'] || '';
         this.caseForm.counselor = cfg['專輔'] || '';
-        this.showToast(`已自動代入人員與產生編號 ${this.caseForm.id}`, 'info');
+        this.showToast(`已自動代入班級相關人員資訊`, 'info');
       }
     },
     autoFillGender() {
@@ -574,6 +593,11 @@ createApp({
       }
     },
     async saveCaseForm() {
+      // 統一格式修補：如果輸出的編號是 1140118 (7碼)，自動轉為 114-0118
+      if (/^\d{7}$/.test(this.caseForm.id)) {
+        this.caseForm.id = this.caseForm.id.slice(0, 3) + '-' + this.caseForm.id.slice(3);
+      }
+
       if (!this.caseForm.id || !this.caseForm.name) {
         this.showToast('請填寫個案編號與姓名', 'error'); return;
       }
@@ -614,6 +638,79 @@ createApp({
         }
       }
     },
+    async generateSummary(targetGradeNum, sem) {
+      if (!this.currentCase) return;
+      
+      const gradeMap = { 7: '七', 8: '八', 9: '九' };
+      const semMap = { '1': '上', '2': '下' };
+      const label = `${gradeMap[targetGradeNum]}${semMap[sem]}綜述`;
+
+      if (!confirm(`確定要利用 AI 生成 [${label}] 嗎？此操作會直接覆寫現有內容。`)) return;
+      
+      try {
+        this.loading = true;
+        this.loadingMsg = 'AI 正在分析紀錄並生成摘要...';
+        
+        let entryYearStr = String(this.currentCase.schoolYear || '').trim();
+        if (!entryYearStr || isNaN(parseInt(entryYearStr))) {
+           const match = String(this.currentCase.id || '').replace(/-/g, '').match(/^(\d{3})/);
+           if (match) entryYearStr = match[1];
+        }
+        
+        const entryYear = parseInt(entryYearStr);
+        if (isNaN(entryYear)) {
+          throw new Error('無法抓取該學生的入學學年度，請手動確認資料。');
+        }
+
+        const targetYear = entryYear + (targetGradeNum - 7);
+        const semesterStr = `${targetYear}-${sem}`;
+
+        const r = await this.api('generateSummary', { 
+          caseId: this.currentCase.id, 
+          semester: semesterStr,
+          targetGradeNum: targetGradeNum,
+          sem: sem
+        });
+        
+        this.loading = false;
+        
+        // 🎯 究極容錯偵測：如果 r 存在，即使沒抓到 summary，我們優先採用 updatedCase
+        if (r && (r.summary || r.updatedCase)) {
+          const field = `s_${targetGradeNum}${sem === '1' ? 'a' : 'b'}`;
+          const newSummary = r.summary || (r.updatedCase ? r.updatedCase[field] : '');
+          
+          if (!newSummary && (!r.updatedCase || !r.updatedCase[field])) {
+              throw new Error('AI 回傳與資料庫同步檢索均為空，請確認資料庫內容。');
+          }
+
+          // 1. 同步更換整個 caseForm 的引用 (觸發 Vue 徹底重繪)
+          if (this.caseForm) {
+            const updatedForm = { ...this.caseForm };
+            updatedForm[field] = newSummary;
+            this.caseForm = updatedForm; // 絕對路徑替換
+          }
+
+          // 2. 同步更換 currentCase 與案例清單
+          const targetCase = r.updatedCase || { ...this.currentCase, [field]: newSummary };
+          if (this.currentCase && this.currentCase.id === targetCase.id) {
+             this.currentCase = { ...targetCase };
+          }
+          const idx = this.cases.findIndex(c => c.id === targetCase.id);
+          if (idx !== -1) {
+             this.cases[idx] = { ...targetCase };
+          }
+          
+          this.showToast(r.message || 'AI 摘要生成成功！', 'success');
+          console.log(`[AI-SUCCESS] ${field} set to:`, newSummary);
+        } else {
+          this.showToast('AI 生成完成，但回傳解析失敗，請重新整理頁面。', 'warning');
+        }
+      } catch (err) {
+        this.loading = false;
+        this.showToast('生成失敗：' + err.message, 'error');
+        console.error('[AI-ERROR]', err);
+      }
+    },
     async deleteCase(id) {
       this.confirmAction('確定要刪除此個案？相關紀錄也會一併影響。', async () => {
         this.loading = true;
@@ -628,6 +725,63 @@ createApp({
           }
         }
       });
+    },
+    async startBatchSummaries() {
+        if (!this.batchConfig.semesterStr) {
+            this.showToast('請輸入目標學期名稱 (如: 112-1)', 'warning');
+            return;
+        }
+
+        // 轉換年級代號 (7 -> 七)
+        const gradeMap = { '7': '七', '8': '八', '9': '九' };
+        const targetGradeChar = gradeMap[this.batchConfig.grade];
+        const targets = this.cases.filter(c => String(c.grade) === targetGradeChar && c.status !== '已結案');
+        
+        if (targets.length === 0) {
+            this.showToast(`該年級 [${targetGradeChar}] 查無任何在案個案資料。`, 'warning');
+            return;
+        }
+
+        if (!confirm(`確定要為 [${targetGradeChar}年級] 的 ${targets.length} 位個案批量產製 [${this.batchConfig.semesterStr}] 摘要嗎？`)) return;
+
+        this.batchProgress.running = true;
+        this.batchProgress.total = targets.length;
+        this.batchProgress.current = 0;
+        this.batchProgress.lastMsg = '準備開始...';
+
+        for (const student of targets) {
+            if (!this.batchProgress.running) break;
+            
+            this.batchProgress.current++;
+            this.batchProgress.lastMsg = `正在處理: [${this.batchConfig.grade}年級] ${student.name} (${this.batchProgress.current}/${this.batchProgress.total})`;
+            
+            try {
+                // 呼叫現有的個別生成 API
+                const r = await this.api('generateSummary', { 
+                  caseId: student.id, 
+                  semester: this.batchConfig.semesterStr,
+                  targetGradeNum: parseInt(this.batchConfig.grade),
+                  sem: this.batchConfig.sem
+                });
+                
+                if (r && r.updatedCase) {
+                   const idx = this.cases.findIndex(c => c.id === r.updatedCase.id);
+                   if (idx !== -1) {
+                      this.cases[idx] = { ...r.updatedCase };
+                   }
+                }
+                this.batchProgress.lastMsg = `✅ ${student.name} 完成`;
+            } catch (err) {
+                console.error(`[BATCH-ERR] ${student.name}:`, err);
+                this.batchProgress.lastMsg = `❌ ${student.name} 失敗: ${err.message}`;
+                await new Promise(res => setTimeout(res, 2000));
+            }
+            await new Promise(res => setTimeout(res, 800));
+        }
+
+        this.batchProgress.running = false;
+        this.showToast(`批量操作結束。`, 'success');
+        this.batchProgress.lastMsg = '任務已結束。';
     },
     // --- 批次操作 ---
     toggleSelectAll() {
@@ -865,9 +1019,9 @@ createApp({
         const mainTypeNum = getNum(types[0]) || 19;
         const subTypeNum = getNum(types[1]) || 0;
 
-        // 學生代號格式化：1140133 → 114-0133
+        // 學生代碼格式化：確保格式為 114-0133
         const idStr = String(c.id);
-        const formattedId = idStr.length >= 4 ? idStr.slice(0, 3) + '-' + idStr.slice(3) : idStr;
+        const formattedId = idStr.includes('-') ? idStr : (idStr.length >= 4 ? idStr.slice(0, 3) + '-' + idStr.slice(3) : idStr);
 
         const vals = [
           tCode, 1, formattedId,
@@ -1964,6 +2118,15 @@ createApp({
         if (this.isAdmin) this.loadUsers();
         // 初始化主題類別
         document.body.className = this.theme === 'light' ? 'light-theme' : '';
+
+        // 🛡️ 導航守衛：防止在批量生成時意外重新整理網頁
+        window.addEventListener('beforeunload', (e) => {
+          if (this.batchProgress && this.batchProgress.running) {
+            e.preventDefault();
+            e.returnValue = '批量生成任務正在進行中，確定要中斷並離開嗎？';
+            return e.returnValue;
+          }
+        });
       } catch (e) { 
         console.error('Mount error:', e);
         localStorage.removeItem('cms_user'); 
