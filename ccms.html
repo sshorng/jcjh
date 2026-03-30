@@ -605,27 +605,6 @@
                   (Word)</button>
               </div>
 
-              <h3 style="margin-bottom: 12px; font-size: 16px;"><i class="fas fa-tools"></i> 輔助工具</h3>
-              <div class="batch-bar" style="margin-top: 0; margin-bottom: 30px; border-left-color: var(--ok);">
-                <div class="batch-actions">
-                  <div class="action-group">
-                    <i class="fas fa-heartbeat text-acc" style="font-size: 1.5rem;"></i>
-                    <div>
-                      <p style="font-weight: 600;">系統健康檢查</p>
-                      <p style="font-size: 12px; color: var(--tx2);">分析試算表資料一致性，偵測孤兒紀錄或重複編號。</p>
-                    </div>
-                  </div>
-                </div>
-                <button class="btn btn-primary" @click="runHealthCheck" :disabled="loading">
-                  <i class="fas fa-microscope"></i> 開始掃描
-                </button>
-              </div>
-
-              <h3 style="margin-bottom: 12px; font-size: 16px; color: var(--err);"><i
-                  class="fas fa-triangle-exclamation"></i> 系統敏感操作區</h3>
-              <p style="margin-bottom:15px; font-size:13px; color:var(--tx3)">注意：升級與歸檔操作不可逆，執行前請確認已下載上述的 Excel 本機全檔備份。
-              </p>
-
               <h3 style="margin-bottom: 12px; font-size: 16px;"><i class="fas fa-archive"></i> 學期末整理匯出</h3>
               <div
                 style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; padding: 15px; background: rgba(var(--p-alpha), 0.06); border-radius: var(--r2); border: 1px solid var(--bd);">
@@ -649,12 +628,10 @@
           <!-- 3. 系統維護 -->
           <div class="card" v-if="settingsTab === 'maintenance'">
             <div class="card-body fade-in">
-              <h3 style="margin-bottom: 12px; font-size: 16px; color: var(--err);"><i
-                  class="fas fa-triangle-exclamation"></i> 系統敏感操作區</h3>
-              <p style="margin-bottom:15px; font-size:13px; color:var(--tx3)">注意：升級與歸檔操作不可逆，執行前請確認已下載上述的 Excel 本機全檔備份。
-              </p>
+              <h3 style="margin-bottom: 12px; font-size: 16px;"><i
+                  class="fas fa-tools"></i> 輔助工具</h3>
 
-              <div class="batch-bar" style="margin-top: 0; margin-bottom: 24px; border-left-color: var(--ok);">
+              <div class="batch-bar" style="margin-top: 0; margin-bottom: 30px; border-left-color: var(--ok);">
                 <div class="batch-actions">
                   <div class="action-group">
                     <i class="fas fa-heartbeat text-acc" style="font-size: 1.5rem;"></i>
@@ -668,6 +645,11 @@
                   <i class="fas fa-microscope"></i> 開始掃描
                 </button>
               </div>
+
+              <h3 style="margin-bottom: 12px; font-size: 16px; color: var(--err);"><i
+                  class="fas fa-triangle-exclamation"></i> 系統敏感操作區</h3>
+              <p style="margin-bottom:15px; font-size:13px; color:var(--tx3)">注意：升級與歸檔操作不可逆，執行前請確認已下載上述的 Excel 本機全檔備份。
+              </p>
 
               <div
                 style="display: flex; gap: 15px; padding: 15px; margin-bottom: 30px; background: rgba(239, 68, 68, 0.05); border-radius: var(--r2); border: 1px solid rgba(239, 68, 68, 0.3);">
