@@ -265,33 +265,39 @@ createApp({
         this.showSettings = true;
         return null;
       }
+
+      // 從本地取得 Token
+      const token = localStorage.getItem('cms_token');
+
       const payload = {
         action,
-        account: this.user?.account,
-        role: this.user?.role,
+        token, // 🎯 安全加固：注入 Token
         ...data
       };
       try {
-        // 使用 text/plain 避免 Preflight (CORS) 預檢請求
         const r = await fetch(this.gasUrl, {
           method: 'POST',
-          mode: 'cors', // 顯式要求 cors 模式
+          mode: 'cors',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(payload),
           redirect: 'follow'
         });
 
-        if (!r.ok) {
-          throw new Error(`HTTP 錯誤: ${r.status}`);
-        }
+        if (!r.ok) throw new Error(`HTTP 錯誤: ${r.status}`);
 
         const text = await r.text();
         let result;
         try {
           result = JSON.parse(text);
         } catch (err) {
-          console.error('Raw Response:', text);
           throw new Error('服務端回應格式非 JSON，可能是 GAS 腳本出現錯誤。');
+        }
+
+        // 🎯 處理 Session 過期 (Code 401)
+        if (result.code === 401) {
+          this.showToast('Session 已過期，請重新登入', 'error');
+          this.logout(true); // 強制登出但不跳轉，由頁面邏輯處理
+          return null;
         }
 
         if (!result.success && result.error) {
@@ -300,7 +306,7 @@ createApp({
         return result;
       } catch (e) {
         console.error('API Error:', e);
-        this.showToast('連線失敗：請檢查 GAS 網址是否正確，並確保部署權限為「任何人」。', 'error');
+        this.showToast('連線失敗：請檢查 GAS 網址是否正確。', 'error');
         return null;
       }
     },
@@ -316,12 +322,12 @@ createApp({
       this.loading = false;
       if (r?.success) {
         this.user = r.user;
+        // 🎯 儲存 Token
+        localStorage.setItem('cms_token', r.token);
         localStorage.setItem('cms_user', JSON.stringify(r.user));
         this.showToast(`歡迎回來，${r.user.name}`, 'success');
 
-        // 登入後先嘗試載入快取，提升感知速度
         this.loadCache();
-
         await this.fetchData();
         if (this.isAdmin) this.loadUsers();
       }
@@ -337,10 +343,18 @@ createApp({
         } catch (e) { }
       }
     },
-    logout() {
-      this.user = null; this.page = 'dashboard';
+    async logout(force = false) {
+      if (!force) {
+        // 通知後端登出
+        await this.api('logout');
+      }
+      this.user = null;
+      this.page = 'dashboard';
       localStorage.removeItem('cms_user');
+      localStorage.removeItem('cms_token');
+      localStorage.removeItem('cms_dash_cache');
       this.cases = []; this.records = []; this.users = []; this.dashData = null;
+      this.showToast('已安全登出', 'info');
     },
 
     // ===== 整合資料讀取 =====
