@@ -146,11 +146,11 @@
             <div class="stat-card skeleton" v-for="i in 5" :key="i" style="height: 100px;"></div>
           </div>
           <!-- 最近紀錄 -->
-          <div class="card" v-if="dashData && dashData.recentRecords && dashData.recentRecords.length">
+          <div class="card recent-records-card" v-if="dashData">
             <div class="card-header">
               <h3><i class="fas fa-clock-rotate-left"></i> 最近服務紀錄</h3>
             </div>
-            <div class="table-wrap">
+            <div class="table-wrap" v-if="dashData.recentRecords && dashData.recentRecords.length">
               <table>
                 <thead>
                   <tr>
@@ -183,15 +183,21 @@
                 </tbody>
               </table>
             </div>
+            <div v-else class="empty-state" style="padding: 40px 0;">
+              <i class="fas fa-ghost" style="font-size: 32px; opacity: 0.3; margin-bottom: 8px;"></i>
+              <p style="color: var(--tx2); font-size: 14px;">最近尚無服務紀錄</p>
+            </div>
           </div>
           <!-- 🎨 儀表板雙向道佈局：紀錄草稿 + 待辦隨手記 -->
           <div class="dashboard-grid">
-            <!-- 左側：紀錄草稿 -->
-            <div class="card" v-if="casesWithDrafts.length" style="margin-bottom:0">
+            <!-- 左側：紀錄草稿 (永遠顯示以對齊) -->
+            <div class="card recent-records-card" style="margin-bottom:0">
               <div class="card-header">
-                <h3><i class="fas fa-edit"></i> 紀錄草稿 ({{ casesWithDrafts.length }})</h3>
+                <h3><i class="fas fa-edit"></i> 紀錄草稿 <small v-if="casesWithDrafts.length"
+                    style="font-weight:400; opacity:0.6; font-size:12px; margin-left:8px">({{ casesWithDrafts.length }}
+                    筆編輯中)</small></h3>
               </div>
-              <div style="padding: 10px; display: flex; flex-wrap: wrap; gap: 10px;">
+              <div v-if="casesWithDrafts.length" style="padding: 10px; display: flex; flex-wrap: wrap; gap: 10px;">
                 <div v-for="c in casesWithDrafts" :key="c.id" class="badge hover-row"
                   style="cursor:pointer; padding: 10px 18px; background: rgba(244, 162, 97, 0.1); border: 1px solid var(--acc); color: var(--acc); display: flex; align-items: center; gap: 8px; border-radius: 50px; font-weight: 500;"
                   @click="viewCaseById(c.id)">
@@ -203,12 +209,16 @@
                   <small style="opacity:0.8">({{ c.id }})</small>
                 </div>
               </div>
+              <div v-else class="empty-state" style="padding: 40px 0;">
+                <i class="fas fa-check-double" style="font-size: 32px; opacity: 0.2; margin-bottom: 8px;"></i>
+                <p style="color: var(--tx2); font-size: 14px;">目前無進行中的紀錄草稿</p>
+              </div>
             </div>
 
             <!-- 右側：待辦隨手記 (永遠顯示) -->
             <div class="card sticky-note-card" style="margin-bottom:0">
               <div class="card-header">
-                <h3><i class="fas fa-thumbtack"></i> 待辦隨手記 <small style="font-weight:400; opacity:0.6; font-size:12px; margin-left:8px">(瀏覽器自動記憶)</small></h3>
+                <h3><i class="fas fa-thumbtack"></i> 待辦隨手記 </h3>
               </div>
               <div class="sticky-note-body">
                 <textarea class="sticky-note-textarea" v-model="todoNote" placeholder="點擊此處輸入待辦事項、提醒或心得..."></textarea>
@@ -386,7 +396,8 @@
               <small style="color:var(--tx2)">({{ currentCase.id }})</small> 的個案資料
               <span
                 :class="['badge', currentCase.status==='進行中'?'badge-active':(currentCase.status==='觀察中'?'badge-obs':'badge-closed')]"
-                style="margin-left:12px; vertical-align: 2px; font-size:14px; display: inline-block;">{{ currentCase.status }}</span>
+                style="margin-left:12px; vertical-align: 2px; font-size:14px; display: inline-block;">{{
+                currentCase.status }}</span>
             </h1>
             <div>
               <button class="btn btn-primary btn-sm" @click="exportToWord" style="margin-right:8px"><i
@@ -517,17 +528,18 @@
                   <label>服務內容</label>
                   <div class="editor-container">
                     <div class="editor-toolbar">
-                      <button type="button" class="editor-btn" @click="execEditorCommand('bold')" title="粗體 (Ctrl+B)"><i class="fas fa-bold"></i></button>
-                      <button type="button" class="editor-btn" @click="execEditorCommand('insertUnorderedList')" title="項目符號"><i class="fas fa-list-ul"></i></button>
-                      <button type="button" class="editor-btn" @click="execEditorCommand('insertOrderedList')" title="編號清單"><i class="fas fa-list-ol"></i></button>
-                      <button type="button" class="editor-btnHighlight" @click="execEditorCommand('highlight')" title="文字底色"><i class="fas fa-highlighter"></i></button>
+                      <button type="button" class="editor-btn" @click="execEditorCommand('bold')" title="粗體 (Ctrl+B)"><i
+                          class="fas fa-bold"></i></button>
+                      <button type="button" class="editor-btn" @click="execEditorCommand('insertUnorderedList')"
+                        title="項目符號"><i class="fas fa-list-ul"></i></button>
+                      <button type="button" class="editor-btn" @click="execEditorCommand('insertOrderedList')"
+                        title="編號清單"><i class="fas fa-list-ol"></i></button>
+                      <button type="button" class="editor-btnHighlight" @click="execEditorCommand('highlight')"
+                        title="文字底色"><i class="fas fa-highlighter"></i></button>
                     </div>
                     <!-- 🎯 所見即所得編輯區：透過 @input 即時同步回 Markdown 語法 -->
-                    <div id="record-editor" 
-                         class="editor-input" 
-                         contenteditable="true" 
-                         @input="recordForm.content = html2md($event.target.innerHTML)"
-                         placeholder="請輸入服務內容...">
+                    <div id="record-editor" class="editor-input" contenteditable="true"
+                      @input="recordForm.content = html2md($event.target.innerHTML)" placeholder="請輸入服務內容...">
                     </div>
                   </div>
                 </div>
