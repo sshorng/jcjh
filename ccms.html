@@ -81,7 +81,8 @@
             <button class="footer-btn" @click="toggleTheme" :title="theme==='dark'?'開燈':'關燈'">
               <i :class="theme==='dark'?'fas fa-moon':'fas fa-sun'"></i>
             </button>
-            <button class="footer-btn" :class="{'privacy-active': isPrivacyMode}" @click="togglePrivacy" :title="isPrivacyMode?'顯示全名':'開啟隱私遮罩'">
+            <button class="footer-btn" :class="{'privacy-active': isPrivacyMode}" @click="togglePrivacy"
+              :title="isPrivacyMode?'顯示全名':'開啟隱私遮罩'">
               <i :class="isPrivacyMode?'fas fa-eye-slash':'fas fa-eye'"></i>
             </button>
             <button class="footer-btn" @click="showChangePwd=true" title="修改密碼">
@@ -167,7 +168,8 @@
                     <td>{{ formatDate(r.dateTime) }}</td>
                     <td>
                       <span :class="{'privacy-active': isPrivacyMode}">
-                        <span>{{ splitName(r.studentName).first }}</span><span class="name-mid privacy-blur">{{ splitName(r.studentName).mid }}</span><span>{{ splitName(r.studentName).last }}</span>
+                        <span>{{ splitName(r.studentName).first }}</span><span class="name-mid privacy-blur">{{
+                          splitName(r.studentName).mid }}</span><span>{{ splitName(r.studentName).last }}</span>
                       </span>
                       <small style="color:var(--tx2)">({{ r.caseId }})</small>
                     </td>
@@ -185,16 +187,16 @@
           <!-- 🎨 裝修提醒專區：位於最近紀錄後方，提醒尚未完工的草稿 -->
           <div class="card" v-if="casesWithDrafts.length">
             <div class="card-header">
-              <h3><i class="fas fa-edit"></i> 尚未儲存的紀錄草稿 ({{ casesWithDrafts.length }})</h3>
+              <h3><i class="fas fa-edit"></i> 紀錄草稿 ({{ casesWithDrafts.length }})</h3>
             </div>
             <div style="padding: 15px; display: flex; flex-wrap: wrap; gap: 10px;">
-              <div v-for="c in casesWithDrafts" :key="c.id" 
-                class="badge hover-row" 
+              <div v-for="c in casesWithDrafts" :key="c.id" class="badge hover-row"
                 style="cursor:pointer; padding: 10px 18px; background: rgba(244, 162, 97, 0.1); border: 1px solid var(--acc); color: var(--acc); display: flex; align-items: center; gap: 8px; border-radius: 50px; font-weight: 500;"
                 @click="viewCaseById(c.id)">
                 <i class="fas fa-user-clock"></i>
                 <span :class="{'privacy-active': isPrivacyMode}">
-                  <strong>{{ splitName(c.name).first }}</strong><strong class="name-mid privacy-blur">{{ splitName(c.name).mid }}</strong><strong>{{ splitName(c.name).last }}</strong>
+                  <strong>{{ splitName(c.name).first }}</strong><strong class="name-mid privacy-blur">{{
+                    splitName(c.name).mid }}</strong><strong>{{ splitName(c.name).last }}</strong>
                 </span>
                 <small style="opacity:0.8">({{ c.id }})</small>
               </div>
@@ -318,7 +320,8 @@
                   <td>{{ c.seatNo }}</td>
                   <td>
                     <span :class="{'privacy-active': isPrivacyMode}">
-                      <strong>{{ splitName(c.name).first }}</strong><strong class="name-mid privacy-blur">{{ splitName(c.name).mid }}</strong><strong>{{ splitName(c.name).last }}</strong>
+                      <strong>{{ splitName(c.name).first }}</strong><strong class="name-mid privacy-blur">{{
+                        splitName(c.name).mid }}</strong><strong>{{ splitName(c.name).last }}</strong>
                     </span>
                   </td>
                   <td>{{ c.gender }}</td>
@@ -362,9 +365,10 @@
         <section v-if="page==='detail' && currentCase">
           <a class="back-btn" @click="goBackToCases"><i class="fas fa-arrow-left"></i> 返回個案列表</a>
           <div class="page-header">
-            <h1><i class="fas fa-user"></i> 
+            <h1><i class="fas fa-user"></i>
               <span :class="{'privacy-active': isPrivacyMode}">
-                <span>{{ splitName(currentCase.name).first }}</span><span class="name-mid privacy-blur">{{ splitName(currentCase.name).mid }}</span><span>{{ splitName(currentCase.name).last }}</span>
+                <span>{{ splitName(currentCase.name).first }}</span><span class="name-mid privacy-blur">{{
+                  splitName(currentCase.name).mid }}</span><span>{{ splitName(currentCase.name).last }}</span>
               </span>
               <small style="color:var(--tx2)">({{ currentCase.id }})</small> 的個案資料
               <span
@@ -387,9 +391,10 @@
               <div class="info-item"><label>年級班級</label><span>{{ currentCase.grade }}年{{ currentCase.class }}班</span>
               </div>
               <div class="info-item"><label>座號姓名</label>
-                <span>{{ currentCase.seatNo }}號 
+                <span>{{ currentCase.seatNo }}號
                   <span :class="{'privacy-active': isPrivacyMode}">
-                    <span>{{ splitName(currentCase.name).first }}</span><span class="name-mid privacy-blur">{{ splitName(currentCase.name).mid }}</span><span>{{ splitName(currentCase.name).last }}</span>
+                    <span>{{ splitName(currentCase.name).first }}</span><span class="name-mid privacy-blur">{{
+                      splitName(currentCase.name).mid }}</span><span>{{ splitName(currentCase.name).last }}</span>
                   </span>
                 </span>
               </div>
