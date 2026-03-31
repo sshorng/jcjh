@@ -205,6 +205,7 @@ tbody tr { transition: background .15s; cursor: pointer; }
 tbody tr:hover { background: rgba(var(--p-alpha),.06); }
 .badge {
   display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 500;
+  vertical-align: middle;
 }
 .badge-active { background: rgba(42,157,143,.15); color: var(--ok); }
 .badge-obs { background: rgba(69,123,157,.15); color: #457b9d; }
@@ -600,6 +601,3 @@ tr.selected td { background: rgba(var(--p-alpha), 0.08) !important; }
 }
 
 /* 移除按鈕變色，保持一致性 */
-.footer-btn.privacy-active {
-  /* 不再強制變色，僅跟隨原本樣式 */
-}
