@@ -32,6 +32,12 @@ const SERVICE_OPTS = [
   '11.學生諮詢', '12.臨案協處', '13.方案計畫', '14.各項宣講', '15.危機處理',
   '16.轉銜輔導', '17.其他'
 ];
+const REFERRAL_OPTS = [
+  '1.本月轉介輔諮中心',
+  '2.無轉介',
+  '3.已轉介輔諮中心且該中心持續服務中',
+  '4.已轉介輔諮中心，該中心服務至本月結案'
+];
 
 createApp({
   data() {
@@ -90,7 +96,7 @@ createApp({
         lastMsg: ''
       },
       // 選項
-      CASE_TYPES, SOURCE_OPTS, METHOD_OPTS, TARGET_OPTS, STATUS_OPTS, SPECIAL_ED_OPTS, IDENTITY_OPTS, SERVICE_OPTS
+      CASE_TYPES, SOURCE_OPTS, METHOD_OPTS, TARGET_OPTS, STATUS_OPTS, SPECIAL_ED_OPTS, IDENTITY_OPTS, SERVICE_OPTS, REFERRAL_OPTS
     };
   },
 
@@ -249,6 +255,7 @@ createApp({
         situation: '', specialEdu: '0.以下皆非', foreignLowIncome: '',
         teacherReport: '',
         serviceMethod: '', caseSource: '', caseType: '', identity: '',
+        referralStatus: '2.無轉介', referralMonth: '',
         caseTypeArr: [], identityArr: [],
         s_7a: '', s_7b: '', s_8a: '', s_8b: '', s_9a: '', s_9b: '',
         generatingSummary: false // 新增狀態
@@ -1029,7 +1036,7 @@ createApp({
           tCode, 1, formattedId,
           gradeMap[c.grade] || 8,
           genderText, '', getNum(c.specialEdu),
-          isNew, sourceCode, 2,
+          isNew, sourceCode, c.referralStatus || 2,
           mainTypeNum, 0, subTypeNum, 0, count
         ];
 
