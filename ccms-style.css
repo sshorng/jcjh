@@ -24,19 +24,16 @@
 
 /* ===== 鈭株銝駁?閬? ===== */
 body.light-theme {
-  --bg: #faf7f2;
-  --sf: #ffffff;
-  --sf2: #f6eedf;
-  --sf3: #eddcc2;
-  --bd: #e6d3ba;
-  --tx: #4a3f35;
-  --tx2: #806e60;
-  --tx3: #a8988a;
-  --sh: 0 8px 30px rgba(180, 150, 130, 0.12);
-  --p: #d36b46;
-  --ph: #bd5936;
-  --pl: #e5896a;
-  --p-alpha: 211, 107, 70;
+  --bg: #ece7e1; /* 極致護眼：復古紙質背景 */
+  --sf: #f2eee9; /* 低反光感卡片 */
+  --sf2: #e2dbd2;
+  --sf3: #d3c7b8;
+  --bd: #d4c8b9; 
+  --tx: #3f3a35; 
+  --tx2: #6d635b;
+  --tx3: #9b8f84;
+  --sh: 0 4px 15px rgba(130, 110, 90, 0.08);
+  --p: #d36b46; --ph: #bd5936; --pl: #e5896a; --p-alpha: 211, 107, 70;
 }
 
 .light-theme .login-bg {
@@ -1012,7 +1009,7 @@ tbody tr:hover {
   color: var(--tx);
 }
 
-/* ===== 蝝???遘 ===== */
+/* ===== 蝝€???遘 ===== */
 .timeline {
   position: relative;
   padding-left: 28px;
@@ -1405,7 +1402,7 @@ tr.selected td {
   padding-left: 10px;
 }
 
-/* 閰單????憛?*/
+/* 閰單????€憛?*/
 .detail-summary-card {
   background: var(--sf) !important;
   border-left: 4px solid var(--p) !important;
@@ -1637,8 +1634,8 @@ tr.selected td {
 
 .sticky-note-body {
   flex: 1;
-  background: rgba(255, 235, 59, 0.08);
-  /* 淡淡的便利貼黃 */
+  background: rgba(255, 249, 196, 0.12);
+  /* 預設淡黃 */
   border: 1px dashed var(--bd);
   border-radius: var(--r2);
   padding: 12px;
@@ -1648,18 +1645,16 @@ tr.selected td {
 }
 
 .light-theme .sticky-note-body {
-  background: rgba(255, 235, 59, 0.15);
-  border-color: #e6d3ba;
+  background: #ede8e1; /* 溫潤米色，不再使用亮黃 */
+  border-color: #d4c8b9;
 }
-
 .sticky-note-body:focus-within {
-  background: rgba(255, 235, 59, 0.12);
+  background: rgba(211, 107, 70, 0.05);
   border-color: var(--p);
   border-style: solid;
 }
-
 .light-theme .sticky-note-body:focus-within {
-  background: rgba(255, 235, 59, 0.2);
+  background: #f5f2ed; /* 聚焦時輕微提亮 */
 }
 
 .sticky-note-textarea {
@@ -1821,5 +1816,3 @@ mark {
 .timeline-content mark {
   margin: 1px 1px;
 }
-
-The function is being upgraded
