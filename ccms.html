@@ -763,7 +763,7 @@
             <div class="form-grid">
               <div class="fg">
                 <label>個案編號</label>
-                <input v-model="caseForm.id" :disabled="!!editingId" placeholder="例：114-0112 (不填則自動生成暫時編號S-)">
+                <input v-model="caseForm.id" :disabled="!!editingId" placeholder="例：114-0112 (不填則生成暫時編號S-)">
               </div>
               <div class="fg"></div>
               <div class="fg"><label>年級</label><select v-model="caseForm.grade" @change="autoFillStaff">
