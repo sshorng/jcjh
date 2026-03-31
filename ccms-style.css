@@ -578,3 +578,28 @@ tr.selected td { background: rgba(var(--p-alpha), 0.08) !important; }
   list-style-type: decimal;
 }
 
+/* ===== 隱私遮罩 (Privacy Masking) ===== */
+/* 只有當父層具備 .privacy-active 時，中間字才執行模糊 */
+.privacy-active .name-mid.privacy-blur {
+  filter: blur(5.5px) !important;
+  -webkit-filter: blur(5.5px) !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  opacity: 0.8 !important;
+}
+
+/* 基礎樣式：修正偏移問題 */
+.name-mid.privacy-blur {
+  display: inline-block;
+  vertical-align: bottom; /* 🚀 解決偏移關鍵：強制對齊底線 */
+  transition: filter 0.3s ease, opacity 0.3s ease;
+  filter: blur(0px);
+  opacity: 1;
+  margin: 0;
+  padding: 0;
+}
+
+/* 移除按鈕變色，保持一致性 */
+.footer-btn.privacy-active {
+  /* 不再強制變色，僅跟隨原本樣式 */
+}
