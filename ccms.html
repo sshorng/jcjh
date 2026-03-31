@@ -184,21 +184,34 @@
               </table>
             </div>
           </div>
-          <!-- 🎨 裝修提醒專區：位於最近紀錄後方，提醒尚未完工的草稿 -->
-          <div class="card" v-if="casesWithDrafts.length">
-            <div class="card-header">
-              <h3><i class="fas fa-edit"></i> 紀錄草稿 ({{ casesWithDrafts.length }})</h3>
+          <!-- 🎨 儀表板雙向道佈局：紀錄草稿 + 待辦隨手記 -->
+          <div class="dashboard-grid">
+            <!-- 左側：紀錄草稿 -->
+            <div class="card" v-if="casesWithDrafts.length" style="margin-bottom:0">
+              <div class="card-header">
+                <h3><i class="fas fa-edit"></i> 紀錄草稿 ({{ casesWithDrafts.length }})</h3>
+              </div>
+              <div style="padding: 10px; display: flex; flex-wrap: wrap; gap: 10px;">
+                <div v-for="c in casesWithDrafts" :key="c.id" class="badge hover-row"
+                  style="cursor:pointer; padding: 10px 18px; background: rgba(244, 162, 97, 0.1); border: 1px solid var(--acc); color: var(--acc); display: flex; align-items: center; gap: 8px; border-radius: 50px; font-weight: 500;"
+                  @click="viewCaseById(c.id)">
+                  <i class="fas fa-user-clock"></i>
+                  <span :class="{'privacy-active': isPrivacyMode}">
+                    <strong>{{ splitName(c.name).first }}</strong><strong class="name-mid privacy-blur">{{
+                      splitName(c.name).mid }}</strong><strong>{{ splitName(c.name).last }}</strong>
+                  </span>
+                  <small style="opacity:0.8">({{ c.id }})</small>
+                </div>
+              </div>
             </div>
-            <div style="padding: 15px; display: flex; flex-wrap: wrap; gap: 10px;">
-              <div v-for="c in casesWithDrafts" :key="c.id" class="badge hover-row"
-                style="cursor:pointer; padding: 10px 18px; background: rgba(244, 162, 97, 0.1); border: 1px solid var(--acc); color: var(--acc); display: flex; align-items: center; gap: 8px; border-radius: 50px; font-weight: 500;"
-                @click="viewCaseById(c.id)">
-                <i class="fas fa-user-clock"></i>
-                <span :class="{'privacy-active': isPrivacyMode}">
-                  <strong>{{ splitName(c.name).first }}</strong><strong class="name-mid privacy-blur">{{
-                    splitName(c.name).mid }}</strong><strong>{{ splitName(c.name).last }}</strong>
-                </span>
-                <small style="opacity:0.8">({{ c.id }})</small>
+
+            <!-- 右側：待辦隨手記 (永遠顯示) -->
+            <div class="card sticky-note-card" style="margin-bottom:0">
+              <div class="card-header">
+                <h3><i class="fas fa-thumbtack"></i> 待辦隨手記 <small style="font-weight:400; opacity:0.6; font-size:12px; margin-left:8px">(瀏覽器自動記憶)</small></h3>
+              </div>
+              <div class="sticky-note-body">
+                <textarea class="sticky-note-textarea" v-model="todoNote" placeholder="點擊此處輸入待辦事項、提醒或心得..."></textarea>
               </div>
             </div>
           </div>
@@ -500,8 +513,24 @@
                     <span style="color: var(--tx2); font-weight: normal;">純屬個人紀錄，不計入月報表統計次數</span>
                   </label>
                 </div>
-                <div class="fg full"><label>內容</label><textarea v-model="recordForm.content" rows="6"
-                    placeholder="請輸入服務內容..."></textarea></div>
+                <div class="fg full">
+                  <label>服務內容</label>
+                  <div class="editor-container">
+                    <div class="editor-toolbar">
+                      <button type="button" class="editor-btn" @click="execEditorCommand('bold')" title="粗體 (Ctrl+B)"><i class="fas fa-bold"></i></button>
+                      <button type="button" class="editor-btn" @click="execEditorCommand('insertUnorderedList')" title="項目符號"><i class="fas fa-list-ul"></i></button>
+                      <button type="button" class="editor-btn" @click="execEditorCommand('insertOrderedList')" title="編號清單"><i class="fas fa-list-ol"></i></button>
+                      <button type="button" class="editor-btnHighlight" @click="execEditorCommand('highlight')" title="文字底色"><i class="fas fa-highlighter"></i></button>
+                    </div>
+                    <!-- 🎯 所見即所得編輯區：透過 @input 即時同步回 Markdown 語法 -->
+                    <div id="record-editor" 
+                         class="editor-input" 
+                         contenteditable="true" 
+                         @input="recordForm.content = html2md($event.target.innerHTML)"
+                         placeholder="請輸入服務內容...">
+                    </div>
+                  </div>
+                </div>
               </div>
               <div style="margin-top:15px; display: flex; justify-content: space-between; align-items: center;">
                 <div>
@@ -529,7 +558,7 @@
                     <span><i class="fas fa-bullseye"></i> {{ r.method }}</span>
                     <span><i class="fas fa-pen-nib"></i> {{ r.recorderName }}</span>
                   </div>
-                  <div class="timeline-content">{{ r.content }}</div>
+                  <div class="timeline-content" v-html="md2html(r.content)"></div>
                   <div class="timeline-actions" v-if="canEditRecord(r)">
                     <button class="btn btn-icon btn-sm" @click="openRecordModal(r)" title="編輯"><i
                         class="fas fa-pen"></i></button>
