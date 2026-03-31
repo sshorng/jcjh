@@ -551,6 +551,10 @@
         <section v-if="page==='settings' && isAdmin">
           <div class="page-header" style="justify-content: space-between;">
             <h1><i class="fas fa-gear"></i> 系統配置與工具</h1>
+            <a href="https://docs.google.com/spreadsheets/d/1Y2fpaQ8shsR9ylZXiQmbkjFDg53FcfWCafsW3V2gbEc/edit?usp=sharing"
+              target="_blank" class="btn btn-secondary btn-sm">
+              <i class="fas fa-table"></i> 開啟雲端試算表
+            </a>
           </div>
 
           <!-- 分頁籤 -->
@@ -779,7 +783,7 @@
               </div>
               <div class="fg">
                 <label>入學學年度 (屆別)</label>
-                <input v-model="caseForm.entrySY" placeholder="例：112">
+                <input v-model="caseForm.entrySY" placeholder="例：114">
               </div>
               <div class="fg"><label>年級</label><select v-model="caseForm.grade" @change="autoFillStaff">
                   <option value="">--</option>
