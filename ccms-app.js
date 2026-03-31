@@ -71,6 +71,7 @@ createApp({
       backupGrade: '全部',
       selectedCaseIds: [], // 用於批次操作勾選
       recordDrafts: {}, // 🎨 新增案例草稿暫存
+      isPrivacyMode: localStorage.getItem('cms_privacy_mode') === 'true', // 🔒 隱私遮罩模式
       // 配置與設定分頁
       settingsTab: 'export',
       // 配置管理
@@ -267,6 +268,23 @@ createApp({
     toggleTheme() {
       this.theme = this.theme === 'dark' ? 'light' : 'dark';
       localStorage.setItem('cms_theme', this.theme);
+    },
+    // ===== 隱私模式切換 =====
+    togglePrivacy() {
+      // 🚨 哨子測試：若彈窗沒出現，代表 Vue 指令完全沒被觸發
+      console.log('[Privacy Mode] Toggling from', this.isPrivacyMode);
+      this.isPrivacyMode = !this.isPrivacyMode;
+      localStorage.setItem('cms_privacy_mode', this.isPrivacyMode ? 'true' : 'false');
+      // 提示使用者
+      this.showToast(this.isPrivacyMode ? '隱私模式：學員姓名已進入磨砂保密狀態' : '隱私模式：校閱全名模式', 'info');
+    },
+    // 🎨 姓名精準拆解邏輯
+    splitName(name) {
+      if (!name || typeof name !== 'string') return { first: name || '', mid: '', last: '' };
+      const len = name.length;
+      if (len <= 1) return { first: name, mid: '', last: '' };
+      if (len === 2) return { first: name[0], mid: name[1], last: '' };
+      return { first: name[0], mid: name.substring(1, len - 1), last: name[len - 1] };
     },
 
     // ===== 表單初始化 =====
