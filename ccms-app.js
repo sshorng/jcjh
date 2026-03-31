@@ -612,6 +612,31 @@ createApp({
         this.caseForm.gender = '男';
       }
     },
+    async generateOfficialId() {
+      if (!this.caseForm.reportDate) {
+        this.showToast('請先選取年級或填寫「提報學期」（例：114-1）。', 'error'); return;
+      }
+      if (!this.caseForm.counselor) {
+        this.showToast('請先選取負責之「專輔」老師。', 'error'); return;
+      }
+      this.loading = true;
+      try {
+        const r = await this.api('generateOfficialId', {
+          reportDate: this.caseForm.reportDate,
+          counselor: this.caseForm.counselor
+        });
+        if (r?.success) {
+          this.caseForm.id = r.id;
+          this.showToast('正式編號已生成', 'success');
+        } else {
+          this.showToast(r.error || '生成失敗', 'error');
+        }
+      } catch (err) {
+        this.showToast('系統呼叫失敗', 'error');
+      } finally {
+        this.loading = false;
+      }
+    },
     async saveCaseForm() {
       // 統一格式修補：如果輸出的編號是 1140118 (7碼)，自動轉為 114-0118
       if (/^\d{7}$/.test(this.caseForm.id)) {
