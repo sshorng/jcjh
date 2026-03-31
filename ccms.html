@@ -362,6 +362,7 @@
               <div class="info-item"><label>認輔教師</label><span>{{ currentCase.mentorTeacher || '-' }}</span></div>
               <div class="info-item" v-if="currentCase.specialEdu && currentCase.specialEdu !== '0.以下皆非' && currentCase.specialEdu !== '-'"><label>特教身分</label><span>{{ currentCase.specialEdu }}{{ currentCase.specialEduTeacher ? ' (個管：' + currentCase.specialEduTeacher + ')' : '' }}</span></div>
               <div class="info-item"><label>身分背景</label><span>{{ currentCase.identity || '-' }}</span></div>
+              <div class="info-item"><label>轉介概況</label><span>{{ currentCase.referralStatus || '2.無轉介' }}</span></div>
               <div class="info-item"><label>個案來源</label><span>{{ currentCase.caseSource || '-' }}</span></div>
               <div class="info-item"><label>服務方式</label><span>{{ currentCase.serviceMethod || '-' }}</span></div>
             </div>
@@ -793,6 +794,15 @@
                   <label v-for="t in CASE_TYPES" :key="t"><input type="checkbox" :value="t"
                       v-model="caseForm.caseTypeArr"> {{ t }}</label>
                 </div>
+                <div v-if="caseForm.caseTypeArr && caseForm.caseTypeArr.length > 0" class="meta-hint"
+                  style="margin-top: 8px; color: var(--acc); font-size: 13px; font-weight: bold;">
+                  <i class="fas fa-info-circle"></i> 報表判定順序：
+                  <span class="badge badge-primary">主案：{{ caseForm.caseTypeArr[0] }}</span>
+                  <span v-if="caseForm.caseTypeArr[1]" class="badge badge-secondary" style="margin-left:8px;">副案：{{
+                    caseForm.caseTypeArr[1] }}</span>
+                  <span v-if="caseForm.caseTypeArr.length > 2"
+                    style="color: var(--text-mut); font-weight: normal; margin-left:8px;">(其餘不計入 A-1 表)</span>
+                </div>
               </div>
             </div>
           </div>
@@ -826,6 +836,11 @@
                   <option value="">--</option>
                   <option v-for="o in SOURCE_OPTS" :key="o">{{ o }}</option>
                 </select></div>
+              <div class="fg"><label>轉介概況 (配合月報表)</label>
+                <select v-model="caseForm.referralStatus">
+                  <option v-for="o in REFERRAL_OPTS" :key="o" :value="o">{{ o }}</option>
+                </select>
+              </div>
             </div>
           </div>
           <div class="form-section">
