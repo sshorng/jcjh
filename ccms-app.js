@@ -25,7 +25,7 @@ const SPECIAL_ED_OPTS = [
   '6.腦性麻痺', '7.身體病弱', '8.情緒行為障礙', '9.學習障礙', '10.多重障礙',
   '11.自閉症', '12.發展遲緩', '13.其他障礙'
 ];
-const IDENTITY_OPTS = ['1.新住民子女', '2.低收入戶', '3.中低收入戶', '4.身心障礙', '5.原住民', '6.單親家庭', '7.隔代教養', '8.外配子女', '9.兒少保護', '10.其他', '特教生'];
+const IDENTITY_OPTS = ['1.新住民子女', '2.低收入戶', '3.中低收入戶', '4.身心障礙', '5.原住民', '6.單親家庭', '7.隔代教養', '8.外配子女', '9.兒少保護', '10.其他'];
 const SERVICE_OPTS = [
   '1.團體輔導', '2.入班輔導', '3.家長諮詢', '4.教師諮詢', '5.個案會議',
   '6.心理測驗', '7.安心服務', '8.家庭處遇', '9.資源連結', '10.系統會談',
@@ -110,7 +110,7 @@ createApp({
         const q = this.filterIdentity.trim();
         const pureQ = q.replace(/^\d+\./, '');
         if (q === '特教生') {
-          result = result.filter(c => c.specialEdu && String(c.specialEdu).trim() !== '0.以下皆非');
+          result = result.filter(c => c.specialEdu && String(c.specialEdu).trim() !== '0.以下皆非' && String(c.specialEdu).trim() !== '-');
         } else {
           result = result.filter(c => {
             const val = String(c.identity || '');
@@ -554,7 +554,7 @@ createApp({
           ...this.emptyCaseForm(),
           ...base,
           caseTypeArr: rawTypes,
-          identityArr: rawIdentity,
+          identityArr: rawIdentity.filter(id => id !== '特教生'),
           counselor: base.counselor || ''
         };
       } else {
