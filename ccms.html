@@ -599,7 +599,8 @@
           <!-- 2. 匯出與報表 -->
           <div class="card" v-if="settingsTab === 'export'">
             <div class="card-body fade-in">
-              <h3 style="margin-bottom: 12px; font-size: 16px;"><i class="fas fa-print" style="color:var(--pri)"></i> 報表與表單列印</h3>
+              <h3 style="margin-bottom: 12px; font-size: 16px;"><i class="fas fa-print" style="color:var(--pri)"></i>
+                報表與表單列印</h3>
               <div
                 style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 24px; padding: 15px; background: rgba(var(--p-alpha), 0.06); border-radius: var(--r2); border: 1px solid var(--bd);">
                 <button class="btn btn-primary" @click="openExportModal"><i class="fas fa-file-excel"></i>
@@ -608,7 +609,8 @@
                   (Word)</button>
               </div>
 
-              <h3 style="margin-bottom: 12px; font-size: 16px;"><i class="fas fa-archive" style="color:var(--pri)"></i> 學期末整理匯出</h3>
+              <h3 style="margin-bottom: 12px; font-size: 16px;"><i class="fas fa-archive" style="color:var(--pri)"></i>
+                學期末整理匯出</h3>
               <div
                 style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; padding: 15px; background: rgba(var(--p-alpha), 0.06); border-radius: var(--r2); border: 1px solid var(--bd);">
                 <div style="margin-bottom: 0;">
@@ -628,10 +630,12 @@
               </div>
 
               <!-- 學期綜述生成 (AI) -->
-              <h3 style="margin: 20px 0 12px 0; font-size: 16px;"><i class="fas fa-wand-magic-sparkles" style="color:var(--pri)"></i> 學期綜述生成 (AI)</h3>
+              <h3 style="margin: 20px 0 12px 0; font-size: 16px;"><i class="fas fa-wand-magic-sparkles"
+                  style="color:var(--pri)"></i> 學期綜述生成 (AI)</h3>
               <div class="batch-bar"
                 style="margin-top: 0; margin-bottom: 20px; background: rgba(0,0,0,0.03); border-left: none; border: 1px solid var(--bd);">
-                <div class="batch-actions" style="flex:1; display:flex; flex-wrap:wrap; gap:20px; align-items:flex-end;">
+                <div class="batch-actions"
+                  style="flex:1; display:flex; flex-wrap:wrap; gap:20px; align-items:flex-end;">
                   <div class="action-group" style="margin-bottom:0">
                     <label style="margin-bottom: 4px; font-weight: 500; font-size:13px; color:var(--tx2)">限制年級</label>
                     <select v-model="batchConfig.grade" class="search-input" style="width:100px; padding:8px">
@@ -642,7 +646,8 @@
                     </select>
                   </div>
                   <div class="action-group" style="flex:1; min-width:180px; margin-bottom:0">
-                    <label style="margin-bottom: 4px; font-weight: 500; font-size:13px; color:var(--tx2)">目標學期 (如: 114-2 / 114上)</label>
+                    <label style="margin-bottom: 4px; font-weight: 500; font-size:13px; color:var(--tx2)">目標學期 (如: 114-2
+                      / 114上)</label>
                     <input type="text" v-model="batchConfig.semesterStr" class="search-input" placeholder="例如: 114-2"
                       style="padding:8px">
                   </div>
@@ -681,7 +686,8 @@
           <!-- 3. 系統維護 -->
           <div class="card" v-if="settingsTab === 'maintenance'">
             <div class="card-body fade-in">
-              <h3 style="margin-bottom: 12px; font-size: 16px;"><i class="fas fa-tools" style="color:var(--pri)"></i> 輔助工具</h3>
+              <h3 style="margin-bottom: 12px; font-size: 16px;"><i class="fas fa-tools" style="color:var(--pri)"></i>
+                輔助工具</h3>
 
               <div class="batch-bar" style="margin-top: 0; margin-bottom: 30px; border-left-color: var(--ok);">
                 <div class="batch-actions">
@@ -757,7 +763,7 @@
             <div class="form-grid">
               <div class="fg">
                 <label>個案編號</label>
-                <input v-model="caseForm.id" :disabled="!!editingId" placeholder="例：114-0112 (不填則自動生成暫時編號)">
+                <input v-model="caseForm.id" :disabled="!!editingId" placeholder="例：114-0112 (不填則自動生成暫時編號S-)">
               </div>
               <div class="fg"></div>
               <div class="fg"><label>年級</label><select v-model="caseForm.grade" @change="autoFillStaff">
