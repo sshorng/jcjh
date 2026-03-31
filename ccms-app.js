@@ -129,7 +129,7 @@ createApp({
       }
 
       // 3. 排序：依年級、班級、座號順序排列
-      const gradeMap = { '七': 7, '八': 8, '九': 9 };
+      const gradeMap = { '新生': 6, '七': 7, '八': 8, '九': 9, '畢業': 10 };
       result.sort((a, b) => {
         const gA = gradeMap[a.grade] || 99;
         const gB = gradeMap[b.grade] || 99;
@@ -552,8 +552,6 @@ createApp({
         this.caseForm = {
           ...this.emptyCaseForm(),
           ...base,
-          id: c.id,
-          caseTypeArr: rawTypes.filter(t => this.CASE_TYPES.includes(t)),
           identityArr: rawIdentity.filter(id => this.IDENTITY_OPTS.includes(id)),
           counselor: base.counselor || ''
         };
@@ -598,7 +596,9 @@ createApp({
         this.caseForm.id = this.caseForm.id.slice(0, 3) + '-' + this.caseForm.id.slice(3);
       }
 
-      if (!this.caseForm.id || !this.caseForm.name) {
+      if (!this.editingId && !this.caseForm.id) {
+        // 新增時，若沒填 ID，則依賴後端生成，不擋
+      } else if (!this.caseForm.id || !this.caseForm.name) {
         this.showToast('請填寫個案編號與姓名', 'error'); return;
       }
 
