@@ -257,6 +257,7 @@ createApp({
         serviceMethod: '', caseSource: '', caseType: '', identity: '',
         referralStatus: '2.無轉介', referralMonth: '',
         caseTypeArr: [], identityArr: [],
+        entrySY: '',
         s_7a: '', s_7b: '', s_8a: '', s_8b: '', s_9a: '', s_9b: '',
         generatingSummary: false // 新增狀態
       };
@@ -570,18 +571,30 @@ createApp({
       this.showCaseModal = true;
     },
     autoFillStaff() {
-      if (!this.caseForm.grade || !this.caseForm.class) return;
+      if (!this.caseForm.grade) return;
 
       // 1. 自動填寫學期
       const now = new Date();
       let sy = now.getFullYear() - 1911;
-      if (now.getMonth() + 1 < 8) sy -= 1; // 尚未開學，算前一年的學期
+      const month = now.getMonth() + 1;
+      if (month < 8) sy -= 1;
+
       if (!this.caseForm.reportDate) {
-        const month = now.getMonth() + 1;
         this.caseForm.reportDate = (month >= 8) ? `${sy}-1` : (month >= 2 ? `${sy - 1}-2` : `${sy - 1}-1`);
       }
 
-      // 2. 代入相關人員
+      // 1.5 自動推算入學學年度 (屆別)
+      const gradeMap = {
+        '新生': -1,
+        '七': 0, '八': 1, '九': 2,
+        '七年級': 0, '八年級': 1, '九年級': 2
+      };
+      const offset = (this.caseForm.grade in gradeMap) ? gradeMap[this.caseForm.grade] : 0;
+      this.caseForm.entrySY = String(sy - offset);
+
+      // 2. 代入相關人員 (需有班級才執行)
+      if (!this.caseForm.class) return;
+      
       const cfg = this.configs.classes.find(it => it['年級'] === this.caseForm.grade && String(it['班級']) === String(this.caseForm.class));
       if (cfg) {
         this.caseForm.homeroom = cfg['導師'] || '';
