@@ -81,6 +81,9 @@
             <button class="footer-btn" @click="toggleTheme" :title="theme==='dark'?'開燈':'關燈'">
               <i :class="theme==='dark'?'fas fa-moon':'fas fa-sun'"></i>
             </button>
+            <button class="footer-btn" :class="{'privacy-active': isPrivacyMode}" @click="togglePrivacy" :title="isPrivacyMode?'顯示全名':'開啟隱私遮罩'">
+              <i :class="isPrivacyMode?'fas fa-eye-slash':'fas fa-eye'"></i>
+            </button>
             <button class="footer-btn" @click="showChangePwd=true" title="修改密碼">
               <i class="fas fa-key"></i>
             </button>
@@ -162,7 +165,12 @@
                   <tr v-for="r in dashData.recentRecords" :key="r.id" @click="viewCaseById(r.caseId)" class="hover-row"
                     style="cursor: pointer">
                     <td>{{ formatDate(r.dateTime) }}</td>
-                    <td>{{ r.studentName }} <small style="color:var(--tx2)">({{ r.caseId }})</small></td>
+                    <td>
+                      <span :class="{'privacy-active': isPrivacyMode}">
+                        <span>{{ splitName(r.studentName).first }}</span><span class="name-mid privacy-blur">{{ splitName(r.studentName).mid }}</span><span>{{ splitName(r.studentName).last }}</span>
+                      </span>
+                      <small style="color:var(--tx2)">({{ r.caseId }})</small>
+                    </td>
                     <td>{{ r.target }}</td>
                     <td>
                       <div class="text-truncate" style="max-width:200px">{{ r.service }}</div>
@@ -185,7 +193,10 @@
                 style="cursor:pointer; padding: 10px 18px; background: rgba(244, 162, 97, 0.1); border: 1px solid var(--acc); color: var(--acc); display: flex; align-items: center; gap: 8px; border-radius: 50px; font-weight: 500;"
                 @click="viewCaseById(c.id)">
                 <i class="fas fa-user-clock"></i>
-                <strong>{{ c.name }}</strong> <small style="opacity:0.8">({{ c.id }})</small>
+                <span :class="{'privacy-active': isPrivacyMode}">
+                  <strong>{{ splitName(c.name).first }}</strong><strong class="name-mid privacy-blur">{{ splitName(c.name).mid }}</strong><strong>{{ splitName(c.name).last }}</strong>
+                </span>
+                <small style="opacity:0.8">({{ c.id }})</small>
               </div>
             </div>
           </div>
@@ -305,7 +316,11 @@
                   <td>{{ c.grade }}</td>
                   <td>{{ c.class }}</td>
                   <td>{{ c.seatNo }}</td>
-                  <td><strong>{{ c.name }}</strong></td>
+                  <td>
+                    <span :class="{'privacy-active': isPrivacyMode}">
+                      <strong>{{ splitName(c.name).first }}</strong><strong class="name-mid privacy-blur">{{ splitName(c.name).mid }}</strong><strong>{{ splitName(c.name).last }}</strong>
+                    </span>
+                  </td>
                   <td>{{ c.gender }}</td>
                   <td>{{ c.reportDate || '-' }}</td>
                   <td><span class="badge badge-type" v-if="c.caseType">{{ c.caseType }}</span></td>
@@ -347,8 +362,11 @@
         <section v-if="page==='detail' && currentCase">
           <a class="back-btn" @click="goBackToCases"><i class="fas fa-arrow-left"></i> 返回個案列表</a>
           <div class="page-header">
-            <h1><i class="fas fa-user"></i> {{ currentCase.name }} <small style="color:var(--tx2)">({{ currentCase.id
-                }})</small> 的個案資料
+            <h1><i class="fas fa-user"></i> 
+              <span :class="{'privacy-active': isPrivacyMode}">
+                <span>{{ splitName(currentCase.name).first }}</span><span class="name-mid privacy-blur">{{ splitName(currentCase.name).mid }}</span><span>{{ splitName(currentCase.name).last }}</span>
+              </span>
+              <small style="color:var(--tx2)">({{ currentCase.id }})</small> 的個案資料
               <span
                 :class="['badge', currentCase.status==='進行中'?'badge-active':(currentCase.status==='觀察中'?'badge-obs':'badge-closed')]"
                 style="margin-left:12px; vertical-align:middle; font-size:14px;">{{ currentCase.status }}</span>
@@ -368,7 +386,12 @@
             <div class="case-info-grid">
               <div class="info-item"><label>年級班級</label><span>{{ currentCase.grade }}年{{ currentCase.class }}班</span>
               </div>
-              <div class="info-item"><label>座號姓名</label><span>{{ currentCase.seatNo }}號 {{ currentCase.name }}</span>
+              <div class="info-item"><label>座號姓名</label>
+                <span>{{ currentCase.seatNo }}號 
+                  <span :class="{'privacy-active': isPrivacyMode}">
+                    <span>{{ splitName(currentCase.name).first }}</span><span class="name-mid privacy-blur">{{ splitName(currentCase.name).mid }}</span><span>{{ splitName(currentCase.name).last }}</span>
+                  </span>
+                </span>
               </div>
               <div class="info-item"><label>性別</label><span>{{ currentCase.gender }}</span></div>
               <div class="info-item"><label>個案類型</label><span>{{ currentCase.caseType || '-' }}</span></div>
