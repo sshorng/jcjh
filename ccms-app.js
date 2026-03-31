@@ -70,6 +70,7 @@ createApp({
       feedbackModal: { show: false, targetSem: '', currentSem: '' },
       backupGrade: '全部',
       selectedCaseIds: [], // 用於批次操作勾選
+      recordDrafts: {}, // 🎨 新增案例草稿暫存
       // 配置與設定分頁
       settingsTab: 'export',
       // 配置管理
@@ -199,15 +200,41 @@ createApp({
     paginatedCases() {
       const start = (this.casePage - 1) * this.casePageSize;
       return this.filteredCases.slice(start, start + this.casePageSize);
+    },
+    // 🎨 裝修提醒專區：從保險櫃找出所有「施工中」的案子，並與全案名單比對以獲取姓名
+    casesWithDrafts() {
+      if (!this.recordDrafts) return [];
+      const draftIds = Object.keys(this.recordDrafts);
+      // 🎯 只回傳有草稿存在，且該個案確實存在的清單
+      return this.cases.filter(c => draftIds.includes(String(c.id)));
     }
   },
   watch: {
-    // 當晤談紀錄內容變動時，自動儲存至草稿
+    // 🎨 個案專屬全表單自動存檔：當任何欄位變動，立刻鎖定存入該個案的專屬 ID 下
     recordForm: {
       deep: true,
       handler(val) {
-        if (!this.editingRecordId && this.showRecordModal) {
-          localStorage.setItem('cms_record_draft', JSON.stringify(val));
+        // 🎯 只有在「視窗打開」的情況下才進行裝修同步
+        if (this.currentCase && this.currentCase.id && this.showRecordModal && !this.editingRecordId) {
+          // 🔎 智慧過濾：檢查是否為「預設裝修初稿」 (無內容、無選取、日期回正)
+          const def = this.emptyRecordForm();
+          const p = val;
+          const isEmpty = (!p.content.trim()) && 
+                          (p.serviceArr.length === 0) && (p.targetArr.length === 0) && (p.methodArr.length === 0) &&
+                          (!p.customTarget.trim()) && (!p.customMethod.trim()) && (!p.excludeFromReport) &&
+                          (p.date === def.date);
+
+          if (isEmpty) {
+            // 🧹 如果內容已經歸零，則從櫃子裡把這案子掃掉
+            if (this.recordDrafts[this.currentCase.id]) {
+              delete this.recordDrafts[this.currentCase.id];
+              localStorage.setItem('cms_record_drafts', JSON.stringify(this.recordDrafts));
+            }
+          } else {
+            // 🚀 確有進度，立刻鎖入保險櫃
+            this.recordDrafts[this.currentCase.id] = JSON.parse(JSON.stringify(val));
+            localStorage.setItem('cms_record_drafts', JSON.stringify(this.recordDrafts));
+          }
         }
       }
     },
@@ -494,16 +521,25 @@ createApp({
       }
     },
     async viewCase(c) {
+      if (!c || !c.id) return;
+      
+      // --- 核心狀態切換 ---
       this.currentCase = c;
       this.page = 'detail';
       this.recordPage = 1;
       this.showRecordModal = false;
+      this.editingRecordId = null;
+
+      // 🎯 進入詳情頁時，只需確保 Modal 是關閉狀態，表單初始化交給 openRecordModal
+      this.recordForm = this.emptyRecordForm();
 
       // 優先載入快取中的紀錄
       const cacheKey = `cms_records_${c.id}`;
       const cachedRecords = localStorage.getItem(cacheKey);
       if (cachedRecords) {
-        this.records = JSON.parse(cachedRecords);
+        try {
+          this.records = JSON.parse(cachedRecords);
+        } catch (e) { this.records = []; }
       } else {
         this.records = [];
       }
@@ -546,6 +582,11 @@ createApp({
           const idx = this.cases.findIndex(x => String(x.id) === String(c.id));
           if (idx >= 0) this.cases[idx] = this.currentCase;
         }
+      }
+
+      // 🎯 智慧自動展開：進入詳情後，若發現有「施工中」的草稿，直接為您展開編輯欄
+      if (this.recordDrafts && this.recordDrafts[c.id]) {
+        this.openRecordModal(null);
       }
     },
     openCaseModal(c) {
@@ -748,8 +789,7 @@ createApp({
           }
 
           this.showToast(r.message || 'AI 摘要生成成功！', 'success');
-          console.log(`[AI-SUCCESS] ${field} set to:`, newSummary);
-        } else {
+        } else if (r && r.success) {
           this.showToast('AI 生成完成，但回傳解析失敗，請重新整理頁面。', 'warning');
         }
       } catch (err) {
@@ -1235,25 +1275,28 @@ createApp({
         };
       } else {
         this.editingRecordId = null;
-        const draft = localStorage.getItem('cms_record_draft');
-        if (draft) {
-          try {
-            const parsed = JSON.parse(draft);
-            if (!Array.isArray(parsed.serviceArr)) parsed.serviceArr = [];
-            if (!Array.isArray(parsed.targetArr)) parsed.targetArr = [];
-            if (!Array.isArray(parsed.methodArr)) parsed.methodArr = [];
-
-            // 🎯 關鍵修正：草稿內容保留，但「日期」強制度調整為今日
-            const todayForm = this.emptyRecordForm();
-            parsed.date = todayForm.date;
-
-            this.recordForm = parsed;
-          } catch (e) { this.recordForm = this.emptyRecordForm(); }
-        } else {
-          this.recordForm = this.emptyRecordForm();
+        // 🎯 新增錄入模式：先初始化一個今日乾淨表單
+        this.recordForm = this.emptyRecordForm();
+        // 🚀 自動從「隔離櫃 (recordDrafts)」中取出「完整表單狀態」 (包含日期、勾選、內容)
+        if (this.currentCase && this.recordDrafts[this.currentCase.id]) {
+          const draft = this.recordDrafts[this.currentCase.id];
+          // 排除 Null 或是格式錯誤，進行安全深度拷貝還原
+          this.recordForm = JSON.parse(JSON.stringify(draft));
         }
       }
       this.showRecordModal = true;
+    },
+    clearRecordDraft() {
+      this.confirmAction('🛠️ 確定要重排裝修計畫（清空目前編輯區）嗎？\n這將會清除您本個案所有打到一半的內容與選取，且無法還原。', () => {
+        // 1. 初始化表單 (重置為今天與空白)
+        this.recordForm = this.emptyRecordForm();
+        // 2. 徹底同步保險櫃與緩存
+        if (this.currentCase && this.recordDrafts[this.currentCase.id]) {
+          delete this.recordDrafts[this.currentCase.id];
+          localStorage.setItem('cms_record_drafts', JSON.stringify(this.recordDrafts));
+        }
+        this.showToast('編輯區已清空', 'info');
+      });
     },
     async saveRecordForm() {
       if (!this.recordForm.content) { this.showToast('請填寫晤談紀錄', 'error'); return; }
@@ -1318,9 +1361,14 @@ createApp({
         this.showToast(r.message, 'success');
         this.showRecordModal = false; // 這裡的 showRecordModal 控制內嵌表單的收合
         this.editingRecordId = null;
-        if (!this.editingRecordId) {
-          localStorage.removeItem('cms_record_draft');
+        if (this.currentCase && this.recordDrafts[this.currentCase.id]) {
+          delete this.recordDrafts[this.currentCase.id];
+          // 🚀 同步清理瀏覽器快取
+          localStorage.setItem('cms_record_drafts', JSON.stringify(this.recordDrafts));
         }
+        // 🎯 儲存成功後，強制清空全域表單，避免切換個案時「借用」到剛才的內容
+        this.recordForm = this.emptyRecordForm();
+        
         await this.fetchData();
         const rr = await this.api('getRecords', { caseId: this.currentCase.id });
         if (rr?.success) {
@@ -2155,6 +2203,13 @@ createApp({
 
   mounted() {
     this.initGasUrl();
+
+    // 🚀 載入持久化草稿
+    const savedDrafts = localStorage.getItem('cms_record_drafts');
+    if (savedDrafts) {
+      try { this.recordDrafts = JSON.parse(savedDrafts); } catch(e) {}
+    }
+
     const saved = localStorage.getItem('cms_user');
     if (saved) {
       try {
