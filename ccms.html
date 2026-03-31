@@ -199,6 +199,7 @@
               style="flex:2; min-width:200px">
             <select v-model="filterGrade" class="search-input" style="flex:1; min-width:100px">
               <option value="">--年級篩選--</option>
+              <option>新生</option>
               <option>七</option>
               <option>八</option>
               <option>九</option>
@@ -265,6 +266,7 @@
                   <th style="width: 40px"><input type="checkbox" :checked="isAllSelected" @click="toggleSelectAll">
                   </th>
                   <th style="width: 50px">序號</th>
+                  <th style="width: 100px">個案編號</th>
                   <th style="width: 60px">年級</th>
                   <th style="width: 60px">班級</th>
                   <th style="width: 60px">座號</th>
@@ -283,6 +285,7 @@
                   <td @click.stop><input type="checkbox" :value="c.id" v-model="selectedCaseIds"></td>
                   <td style="text-align:center; opacity:.6; font-size:13px">{{ (casePage - 1) * casePageSize + idx + 1
                     }}</td>
+                  <td style="font-family: monospace; font-size: 13px;">{{ c.id }}</td>
                   <td>{{ c.grade }}</td>
                   <td>{{ c.class }}</td>
                   <td>{{ c.seatNo }}</td>
@@ -612,6 +615,7 @@
                   <label style="display:block; font-size:12px; color:var(--tx2); margin-bottom:4px;">批量選取年級</label>
                   <select v-model="backupGrade" class="search-input" style="padding:8px">
                     <option>全部</option>
+                    <option>新生</option>
                     <option>七</option>
                     <option>八</option>
                     <option>九</option>
@@ -631,6 +635,7 @@
                   <div class="action-group" style="margin-bottom:0">
                     <label style="margin-bottom: 4px; font-weight: 500; font-size:13px; color:var(--tx2)">限制年級</label>
                     <select v-model="batchConfig.grade" class="search-input" style="width:100px; padding:8px">
+                      <option value="新生">新生</option>
                       <option value="7">七年級</option>
                       <option value="8">八年級</option>
                       <option value="9">九年級</option>
@@ -750,11 +755,14 @@
           <div class="form-section">
             <h4>👤 基本資料</h4>
             <div class="form-grid">
-              <div class="fg"><label>個案編號</label><input v-model="caseForm.id" :disabled="!!editingId"
-                  placeholder="例：114-0112" required></div>
+              <div class="fg">
+                <label>個案編號</label>
+                <input v-model="caseForm.id" :disabled="!!editingId" placeholder="例：114-0112 (不填則自動生成暫時編號)">
+              </div>
               <div class="fg"></div>
               <div class="fg"><label>年級</label><select v-model="caseForm.grade" @change="autoFillStaff">
                   <option value="">--</option>
+                  <option>新生</option>
                   <option>七</option>
                   <option>八</option>
                   <option>九</option>
