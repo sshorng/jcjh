@@ -1392,21 +1392,21 @@ createApp({
         });
       }
       this.loading = false;
-        if (r?.success) {
-          this.showToast(r.message, 'success');
-          this.showRecordModal = false;
-          this.editingRecordId = null;
-          if (this.currentCase && this.recordDrafts[this.currentCase.id]) {
-            delete this.recordDrafts[this.currentCase.id];
-            localStorage.setItem('cms_record_drafts', JSON.stringify(this.recordDrafts));
-          }
-          this.recordForm = this.emptyRecordForm();
-
-          // 🚀 自動刷新：確保資料庫中最新的 Markdown 序列與渲染效果正確呈現
-          setTimeout(() => {
-            window.location.reload();
-          }, 500);
+      if (r?.success) {
+        this.showToast(r.message, 'success');
+        this.showRecordModal = false;
+        this.editingRecordId = null;
+        if (this.currentCase && this.recordDrafts[this.currentCase.id]) {
+          delete this.recordDrafts[this.currentCase.id];
+          localStorage.setItem('cms_record_drafts', JSON.stringify(this.recordDrafts));
         }
+        this.recordForm = this.emptyRecordForm();
+
+        // 🚀 自動刷新：確保資料庫中最新的 Markdown 序列與渲染效果正確呈現
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      }
     },
     async deleteRecord(id) {
       this.confirmAction('確定要刪除此晤談紀錄？', async () => {
@@ -1918,7 +1918,7 @@ createApp({
       let html = md.replace(/==(.*?)==/g, '<mark>$1</mark>');
       // 2. 處理粗體 **text** -> <strong>text</strong>
       html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      
+
       const lines = html.split('\n');
       let inUl = false, inOl = false;
       const res = [];
@@ -1946,7 +1946,7 @@ createApp({
     html2md(html) {
       const div = document.createElement('div');
       div.innerHTML = html.replace(/<p>/g, '<div>').replace(/<\/p>/g, '</div>'); // 統一轉換
-      
+
       const process = (node) => {
         let md = '';
         node.childNodes.forEach(child => {
@@ -1970,7 +1970,7 @@ createApp({
               const inner = process(child);
               if (inner || tag === 'br') md += (inner || '') + '\n';
             } else if (tag === 'ul' || tag === 'ol') {
-               md += process(child);
+              md += process(child);
             } else {
               md += process(child);
             }
@@ -1978,7 +1978,7 @@ createApp({
         });
         return md;
       };
-      
+
       return process(div).trim().replace(/\n{3,}/g, '\n\n');
     },
     execEditorCommand(cmd, val = null) {
@@ -2005,7 +2005,7 @@ createApp({
       } else {
         document.execCommand(cmd, false, val);
       }
-      
+
       // 強制同步回內容
       const editorDiv = document.getElementById('record-editor');
       if (editorDiv) {
@@ -2083,8 +2083,8 @@ createApp({
             new TableCell({ borders: modernBorders, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: this.formatDate(r.dateTime), size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
             new TableCell({ borders: modernBorders, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: String(r.target || '-'), size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
             new TableCell({ borders: modernBorders, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: String(r.method || '-'), size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-            new TableCell({ 
-              borders: modernBorders, 
+            new TableCell({
+              borders: modernBorders,
               children: this.parseMarkdownToDocx(r.content, FONT_SIZE) // 🎨 調用語法解析器
             }),
             new TableCell({ borders: modernBorders, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: String(r.recorderName || '-'), size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
@@ -2142,8 +2142,8 @@ createApp({
         const children = [];
         // 🚀 將清單符號/序號加回 children
         if (isBullet === 'ol') {
-          children.push(new TextRun({ 
-            text: isBulletPrefix + " ", 
+          children.push(new TextRun({
+            text: isBulletPrefix + " ",
             bold: true,
             size: fontSize,
             color: "1E293B" // 代碼塊/序號使用深色
@@ -2152,22 +2152,22 @@ createApp({
 
         // 🎨 混合解析：粗體與底色
         const tokens = text.split(/(==.*?==|\*\*.*?\*\*)/g);
-        
+
         tokens.forEach(token => {
           if (token.startsWith('==') && token.endsWith('==')) {
             // 解析底色：使用 Word 精緻淡藍
-            children.push(new TextRun({ 
-              text: token.slice(2, -2), 
+            children.push(new TextRun({
+              text: token.slice(2, -2),
               size: fontSize,
-              shading: { fill: "CCE5FF" } 
+              shading: { fill: "CCE5FF" }
             }));
           } else if (token.startsWith('**') && token.endsWith('**')) {
             // 解析粗體：官方正式深藍
-            children.push(new TextRun({ 
-              text: token.slice(2, -2), 
-              bold: true, 
+            children.push(new TextRun({
+              text: token.slice(2, -2),
+              bold: true,
               size: fontSize,
-              color: "1B2E57" 
+              color: "1B2E57"
             }));
           } else if (token) {
             children.push(new TextRun({ text: token, size: fontSize }));
@@ -2179,7 +2179,7 @@ createApp({
         const pProps = {
           children: children,
           spacing: { before: 120, after: 120 },
-          indent: { left: 720, hanging: 360 } 
+          indent: { left: 720, hanging: 360 }
         };
 
         if (isBullet === 'ul') {
