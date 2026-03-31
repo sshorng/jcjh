@@ -71,6 +71,7 @@ createApp({
       backupGrade: '全部',
       selectedCaseIds: [], // 用於批次操作勾選
       recordDrafts: {}, // 🎨 新增案例草稿暫存
+      todoNote: '', // 📌 待辦隨手記事本
       isPrivacyMode: localStorage.getItem('cms_privacy_mode') === 'true', // 🔒 隱私遮罩模式
       // 配置與設定分頁
       settingsTab: 'export',
@@ -215,9 +216,7 @@ createApp({
     recordForm: {
       deep: true,
       handler(val) {
-        // 🎯 只有在「視窗打開」的情況下才進行裝修同步
         if (this.currentCase && this.currentCase.id && this.showRecordModal && !this.editingRecordId) {
-          // 🔎 智慧過濾：檢查是否為「預設裝修初稿」 (無內容、無選取、日期回正)
           const def = this.emptyRecordForm();
           const p = val;
           const isEmpty = (!p.content.trim()) &&
@@ -226,26 +225,22 @@ createApp({
             (p.date === def.date);
 
           if (isEmpty) {
-            // 🧹 如果內容已經歸零，則從櫃子裡把這案子掃掉
             if (this.recordDrafts[this.currentCase.id]) {
               delete this.recordDrafts[this.currentCase.id];
               localStorage.setItem('cms_record_drafts', JSON.stringify(this.recordDrafts));
             }
           } else {
-            // 🚀 確有進度，立刻鎖入保險櫃
             this.recordDrafts[this.currentCase.id] = JSON.parse(JSON.stringify(val));
             localStorage.setItem('cms_record_drafts', JSON.stringify(this.recordDrafts));
           }
         }
       }
     },
-    // 🎯 狀態持久化：紀錄當前頁面與個案 ID，避免刷新跳回首頁
     page(val) { localStorage.setItem('cms_page', val); },
     currentCase(val) {
       if (val) localStorage.setItem('cms_case_id', val.id);
       else localStorage.removeItem('cms_case_id');
     },
-    // 🎯 效能優化：搜尋防抖 (Debounce)
     searchInputStr(val) {
       clearTimeout(this.searchTimeout);
       this.searchTimeout = setTimeout(() => {
@@ -253,11 +248,23 @@ createApp({
         this.casePage = 1;
       }, 300);
     },
+    showRecordModal(val) {
+      if (val) {
+        this.$nextTick(() => {
+          const editor = document.getElementById('record-editor');
+          if (editor) {
+            editor.innerHTML = this.recordForm.contentHTML || '';
+          }
+        });
+      }
+    },
+    todoNote(val) {
+      localStorage.setItem('cms_todo_note', val);
+    },
     filterGrade() { this.casePage = 1; },
     filterStatus() { this.casePage = 1; },
     filterCounselor() { this.casePage = 1; },
     filterIdentity() { this.casePage = 1; },
-    // 🎯 主題同步：讓 body 也帶有主題 class
     theme(val) {
       document.body.className = val === 'light' ? 'light-theme' : '';
     }
@@ -321,6 +328,7 @@ createApp({
         customMethod: '',
         serviceArr: [],
         content: '',
+        contentHTML: '', // ✅ 新增：編輯器專用 HTML 欄位
         excludeFromReport: false
       };
     },
@@ -1289,6 +1297,7 @@ createApp({
           customMethod: customMethods.join(', '),
           serviceArr: cleanServiceArr,
           content: rec.content,
+          contentHTML: this.md2html(rec.content), // 🎨 載入時轉換為網頁樣式
           excludeFromReport: excludeFromReport
         };
       } else {
@@ -1300,6 +1309,8 @@ createApp({
           const draft = this.recordDrafts[this.currentCase.id];
           // 排除 Null 或是格式錯誤，進行安全深度拷貝還原
           this.recordForm = JSON.parse(JSON.stringify(draft));
+          // 🚀 關鍵：從快取草稿恢復後，也要更新編輯器內部 HTML
+          this.recordForm.contentHTML = this.md2html(this.recordForm.content);
         }
       }
       this.showRecordModal = true;
@@ -1317,6 +1328,12 @@ createApp({
       });
     },
     async saveRecordForm() {
+      // 🎨 存檔前，強制將編輯器的 HTML 轉譯回 Markdown 語法
+      const editorDiv = document.getElementById('record-editor');
+      if (editorDiv) {
+        this.recordForm.content = this.html2md(editorDiv.innerHTML);
+      }
+
       if (!this.recordForm.content) { this.showToast('請填寫晤談紀錄', 'error'); return; }
 
       // 合併對象
@@ -1375,25 +1392,21 @@ createApp({
         });
       }
       this.loading = false;
-      if (r?.success) {
-        this.showToast(r.message, 'success');
-        this.showRecordModal = false; // 這裡的 showRecordModal 控制內嵌表單的收合
-        this.editingRecordId = null;
-        if (this.currentCase && this.recordDrafts[this.currentCase.id]) {
-          delete this.recordDrafts[this.currentCase.id];
-          // 🚀 同步清理瀏覽器快取
-          localStorage.setItem('cms_record_drafts', JSON.stringify(this.recordDrafts));
-        }
-        // 🎯 儲存成功後，強制清空全域表單，避免切換個案時「借用」到剛才的內容
-        this.recordForm = this.emptyRecordForm();
+        if (r?.success) {
+          this.showToast(r.message, 'success');
+          this.showRecordModal = false;
+          this.editingRecordId = null;
+          if (this.currentCase && this.recordDrafts[this.currentCase.id]) {
+            delete this.recordDrafts[this.currentCase.id];
+            localStorage.setItem('cms_record_drafts', JSON.stringify(this.recordDrafts));
+          }
+          this.recordForm = this.emptyRecordForm();
 
-        await this.fetchData();
-        const rr = await this.api('getRecords', { caseId: this.currentCase.id });
-        if (rr?.success) {
-          this.records = rr.data;
-          this.recordPage = 1; // 回到第一頁看新紀錄
+          // 🚀 自動刷新：確保資料庫中最新的 Markdown 序列與渲染效果正確呈現
+          setTimeout(() => {
+            window.location.reload();
+          }, 500);
         }
-      }
     },
     async deleteRecord(id) {
       this.confirmAction('確定要刪除此晤談紀錄？', async () => {
@@ -1898,6 +1911,108 @@ createApp({
       return s.slice(0, 10);
     },
 
+    // 🎨 Markdown <-> HTML 雙向翻譯引擎
+    md2html(md) {
+      if (!md) return '';
+      // 1. 處理底色 ==text== -> <mark>text</mark>
+      let html = md.replace(/==(.*?)==/g, '<mark>$1</mark>');
+      // 2. 處理粗體 **text** -> <strong>text</strong>
+      html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      
+      const lines = html.split('\n');
+      let inUl = false, inOl = false;
+      const res = [];
+
+      lines.forEach(line => {
+        const ulMatch = line.match(/^[\-\*]\s+(.*)/);
+        const olMatch = line.match(/^\d+\.\s+(.*)/);
+
+        if (ulMatch) {
+          if (!inUl) { if (inOl) { res.push('</ol>'); inOl = false; } res.push('<ul>'); inUl = true; }
+          res.push(`<li>${ulMatch[1]}</li>`);
+        } else if (olMatch) {
+          if (!inOl) { if (inUl) { res.push('</ul>'); inUl = false; } res.push('<ol>'); inOl = true; }
+          res.push(`<li>${olMatch[1]}</li>`);
+        } else {
+          if (inUl) { res.push('</ul>'); inUl = false; }
+          if (inOl) { res.push('</ol>'); inOl = false; }
+          res.push(line ? `<div>${line}</div>` : '<div><br></div>');
+        }
+      });
+      if (inUl) res.push('</ul>');
+      if (inOl) res.push('</ol>');
+      return res.join('');
+    },
+    html2md(html) {
+      const div = document.createElement('div');
+      div.innerHTML = html.replace(/<p>/g, '<div>').replace(/<\/p>/g, '</div>'); // 統一轉換
+      
+      const process = (node) => {
+        let md = '';
+        node.childNodes.forEach(child => {
+          if (child.nodeType === 3) { // Text
+            md += child.textContent;
+          } else if (child.nodeType === 1) { // Element
+            const tag = child.tagName.toLowerCase();
+            if (tag === 'b' || tag === 'strong') md += `**${process(child)}**`;
+            else if (tag === 'mark') md += `==${process(child)}==`;
+            else if (tag === 'li') {
+              const parentTag = child.parentNode.tagName.toLowerCase();
+              if (parentTag === 'ol') {
+                // 🚀 動態計算序號
+                const siblings = Array.from(child.parentNode.children);
+                const index = siblings.indexOf(child) + 1;
+                md += `${index}. ${process(child)}\n`;
+              } else {
+                md += `- ${process(child)}\n`;
+              }
+            } else if (tag === 'div' || tag === 'br') {
+              const inner = process(child);
+              if (inner || tag === 'br') md += (inner || '') + '\n';
+            } else if (tag === 'ul' || tag === 'ol') {
+               md += process(child);
+            } else {
+              md += process(child);
+            }
+          }
+        });
+        return md;
+      };
+      
+      return process(div).trim().replace(/\n{3,}/g, '\n\n');
+    },
+    execEditorCommand(cmd, val = null) {
+      if (cmd === 'highlight') {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+        const range = selection.getRangeAt(0);
+        const selectedText = range.toString();
+        if (!selectedText) return;
+
+        // 檢查是否已經被 mark 包裹
+        const parent = range.commonAncestorContainer.parentElement;
+        if (parent && parent.tagName.toLowerCase() === 'mark') {
+          // 移除 mark (還原)
+          const textNode = document.createTextNode(parent.textContent);
+          parent.parentNode.replaceChild(textNode, parent);
+        } else {
+          // 插入 mark
+          const mark = document.createElement('mark');
+          mark.textContent = selectedText;
+          range.deleteContents();
+          range.insertNode(mark);
+        }
+      } else {
+        document.execCommand(cmd, false, val);
+      }
+      
+      // 強制同步回內容
+      const editorDiv = document.getElementById('record-editor');
+      if (editorDiv) {
+        this.recordForm.content = this.html2md(editorDiv.innerHTML);
+      }
+    },
+
     // ===== 系統備份與維護 =====
     generateWordDocDef(c, records) {
       const { Document, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, VerticalAlign, BorderStyle } = window.docx;
@@ -1968,7 +2083,10 @@ createApp({
             new TableCell({ borders: modernBorders, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: this.formatDate(r.dateTime), size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
             new TableCell({ borders: modernBorders, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: String(r.target || '-'), size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
             new TableCell({ borders: modernBorders, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: String(r.method || '-'), size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-            new TableCell({ borders: modernBorders, children: [new Paragraph({ children: [new TextRun({ text: r.content, size: FONT_SIZE })], spacing: { before: 160, after: 160 }, indent: { left: 160, right: 160 } })] }),
+            new TableCell({ 
+              borders: modernBorders, 
+              children: this.parseMarkdownToDocx(r.content, FONT_SIZE) // 🎨 調用語法解析器
+            }),
             new TableCell({ borders: modernBorders, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: String(r.recorderName || '-'), size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
           ]
         }));
@@ -1987,6 +2105,91 @@ createApp({
           ],
         }],
       });
+    },
+
+    // 🎨 Word 專用 Markdown 解析器
+    parseMarkdownToDocx(md, fontSize) {
+      const { Paragraph, TextRun, AlignmentType } = window.docx;
+      if (!md) return [new Paragraph({ children: [new TextRun({ text: "", size: fontSize })] })];
+
+      const lines = md.split('\n');
+      const paragraphs = [];
+
+      lines.forEach(line => {
+        let text = line.trim();
+        if (!text) {
+          paragraphs.push(new Paragraph({ children: [new TextRun({ text: "", size: fontSize })], spacing: { before: 80, after: 80 } }));
+          return;
+        }
+
+        let isBullet = null;
+        let isBulletPrefix = '';
+
+        // 偵測清單類型 (區分 ul/ol)
+        if (text.startsWith('- ') || text.startsWith('* ')) {
+          isBullet = 'ul';
+          text = text.trim().substring(2);
+        } else {
+          // 修正正則：確保能抓到多位數
+          const olMatch = text.match(/^(\d+\.)\s+(.*)/);
+          if (olMatch) {
+            isBullet = 'ol';
+            isBulletPrefix = olMatch[1]; // 這裡會抓到正確的 "1.", "2." 等
+            text = olMatch[2];
+          }
+        }
+
+        const children = [];
+        // 🚀 將清單符號/序號加回 children
+        if (isBullet === 'ol') {
+          children.push(new TextRun({ 
+            text: isBulletPrefix + " ", 
+            bold: true,
+            size: fontSize,
+            color: "1E293B" // 代碼塊/序號使用深色
+          }));
+        }
+
+        // 🎨 混合解析：粗體與底色
+        const tokens = text.split(/(==.*?==|\*\*.*?\*\*)/g);
+        
+        tokens.forEach(token => {
+          if (token.startsWith('==') && token.endsWith('==')) {
+            // 解析底色：使用 Word 精緻淡藍
+            children.push(new TextRun({ 
+              text: token.slice(2, -2), 
+              size: fontSize,
+              shading: { fill: "CCE5FF" } 
+            }));
+          } else if (token.startsWith('**') && token.endsWith('**')) {
+            // 解析粗體：官方正式深藍
+            children.push(new TextRun({ 
+              text: token.slice(2, -2), 
+              bold: true, 
+              size: fontSize,
+              color: "1B2E57" 
+            }));
+          } else if (token) {
+            children.push(new TextRun({ text: token, size: fontSize }));
+          }
+        });
+
+        if (children.length === 0) children.push(new TextRun({ text: "", size: fontSize }));
+
+        const pProps = {
+          children: children,
+          spacing: { before: 120, after: 120 },
+          indent: { left: 720, hanging: 360 } 
+        };
+
+        if (isBullet === 'ul') {
+          pProps.bullet = { level: 0 };
+        }
+
+        paragraphs.push(new Paragraph(pProps));
+      });
+
+      return paragraphs;
     },
 
     async exportBatchWord() {
@@ -2221,6 +2424,9 @@ createApp({
 
   mounted() {
     this.initGasUrl();
+
+    // 🚀 載入持久化隨手記
+    this.todoNote = localStorage.getItem('cms_todo_note') || '';
 
     // 🚀 載入持久化草稿
     const savedDrafts = localStorage.getItem('cms_record_drafts');
