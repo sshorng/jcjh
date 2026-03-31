@@ -530,12 +530,12 @@
                     <div class="editor-toolbar">
                       <button type="button" class="editor-btn" @click="execEditorCommand('bold')" title="粗體 (Ctrl+B)"><i
                           class="fas fa-bold"></i></button>
+                      <button type="button" class="editor-btnHighlight" @click="execEditorCommand('highlight')"
+                        title="文字底色"><i class="fas fa-highlighter"></i></button>
                       <button type="button" class="editor-btn" @click="execEditorCommand('insertUnorderedList')"
                         title="項目符號"><i class="fas fa-list-ul"></i></button>
                       <button type="button" class="editor-btn" @click="execEditorCommand('insertOrderedList')"
                         title="編號清單"><i class="fas fa-list-ol"></i></button>
-                      <button type="button" class="editor-btnHighlight" @click="execEditorCommand('highlight')"
-                        title="文字底色"><i class="fas fa-highlighter"></i></button>
                     </div>
                     <!-- 🎯 所見即所得編輯區：透過 @input 即時同步回 Markdown 語法 -->
                     <div id="record-editor" class="editor-input" contenteditable="true"
