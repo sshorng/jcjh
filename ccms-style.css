@@ -91,6 +91,16 @@ body {
 .btn-success:hover { background: #059669; }
 .btn-danger { background: var(--err); }
 .btn-danger:hover { background: #dc2626; }
+.btn-outline-err {
+  background: rgba(231,111,81, 0.05); 
+  border: 1px solid rgba(231,111,81, 0.25); 
+  color: var(--err);
+}
+.btn-outline-err:hover {
+  background: rgba(231,111,81, 0.12);
+  border-color: var(--err);
+  transform: translateY(-1px);
+}
 .btn-secondary { background: var(--sf2); color: var(--tx2); }
 .btn-secondary:hover { background: var(--sf3); }
 .btn-sm { padding: 6px 12px; font-size: 13px; }
