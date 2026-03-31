@@ -214,6 +214,7 @@
             </select>
             <select v-model="filterIdentity" class="search-input" style="flex:1; min-width:120px">
               <option value="">--身分篩選--</option>
+              <option value="特教生">特教生 (依特教身分)</option>
               <option v-for="id in IDENTITY_OPTS" :key="id" :value="id">{{ id }}</option>
             </select>
             <button class="btn btn-secondary btn-sm" @click="resetFilters" title="清除篩選"><i
