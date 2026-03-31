@@ -220,10 +220,10 @@ createApp({
           // 🔎 智慧過濾：檢查是否為「預設裝修初稿」 (無內容、無選取、日期回正)
           const def = this.emptyRecordForm();
           const p = val;
-          const isEmpty = (!p.content.trim()) && 
-                          (p.serviceArr.length === 0) && (p.targetArr.length === 0) && (p.methodArr.length === 0) &&
-                          (!p.customTarget.trim()) && (!p.customMethod.trim()) && (!p.excludeFromReport) &&
-                          (p.date === def.date);
+          const isEmpty = (!p.content.trim()) &&
+            (p.serviceArr.length === 0) && (p.targetArr.length === 0) && (p.methodArr.length === 0) &&
+            (!p.customTarget.trim()) && (!p.customMethod.trim()) && (!p.excludeFromReport) &&
+            (p.date === def.date);
 
           if (isEmpty) {
             // 🧹 如果內容已經歸零，則從櫃子裡把這案子掃掉
@@ -276,7 +276,7 @@ createApp({
       this.isPrivacyMode = !this.isPrivacyMode;
       localStorage.setItem('cms_privacy_mode', this.isPrivacyMode ? 'true' : 'false');
       // 提示使用者
-      this.showToast(this.isPrivacyMode ? '隱私模式：學員姓名已進入磨砂保密狀態' : '隱私模式：校閱全名模式', 'info');
+      this.showToast(this.isPrivacyMode ? '隱私模式：姓名保密狀態' : '隱私模式：校閱全名模式', 'info');
     },
     // 🎨 姓名精準拆解邏輯
     splitName(name) {
@@ -540,7 +540,7 @@ createApp({
     },
     async viewCase(c) {
       if (!c || !c.id) return;
-      
+
       // --- 核心狀態切換 ---
       this.currentCase = c;
       this.page = 'detail';
@@ -653,7 +653,7 @@ createApp({
 
       // 2. 代入相關人員 (需有班級才執行)
       if (!this.caseForm.class) return;
-      
+
       const cfg = this.configs.classes.find(it => it['年級'] === this.caseForm.grade && String(it['班級']) === String(this.caseForm.class));
       if (cfg) {
         this.caseForm.homeroom = cfg['導師'] || '';
@@ -1386,7 +1386,7 @@ createApp({
         }
         // 🎯 儲存成功後，強制清空全域表單，避免切換個案時「借用」到剛才的內容
         this.recordForm = this.emptyRecordForm();
-        
+
         await this.fetchData();
         const rr = await this.api('getRecords', { caseId: this.currentCase.id });
         if (rr?.success) {
@@ -2225,7 +2225,7 @@ createApp({
     // 🚀 載入持久化草稿
     const savedDrafts = localStorage.getItem('cms_record_drafts');
     if (savedDrafts) {
-      try { this.recordDrafts = JSON.parse(savedDrafts); } catch(e) {}
+      try { this.recordDrafts = JSON.parse(savedDrafts); } catch (e) { }
     }
 
     const saved = localStorage.getItem('cms_user');
