@@ -332,9 +332,11 @@
         <section v-if="page==='detail' && currentCase">
           <a class="back-btn" @click="goBackToCases"><i class="fas fa-arrow-left"></i> 返回個案列表</a>
           <div class="page-header">
-            <h1><i class="fas fa-user"></i> {{ currentCase.name }} <small style="color:var(--tx2)">({{ currentCase.id }})</small> 的個案資料
-              <span :class="['badge', currentCase.status==='進行中'?'badge-active':(currentCase.status==='觀察中'?'badge-obs':'badge-closed')]" 
-                    style="margin-left:12px; vertical-align:middle; font-size:14px;">{{ currentCase.status }}</span>
+            <h1><i class="fas fa-user"></i> {{ currentCase.name }} <small style="color:var(--tx2)">({{ currentCase.id
+                }})</small> 的個案資料
+              <span
+                :class="['badge', currentCase.status==='進行中'?'badge-active':(currentCase.status==='觀察中'?'badge-obs':'badge-closed')]"
+                style="margin-left:12px; vertical-align:middle; font-size:14px;">{{ currentCase.status }}</span>
             </h1>
             <div>
               <button class="btn btn-primary btn-sm" @click="exportToWord" style="margin-right:8px"><i
@@ -360,7 +362,11 @@
               <div class="info-item"><label>班輔</label><span>{{ currentCase.classGuidance || '-' }}</span></div>
               <div class="info-item"><label>專輔</label><span>{{ currentCase.counselor || '-' }}</span></div>
               <div class="info-item"><label>認輔教師</label><span>{{ currentCase.mentorTeacher || '-' }}</span></div>
-              <div class="info-item" v-if="currentCase.specialEdu && currentCase.specialEdu !== '0.以下皆非' && currentCase.specialEdu !== '-'"><label>特教身分</label><span>{{ currentCase.specialEdu }}{{ currentCase.specialEduTeacher ? ' (個管：' + currentCase.specialEduTeacher + ')' : '' }}</span></div>
+              <div class="info-item"
+                v-if="currentCase.specialEdu && currentCase.specialEdu !== '0.以下皆非' && currentCase.specialEdu !== '-'">
+                <label>特教身分</label><span>{{ currentCase.specialEdu }}{{ currentCase.specialEduTeacher ? ' (個管：' +
+                  currentCase.specialEduTeacher + ')' : '' }}</span>
+              </div>
               <div class="info-item"><label>身分背景</label><span>{{ currentCase.identity || '-' }}</span></div>
               <div class="info-item"><label>轉介概況</label><span>{{ currentCase.referralStatus || '2.無轉介' }}</span></div>
               <div class="info-item"><label>個案來源</label><span>{{ currentCase.caseSource || '-' }}</span></div>
@@ -763,7 +769,13 @@
             <div class="form-grid">
               <div class="fg">
                 <label>個案編號</label>
-                <input v-model="caseForm.id" :disabled="!!editingId" placeholder="例：114-0112 (不填則生成暫時編號S-)">
+                <div style="display: flex; gap: 5px;">
+                  <input v-model="caseForm.id" :disabled="!!editingId" placeholder="留空生成暫時編號S-，不列入月報" style="flex: 1;">
+                  <button v-if="!editingId" class="btn btn-secondary btn-sm" @click="generateOfficialId"
+                    title="根據學年度與專輔代碼生成正式編號" style="white-space: nowrap;">
+                    <i class="fas fa-magic"></i> 生成
+                  </button>
+                </div>
               </div>
               <div class="fg">
                 <label>入學學年度 (屆別)</label>
