@@ -341,7 +341,7 @@ createApp({
     },
 
     // ===== API 呼叫 =====
-    async api(action, data = {}) {
+    async api(action, data = {}, _isRetry = false) {
       if (!this.gasUrl) {
         this.showToast('請先設定 GAS API 網址', 'error');
         this.showSettings = true;
@@ -354,7 +354,8 @@ createApp({
       const payload = {
         action,
         token, // 🎯 安全加固：注入 Token
-        ...data
+        ...data,
+        _retried: _isRetry // 🎯 修正：將重試狀態標記在 Payload 中
       };
       try {
         const r = await fetch(this.gasUrl, {
@@ -377,11 +378,10 @@ createApp({
 
         // 🎯 處理 Session 過期 (Code 401) - 增加一次自動重試機制，防範 CacheService 偶發失效
         if (result.code === 401) {
-          if (!payload._retried) {
+          if (!_isRetry) {
             console.warn('Session 偵測失敗，正在嘗試自動重連...');
             await new Promise(res => setTimeout(res, 500));
-            payload._retried = true;
-            return this.api(action, data, payload);
+            return this.api(action, data, true); // 🎯 修正：傳遞 true 給下一次呼叫以終止遞迴
           }
           this.showToast('Session 已過期，請重新登入', 'error');
           this.logout(true); // 強制登出
@@ -648,6 +648,9 @@ createApp({
       this.showCaseModal = true;
     },
     async runAutoMaintenance() {
+      // 🎯 修正：根據使用者需求，每月 15 號後才進行自動轉換門檻檢測
+      if (new Date().getDate() < 15) return;
+
       const expiredCases = this.cases.filter(c => c.referralStatus && (c.referralStatus.startsWith('1.') || c.referralStatus.startsWith('4.')) && c.referralMonth && c.referralMonth !== this.currentROCMonth);
       if (expiredCases.length === 0) return;
 
@@ -657,6 +660,7 @@ createApp({
 
         if (c.referralStatus.startsWith('1.')) {
           newStatus = '3.已轉介輔諮中心且該中心持續服務中';
+          newMonth = this.currentROCMonth; // 🎯 修正：轉換後月份同步更新至目前月份
         } else if (c.referralStatus.startsWith('4.')) {
           newStatus = '2.無轉介';
           newMonth = ''; // 🎯 結案後清空轉介月份
@@ -755,12 +759,6 @@ createApp({
       // 檢查 ID 是否重複（新增時）
       if (!this.editingId && this.cases.find(c => c.id === this.caseForm.id)) {
         this.showToast('個案編號已存在，請使用其他編號', 'error'); return;
-      }
-
-      // 🎯 自動補齊轉介紀錄月：若選取「本月轉介」或「本月結案」，自動寫入當前民國月
-      const s = this.caseForm.referralStatus || '';
-      if (s.startsWith('1.') || s.startsWith('4.')) {
-        this.caseForm.referralMonth = this.currentROCMonth;
       }
 
       // 🎯 自動補齊轉介紀錄月：若選取「本月轉介」或「本月結案」，自動寫入當前民國月
