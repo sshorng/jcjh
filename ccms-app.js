@@ -647,6 +647,32 @@ createApp({
       }
       this.showCaseModal = true;
     },
+    async runAutoMaintenance() {
+      const expiredCases = this.cases.filter(c => c.referralStatus && (c.referralStatus.startsWith('1.') || c.referralStatus.startsWith('4.')) && c.referralMonth && c.referralMonth !== this.currentROCMonth);
+      if (expiredCases.length === 0) return;
+
+      for (const c of expiredCases) {
+        let newStatus = c.referralStatus;
+        let newMonth = c.referralMonth;
+
+        if (c.referralStatus.startsWith('1.')) {
+          newStatus = '3.已轉介輔諮中心且該中心持續服務中';
+        } else if (c.referralStatus.startsWith('4.')) {
+          newStatus = '2.無轉介';
+          newMonth = ''; // 🎯 結案後清空轉介月份
+        }
+
+        console.log(`[Maintenance] 自動跳轉: ${c.name} (${c.id}) -> ${newStatus}`);
+        
+        // 實質寫回資料庫
+        await this.api('updateCase', {
+          id: c.id,
+          referralStatus: newStatus,
+          referralMonth: newMonth
+        });
+      }
+      await this.fetchData(true);
+    },
     autoFillStaff() {
       if (!this.caseForm.grade) return;
 
