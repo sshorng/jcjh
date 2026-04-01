@@ -209,6 +209,13 @@ createApp({
       const draftIds = Object.keys(this.recordDrafts);
       // 🎯 只回傳有草稿存在，且該個案確實存在的清單
       return this.cases.filter(c => draftIds.includes(String(c.id)));
+    },
+    // 📅 當前民國年月字符串 (格式: 115-04)
+    currentROCMonth() {
+      const now = new Date();
+      const rocYear = now.getFullYear() - 1911;
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      return `${rocYear}-${month}`;
     }
   },
   watch: {
@@ -307,11 +314,11 @@ createApp({
         situation: '', specialEdu: '0.以下皆非', foreignLowIncome: '',
         teacherReport: '',
         serviceMethod: '', caseSource: '', caseType: '', identity: '',
-        referralStatus: '2.無轉介', referralMonth: '',
+        referralStatus: '2.無轉介', referralMonth: '', // 🎯 預計格式: 115-03
         caseTypeArr: [], identityArr: [],
         entrySY: '',
         s_7a: '', s_7b: '', s_8a: '', s_8b: '', s_9a: '', s_9b: '',
-        generatingSummary: false // 新增狀態
+        generatingSummary: false 
       };
     },
     emptyRecordForm() {
@@ -517,6 +524,9 @@ createApp({
           }, 0);
 
           this.selectedCaseIds = [];
+
+          // 🚀 [智慧維護門戶] 載入資料後，立即進行 15 號轉介跳轉檢測
+          this.runAutoMaintenance();
         }
       } catch (e) {
         console.error('Fetch error:', e);
@@ -719,6 +729,18 @@ createApp({
       // 檢查 ID 是否重複（新增時）
       if (!this.editingId && this.cases.find(c => c.id === this.caseForm.id)) {
         this.showToast('個案編號已存在，請使用其他編號', 'error'); return;
+      }
+
+      // 🎯 自動補齊轉介紀錄月：若選取「本月轉介」或「本月結案」，自動寫入當前民國月
+      const s = this.caseForm.referralStatus || '';
+      if (s.startsWith('1.') || s.startsWith('4.')) {
+        this.caseForm.referralMonth = this.currentROCMonth;
+      }
+
+      // 🎯 自動補齊轉介紀錄月：若選取「本月轉介」或「本月結案」，自動寫入當前民國月
+      const rs = this.caseForm.referralStatus || '';
+      if (rs.startsWith('1.') || rs.startsWith('4.')) {
+        this.caseForm.referralMonth = this.currentROCMonth;
       }
 
       const data = {
