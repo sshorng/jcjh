@@ -1181,29 +1181,110 @@ tbody tr:hover {
 
   .main-content {
     margin-left: 0;
-    padding: 60px 16px 16px;
+    padding: 68px 12px 24px; /* 增加頂部間距與左右留白 */
+  }
+
+  .page-header h1 {
+    font-size: 20px;
+  }
+
+  /* --- 搜尋列優化 --- */
+  .search-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .search-input {
+    min-width: 0 !important;
+    width: 100%;
+  }
+  .search-input[v-model="searchInputStr"] {
+    grid-column: 1 / -1; /* 搜尋文字框全寬 */
+  }
+
+  /* --- 列表 Table 優化 (維持非卡片式) --- */
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: var(--r2);
+  }
+
+  table {
+    min-width: 600px; /* 確保內容不會縮得太窄 */
+  }
+
+  th, td {
+    padding: 12px 10px; /* 增加點擊高度 */
+  }
+
+  /* 隱藏個案列表次要欄位：序號(2), ID(3), 年級(4), 班級(5), 座號(6), 性別(8), 提報日期(9) */
+  .page-cases table th:nth-child(2), .page-cases table td:nth-child(2),
+  .page-cases table th:nth-child(3), .page-cases table td:nth-child(3),
+  .page-cases table th:nth-child(4), .page-cases table td:nth-child(4),
+  .page-cases table th:nth-child(5), .page-cases table td:nth-child(5),
+  .page-cases table th:nth-child(6), .page-cases table td:nth-child(6),
+  .page-cases table th:nth-child(8), .page-cases table td:nth-child(8),
+  .page-cases table th:nth-child(9), .page-cases table td:nth-child(9) {
+    display: none;
+  }
+
+  /* 固定姓名欄位 (第7欄) */
+  .page-cases table th:nth-child(7), .page-cases table td:nth-child(7) {
+    position: sticky;
+    left: 0;
+    z-index: 10;
+    background: var(--sf); /* 使用當前主題背景色 */
+    box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+  }
+  
+  /* 處理固定欄位在捲動時的邊界感 */
+  .page-cases table th:nth-child(7)::after, .page-cases table td:nth-child(7)::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--bd);
+  }
+
+  /* 隱藏最近紀錄次要欄位：服務項目(4), 方式(5) */
+  .recent-records-card table th:nth-child(4), .recent-records-card table td:nth-child(4),
+  .recent-records-card table th:nth-child(5), .recent-records-card table td:nth-child(5) {
+    display: none;
   }
 
   .form-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .stats-row {
-    display: flex;
-    overflow-x: auto;
-    gap: 12px;
-    padding-bottom: 8px;
-    scroll-snap-type: x mandatory;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
   }
 
   .stat-card {
-    min-width: 170px;
-    flex-shrink: 0;
-    scroll-snap-align: start;
+    padding: 12px;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .stat-card .icon {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
   }
 
   .stat-card .info h3 {
-    font-size: 20px;
+    font-size: 18px;
+  }
+
+  /* 個案詳情基資優化 */
+  .case-info-grid {
+    grid-template-columns: 1fr 1fr;
   }
 }
 
@@ -1400,6 +1481,20 @@ tr.selected td {
   opacity: 0.7;
   border-left: 1px solid var(--bd);
   padding-left: 10px;
+}
+
+@media (max-width: 600px) {
+  .pagination {
+    gap: 8px;
+    padding: 16px 0;
+  }
+  .page-info {
+    padding: 4px 12px;
+    font-size: 13px;
+  }
+  .page-info .count {
+    display: none;
+  }
 }
 
 /* 閰單????€憛?*/
