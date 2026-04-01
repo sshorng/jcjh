@@ -240,7 +240,7 @@
         </section>
 
         <!-- ========== 個案管理 ========== -->
-        <section v-if="page==='cases'">
+        <section v-if="page==='cases'" class="page-cases">
           <div class="page-header">
             <h1><i class="fas fa-users"></i> 優先關懷個案名單</h1>
             <button class="btn btn-primary" @click="openCaseModal(null)"><i class="fas fa-plus"></i> 新增個案</button>
@@ -435,7 +435,12 @@
                   currentCase.specialEduTeacher + ')' : '' }}</span>
               </div>
               <div class="info-item"><label>身分背景</label><span>{{ currentCase.identity || '-' }}</span></div>
-              <div class="info-item"><label>轉介概況</label><span>{{ currentCase.referralStatus || '2.無轉介' }}</span></div>
+              <div class="info-item"><label>轉介概況</label>
+                <span>{{ currentCase.referralStatus || '2.無轉介' }}
+                  <small v-if="currentCase.referralMonth && currentCase.referralMonth !== '-'" 
+                         style="opacity:0.6; margin-left:4px">({{ currentCase.referralMonth }})</small>
+                </span>
+              </div>
               <div class="info-item"><label>個案來源</label><span>{{ currentCase.caseSource || '-' }}</span></div>
               <div class="info-item"><label>服務方式</label><span>{{ currentCase.serviceMethod || '-' }}</span></div>
             </div>
