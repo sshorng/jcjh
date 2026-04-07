@@ -226,8 +226,9 @@ createApp({
         if (this.currentCase && this.currentCase.id && this.showRecordModal && !this.editingRecordId) {
           const def = this.emptyRecordForm();
           const p = val;
+          const isServiceItemsEmpty = (p.serviceItems || []).every(it => !it.service && !it.target);
           const isEmpty = (!p.content.trim()) &&
-            (p.serviceArr.length === 0) && (p.targetArr.length === 0) && (p.methodArr.length === 0) &&
+            isServiceItemsEmpty && (p.methodArr.length === 0) &&
             (!p.customTarget.trim()) && (!p.customMethod.trim()) && (!p.excludeFromReport) &&
             (p.date === def.date);
 
@@ -1338,7 +1339,8 @@ createApp({
         const match = rawTarget.match(/^(.*?)(?:\s*\((.*?)\))?$/);
         let baseTargetsArr = [];
         if (match) {
-          baseTargetsArr = match[1].split(',').map(s => s.trim()).filter(Boolean);
+          // 🎯 修正：不使用 filter(Boolean) 確保與服務項目索引位置對應
+          baseTargetsArr = match[1].split(',').map(s => s.trim());
           if (match[2]) customTxt = match[2];
         }
 
@@ -1346,9 +1348,10 @@ createApp({
         const customTargets = customTxt ? [customTxt] : [];
         baseTargetsArr.forEach(t => {
           // 🎯 修正：辨識時需忽略 [性別] 編碼
-          const cleanT = t.replace(/\[.*?\]$/, '');
-          if (this.TARGET_OPTS.includes(cleanT)) targetArr.push(t);
-          else if (t !== '其他') {
+          const cleanT = t.replace(/\[.*?\]$/, '').trim();
+          if (this.TARGET_OPTS.includes(cleanT) || cleanT === '') {
+            targetArr.push(t);
+          } else if (t.trim() !== '其他') {
             customTargets.push(t);
           }
         });
@@ -1361,7 +1364,7 @@ createApp({
           else customMethods.push(m);
         });
 
-        const serviceArr = (rec.service || '').split(',').map(s => s.trim()).filter(Boolean);
+        const serviceArr = (rec.service || '').split(',').map(s => s.trim());
         const excludeFromReport = serviceArr.includes('純紀錄_不計入月報表');
         const cleanServiceArr = serviceArr.filter(s => s !== '純紀錄_不計入月報表');
 
@@ -1446,11 +1449,11 @@ createApp({
           this.showToast('請務必選取或填寫至少一個服務項目與對象', 'error'); return;
         }
 
-        this.recordForm.serviceArr = activeItems.map(it => it.service).filter(Boolean);
-        // 🎯 儲存存檔編碼格式：對象[性別]
+        this.recordForm.serviceArr = activeItems.map(it => it.service || ' '); 
+        // 🎯 儲存存檔編碼格式：對象[性別]，不使用 filter(Boolean) 確保與服務項目索引對齊
         this.recordForm.targetArr = activeItems.map(it => {
-          return it.target ? `${it.target}[${it.gender || '男'}]` : '';
-        }).filter(Boolean);
+          return it.target ? `${it.target}[${it.gender || '男'}]` : ' ';
+        });
         
         targetStr = this.recordForm.targetArr.join(', ');
       } else {
