@@ -336,7 +336,22 @@ body {
   font-size: 16px;
 }
 
-/* ===== ??蔭 ===== */
+/* ===== 版面配置 ===== */
+.mobile-toggle {
+  display: none; /* 桌機版隱藏，768px 以下才顯示 */
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+}
+
+.sidebar-overlay.show {
+  display: block;
+}
+
 .app-layout {
   display: flex;
   min-height: 100vh;
@@ -506,9 +521,11 @@ body {
 
 .main-content {
   margin-left: var(--sidebar-w);
+  width: calc(100% - var(--sidebar-w));
   flex: 1;
   padding: 32px 40px;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* ===== ?璅? ===== */
@@ -2015,4 +2032,105 @@ mark {
 
 .timeline-content mark {
   margin: 1px 1px;
+}
+
+/* ===== RWD 響應式佈局 ===== */
+
+/* 平板：sidebar 縮為圖示欄位 */
+@media (max-width: 1024px) {
+  .main-content {
+    padding: 24px 28px;
+  }
+
+  .stats-row {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* 手機橫向 / 小平板 */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+    padding: 20px 16px;
+  }
+
+  .mobile-toggle {
+    display: flex;
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 200;
+    width: 40px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+    background: var(--sf);
+    border: 1px solid var(--bd);
+    border-radius: 10px;
+    color: var(--tx);
+    cursor: pointer;
+    font-size: 16px;
+    box-shadow: var(--sh);
+    transition: all .2s;
+  }
+
+  .mobile-toggle:hover {
+    background: var(--sf2);
+    border-color: var(--p);
+  }
+
+  .page-header {
+    margin-top: 12px;
+  }
+
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-card .info h3 {
+    font-size: 20px;
+  }
+
+  .table-wrap {
+    font-size: 13px;
+  }
+
+  .btn-sm {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+}
+
+/* 手機直向 */
+@media (max-width: 480px) {
+  .stats-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .stat-card {
+    padding: 14px;
+  }
+
+  .main-content {
+    padding: 16px 12px;
+  }
+
+  .page-header h1 {
+    font-size: 18px;
+  }
 }
