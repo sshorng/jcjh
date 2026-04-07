@@ -612,7 +612,6 @@ body {
   height: 18px;
   background: transparent;
   color: var(--tx3);
-  font-family: monospace;
   font-size: 11px;
   display: flex;
   align-items: center;
