@@ -498,21 +498,46 @@
               </div>
               <div class="form-grid">
                 <div class="fg"><label>日期</label><input v-model="recordForm.date" type="date"></div>
-                <div class="fg full">
-                  <label>服務項目<span v-if="!recordForm.excludeFromReport">（必選）</span></label>
-                  <div class="checkbox-group">
-                    <label v-for="s in SERVICE_OPTS" :key="s"><input type="checkbox" :value="s"
-                        v-model="recordForm.serviceArr"> {{ s }}</label>
+                <!-- 🎯 改造：服務項目與對象對應組合 (優化空間版) -->
+                <div class="fg full" style="background: rgba(var(--p-alpha), 0.02); padding: 10px; border-radius: 10px; border: 1px dashed var(--bd);">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label style="margin-bottom: 0; font-weight: 600; font-size: 13px; color: var(--pri);"><i class="fas fa-link"></i> 服務配對 (月報表資料來源)</label>
+                    <button type="button" class="btn btn-secondary btn-sm" @click="addServiceItem" style="padding: 3px 8px; font-size: 11px; opacity: 0.8;">
+                      <i class="fas fa-plus"></i> 新增一組對應
+                    </button>
                   </div>
-                </div>
-                <div class="fg full">
-                  <label>對象<span v-if="!recordForm.excludeFromReport">（必選）</span></label>
-                  <div class="checkbox-group">
-                    <label v-for="t in TARGET_OPTS" :key="t"><input type="checkbox" :value="t"
-                        v-model="recordForm.targetArr"> {{ t }}</label>
+
+                  <div v-if="recordForm.serviceItems && recordForm.serviceItems.length > 0" class="service-items-list">
+                    <div v-for="(item, idx) in recordForm.serviceItems" :key="idx" class="service-item-row fade-in">
+                      <div class="row-index">{{ idx + 1 }}</div>
+                      <div class="row-selects">
+                        <select v-model="item.service" class="table-input" style="flex: 1.5;" title="服務項目">
+                          <option value="">-- 項目 --</option>
+                          <option v-for="s in SERVICE_OPTS" :key="s" :value="s">{{ s }}</option>
+                        </select>
+                        <i class="fas fa-arrow-right" style="opacity: 0.2; font-size: 11px;"></i>
+                        <select v-model="item.target" class="table-input" style="flex: 0.8;" title="服務對象">
+                          <option value="">-- 對象 --</option>
+                          <option v-for="t in TARGET_OPTS" :key="t" :value="t">{{ t }}</option>
+                        </select>
+                        <select v-model="item.gender" class="table-input" style="flex: 0.5; min-width: 50px;" title="性別 (影響月報統計)">
+                          <option value="男">男</option>
+                          <option value="女">女</option>
+                          <option value="其他">其</option>
+                        </select>
+                      </div>
+                      <button type="button" class="btn btn-icon-danger btn-sm" @click="removeServiceItem(idx)" title="刪除此組">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
                   </div>
-                  <input v-model="recordForm.customTarget" placeholder="補充說明（將顯示在選項後方：例如 爸爸）..."
-                    style="margin-top:8px;">
+                  <div v-else class="empty-hint" style="text-align: center; padding: 10px; color: var(--tx3); font-size: 13px;">
+                    尚未新增任何服務對應，請點擊上方按鈕新增。
+                  </div>
+
+                  <div v-if="recordForm.serviceItems && recordForm.serviceItems.length > 0" style="margin-top: 10px;">
+                    <input v-model="recordForm.customTarget" placeholder="對象補充說明（例：爸爸、某某老師）..." style="font-size: 13px;">
+                  </div>
                 </div>
                 <div class="fg full">
                   <label>方式</label>
