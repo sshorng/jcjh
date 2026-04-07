@@ -757,9 +757,9 @@ createApp({
         this.showToast('請填寫個案編號與姓名', 'error'); return;
       }
 
-      // 檢查 ID 是否重複（新增時）
-      if (!this.editingId && this.cases.find(c => c.id === this.caseForm.id)) {
-        this.showToast('個案編號已存在，請使用其他編號', 'error'); return;
+      // 檢查 ID 是否重複（包含新增或修改編號的情況）
+      if (this.cases.find(c => c.id === this.caseForm.id && c.id !== this.editingId)) {
+        this.showToast('該個案編號已存在，請確認後再使用', 'error'); return;
       }
 
       // 🎯 自動補齊轉介紀錄月：若選取「本月轉介」或「本月結案」，自動寫入當前民國月
@@ -780,7 +780,7 @@ createApp({
       this.loading = true;
       let r;
       if (this.editingId) {
-        r = await this.api('updateCase', { ...data, id: this.editingId });
+        r = await this.api('updateCase', { ...data, originalId: this.editingId });
       } else {
         r = await this.api('addCase', data);
       }
