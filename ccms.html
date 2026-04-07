@@ -896,8 +896,8 @@
               <div class="fg">
                 <label>個案編號</label>
                 <div style="display: flex; gap: 5px;">
-                  <input v-model="caseForm.id" :disabled="!!editingId" placeholder="留空生成暫時編號S-，不列入月報" style="flex: 1;">
-                  <button v-if="!editingId" class="btn btn-secondary btn-sm" @click="generateOfficialId"
+                  <input v-model="caseForm.id" placeholder="建議採 114-0112 格式" style="flex: 1;">
+                  <button class="btn btn-secondary btn-sm" @click="generateOfficialId"
                     title="根據學年度與專輔代碼生成正式編號" style="white-space: nowrap;">
                     <i class="fas fa-magic"></i> 生成
                   </button>
