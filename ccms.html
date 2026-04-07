@@ -535,8 +535,11 @@
                     尚未新增任何服務對應，請點擊上方按鈕新增。
                   </div>
 
-                  <div v-if="recordForm.serviceItems && recordForm.serviceItems.length > 0" style="margin-top: 10px;">
-                    <input v-model="recordForm.customTarget" placeholder="對象補充說明（例：爸爸、某某老師）..." style="font-size: 13px;">
+                  <div v-if="recordForm.serviceItems && recordForm.serviceItems.length > 0" class="service-item-row" style="margin-top: 10px; border-style: dashed; opacity: 0.9;">
+                    <div class="row-index" style="opacity: 0.5;"><i class="fas fa-comment-dots" style="font-size: 10px;"></i></div>
+                    <div class="row-selects">
+                      <input v-model="recordForm.customTarget" class="table-input" placeholder="對象補充說明（例：爸爸、某某老師...）" style="flex: 1; border-style: dashed !important;">
+                    </div>
                   </div>
                 </div>
                 <div class="fg full">
