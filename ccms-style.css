@@ -97,7 +97,21 @@ body {
 }
 
 
-/* ????撌脩宏??*/
+/* 清除草稿按鈕 */
+.clear-draft-btn {
+  font-size: 14px;
+  opacity: 0.4;
+  transition: all 0.2s ease;
+  padding: 4px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.clear-draft-btn:hover {
+  opacity: 1;
+  background: rgba(var(--err-alpha, 231, 76, 60), 0.1);
+  color: var(--err);
+  transform: scale(1.1) rotate(90deg);
+}
 /* ===== 撉冽撅???===== */
 @keyframes skeleton-loading {
   0% {
