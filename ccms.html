@@ -335,9 +335,9 @@
                 <tr v-for="(c, idx) in paginatedCases" :key="c.id" @click="viewCase(c)"
                   :class="{selected: isSelected(c.id)}">
                   <td @click.stop><input type="checkbox" :value="c.id" v-model="selectedCaseIds"></td>
-                  <td style="text-align:center; opacity:.6; font-size:13px">{{ (casePage - 1) * casePageSize + idx + 1
+                  <td style="text-align:center; opacity:.5;">{{ (casePage - 1) * casePageSize + idx + 1
                     }}</td>
-                  <td style="font-family: monospace; font-size: 13px;">{{ c.id }}</td>
+                  <td style="opacity:.8;">{{ c.id }}</td>
                   <td>{{ c.grade }}</td>
                   <td>{{ c.class }}</td>
                   <td>{{ c.seatNo }}</td>
@@ -1176,7 +1176,7 @@
                 <div class="report-list"
                   style="max-height: 150px; overflow-y:auto; background:rgba(0,0,0,0.05); border-radius:8px; padding:10px;">
                   <div v-for="o in healthReport.orphans"
-                    style="font-family:'Consolas',monospace; font-size:13px; border-bottom:1px solid rgba(0,0,0,0.05); padding:4px 0;">
+                    style="font-size:13px; border-bottom:1px solid rgba(0,0,0,0.05); padding:4px 0;">
                     [紀錄表 第 {{ o.row }} 列] 編號: {{ o.id }} ({{ o.date }})
                   </div>
                 </div>
@@ -1190,7 +1190,7 @@
                 <div class="report-list"
                   style="max-height: 150px; overflow-y:auto; background:rgba(0,0,0,0.05); border-radius:8px; padding:10px;">
                   <div v-for="i in healthReport.invalidIds"
-                    style="font-family:'Consolas',monospace; font-size:13px; border-bottom:1px solid rgba(0,0,0,0.05); padding:4px 0;">
+                    style="font-size:13px; border-bottom:1px solid rgba(0,0,0,0.05); padding:4px 0;">
                     [個案表 第 {{ i.row }} 列] 姓名: {{ i.name }} / 編號: {{ i.id }}
                   </div>
                 </div>
