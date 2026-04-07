@@ -334,8 +334,9 @@ createApp({
         methodArr: [],
         customMethod: '',
         serviceArr: [],
+        serviceItems: [{ service: '', target: '', gender: this.currentCase?.gender || '男' }], // 🎯 預設帶入個案性別
         content: '',
-        contentHTML: '', // ✅ 新增：編輯器專用 HTML 欄位
+        contentHTML: '', 
         excludeFromReport: false
       };
     },
@@ -1010,6 +1011,19 @@ createApp({
       }
     },
 
+    // --- 服務配對操作 ---
+    addServiceItem() {
+      if (!this.recordForm.serviceItems) this.recordForm.serviceItems = [];
+      this.recordForm.serviceItems.push({ 
+        service: '', 
+        target: '', 
+        gender: this.currentCase?.gender || '男' // 🎯 新增時自動預判
+      });
+    },
+    removeServiceItem(idx) {
+      this.recordForm.serviceItems.splice(idx, 1);
+    },
+
     // --- 開啟匯出 Modal ---
     openExportModal() {
       const now = new Date();
@@ -1085,8 +1099,9 @@ createApp({
       cases.forEach(c => { caseMap[String(c.id)] = c; });
 
       const gradeMap = {
-        '一年級': 2, '二年級': 3, '三年級': 4, '四年級': 5, '五年級': 6, '六年級': 7,
-        '七年級': 8, '八年級': 9, '九年級': 10, '七': 8, '八': 9, '九': 10
+        '一年級': 1, '二年級': 2, '三年級': 3, '四年級': 4, '五年級': 5, '六年級': 6,
+        '七年級': 7, '八年級': 8, '九年級': 9, '七': 7, '八': 8, '九': 9,
+        '高一': 10, '高二': 11, '高三': 12
       };
       const getNum = (s) => s ? parseInt((String(s).match(/^(\d+)/) || ['0'])[0]) : 0;
 
@@ -1245,13 +1260,14 @@ createApp({
 
       // 統計相關服務
       const getTargetCode = (targetStr, gradeStr) => {
-        if (targetStr.includes('家長')) return 14;
-        if (targetStr.includes('教職員') || targetStr.includes('教師') || targetStr.includes('導師') || targetStr.includes('行政')) return 15;
-        if (targetStr.includes('專業人員') || targetStr.includes('社工') || targetStr.includes('專業')) return 16;
-        if (targetStr.includes('個案') || targetStr.includes('學生')) {
-          return gradeMap[gradeStr] || 8;
+        const t = targetStr || '';
+        if (t.includes('教職員') || t.includes('教師') || t.includes('導師') || t.includes('行政')) return 13;
+        if (t.includes('家長')) return 14;
+        if (t.includes('專業人員') || t.includes('社工') || t.includes('專業') || t.includes('心理師')) return 15;
+        if (t.includes('個案') || t.includes('學生')) {
+          return gradeMap[gradeStr] || 7; // 預設七年級碼
         }
-        return 17;
+        return 13; // 預設歸類為教職員/其他
       };
 
       const serviceStats = {};
@@ -1260,22 +1276,34 @@ createApp({
         const gender = c.gender || '男';
         const gradeStr = c.grade || '七';
 
+        // 🎯 核心優化：不再使用交叉相乘 (forEach x forEach)，改用同索引對應
         const services = (r.service || '').split(',').map(s => s.trim()).filter(Boolean);
         const targets = (r.target || '').split(',').map(s => s.trim()).filter(Boolean);
-        if (services.length === 0) services.push('11.學生諮詢');
-        if (targets.length === 0) targets.push('學生');
+        
+        // 取得兩者中比例最長的作為基準，並進行同步遍歷
+        const maxLen = Math.max(services.length, targets.length);
 
-        services.forEach(s => {
-          targets.forEach(t => {
-            const sc = getNum(s) || 17;
-            const tc = getTargetCode(t, gradeStr);
-            const k = `${sc}|${tc}`;
-            if (!serviceStats[k]) serviceStats[k] = { s: sc, t: tc, male: 0, female: 0, other: 0 };
-            if (gender === '男') serviceStats[k].male++;
-            else if (gender === '女') serviceStats[k].female++;
-            else serviceStats[k].other++;
-          });
-        });
+        for (let i = 0; i < maxLen; i++) {
+          const sRaw = services[i] || services[services.length - 1] || '11.學生諮詢';
+          let tRaw = targets[i] || targets[targets.length - 1] || '學生';
+
+          // 🎯 核心進化：從對象字串中解析出精確性別 (格式：對象[性別])
+          let rowGender = gender; // Default to case gender
+          const genderMatch = tRaw.match(/(.*?)\[(男|女|其他)\]/);
+          if (genderMatch) {
+            tRaw = genderMatch[1];
+            rowGender = genderMatch[2];
+          }
+
+          const sc = getNum(sRaw) || 17;
+          const tc = getTargetCode(tRaw, gradeStr);
+          const k = `${sc}|${tc}`;
+
+          if (!serviceStats[k]) serviceStats[k] = { s: sc, t: tc, male: 0, female: 0, other: 0 };
+          if (rowGender === '男') serviceStats[k].male++;
+          else if (rowGender === '女') serviceStats[k].female++;
+          else serviceStats[k].other++;
+        }
       });
 
       let rowA2Idx = 4;
@@ -1317,7 +1345,9 @@ createApp({
         const targetArr = [];
         const customTargets = customTxt ? [customTxt] : [];
         baseTargetsArr.forEach(t => {
-          if (this.TARGET_OPTS.includes(t)) targetArr.push(t);
+          // 🎯 修正：辨識時需忽略 [性別] 編碼
+          const cleanT = t.replace(/\[.*?\]$/, '');
+          if (this.TARGET_OPTS.includes(cleanT)) targetArr.push(t);
           else if (t !== '其他') {
             customTargets.push(t);
           }
@@ -1335,6 +1365,31 @@ createApp({
         const excludeFromReport = serviceArr.includes('純紀錄_不計入月報表');
         const cleanServiceArr = serviceArr.filter(s => s !== '純紀錄_不計入月報表');
 
+        // 🎯 智慧解析對應關係與性別
+        const serviceItems = [];
+        const maxLen = Math.max(cleanServiceArr.length, targetArr.length);
+        if (maxLen === 0) {
+          serviceItems.push({ service: '', target: '', gender: this.currentCase?.gender || '男' });
+        } else {
+          for (let i = 0; i < maxLen; i++) {
+            let tVal = targetArr[i] || '';
+            let gVal = this.currentCase?.gender || '男';
+
+            // 從編碼字串還原： 對象[性別]
+            const m = tVal.match(/(.*?)\[(男|女|其他)\]/);
+            if (m) {
+              tVal = m[1];
+              gVal = m[2];
+            }
+
+            serviceItems.push({
+              service: cleanServiceArr[i] || '',
+              target: tVal,
+              gender: gVal
+            });
+          }
+        }
+
         this.recordForm = {
           date: rec.dateTime,
           targetArr: targetArr,
@@ -1342,6 +1397,7 @@ createApp({
           methodArr: methodArr,
           customMethod: customMethods.join(', '),
           serviceArr: cleanServiceArr,
+          serviceItems: serviceItems, // 🎯 放入對應項目
           content: rec.content,
           contentHTML: this.md2html(rec.content), // 🎨 載入時轉換為網頁樣式
           excludeFromReport: excludeFromReport
@@ -1382,8 +1438,26 @@ createApp({
 
       if (!this.recordForm.content) { this.showToast('請填寫晤談紀錄', 'error'); return; }
 
-      // 合併對象
-      let targetStr = this.recordForm.targetArr.join(', ');
+      let targetStr = '';
+      if (!this.recordForm.excludeFromReport) {
+        // 從 serviceItems 中提取非空的項目與對象
+        const activeItems = (this.recordForm.serviceItems || []).filter(it => it.service || it.target);
+        if (activeItems.length === 0) {
+          this.showToast('請務必選取或填寫至少一個服務項目與對象', 'error'); return;
+        }
+
+        this.recordForm.serviceArr = activeItems.map(it => it.service).filter(Boolean);
+        // 🎯 儲存存檔編碼格式：對象[性別]
+        this.recordForm.targetArr = activeItems.map(it => {
+          return it.target ? `${it.target}[${it.gender || '男'}]` : '';
+        }).filter(Boolean);
+        
+        targetStr = this.recordForm.targetArr.join(', ');
+      } else {
+        this.recordForm.serviceArr = [];
+        this.recordForm.targetArr = [];
+      }
+
       if (this.recordForm.customTarget && this.recordForm.customTarget.trim()) {
         const custom = this.recordForm.customTarget.trim();
         targetStr = targetStr ? `${targetStr}(${custom})` : `(${custom})`;
@@ -1394,15 +1468,6 @@ createApp({
       if (this.recordForm.customMethod && this.recordForm.customMethod.trim()) {
         const custom = this.recordForm.customMethod.split(',').map(s => s.trim()).filter(Boolean);
         custom.forEach(m => { if (!combinedMethods.includes(m)) combinedMethods.push(m); });
-      }
-
-      if (!this.recordForm.excludeFromReport) {
-        if (!targetStr) {
-          this.showToast('請務必選取或填寫對象', 'error'); return;
-        }
-        if (!this.recordForm.serviceArr.length) {
-          this.showToast('請勾選服務項目', 'error'); return;
-        }
       }
 
       this.loadingMsg = '正在儲存晤談紀錄...';
