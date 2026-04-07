@@ -151,34 +151,32 @@
               <h3><i class="fas fa-clock-rotate-left"></i> 最近服務紀錄</h3>
             </div>
             <div class="table-wrap" v-if="dashData.recentRecords && dashData.recentRecords.length">
-              <table>
+              <table style="table-layout: auto;">
                 <thead>
                   <tr>
-                    <th style="width: 15%">日期</th>
-                    <th style="width: 15%">學生</th>
-                    <th style="width: 15%">對象</th>
-                    <th style="width: 25%">服務項目</th>
-                    <th style="width: 18%">方式</th>
-                    <th style="width: 12%">專輔</th>
+                    <th style="white-space: nowrap; width: 100px">日期</th>
+                    <th style="white-space: nowrap; width: 130px">學生</th>
+                    <th style="width: 180px">對象</th>
+                    <th>服務項目</th>
+                    <th style="white-space: nowrap; width: 120px">方式</th>
+                    <th style="white-space: nowrap; width: 80px">專輔</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr v-for="r in dashData.recentRecords" :key="r.id" @click="viewCaseById(r.caseId)" class="hover-row"
                     style="cursor: pointer">
-                    <td>{{ formatDate(r.dateTime) }}</td>
-                    <td>
+                    <td style="white-space: nowrap">{{ formatDate(r.dateTime) }}</td>
+                    <td style="white-space: nowrap">
                       <span :class="{'privacy-active': isPrivacyMode}">
                         <span>{{ splitName(r.studentName).first }}</span><span class="name-mid privacy-blur">{{
                           splitName(r.studentName).mid }}</span><span>{{ splitName(r.studentName).last }}</span>
                       </span>
                       <small style="color:var(--tx2)">({{ r.caseId }})</small>
                     </td>
-                    <td>{{ r.target }}</td>
-                    <td>
-                      <div class="text-truncate" style="max-width:200px">{{ r.service }}</div>
-                    </td>
-                    <td>{{ r.method }}</td>
-                    <td>{{ r.recorderName }}</td>
+                    <td :title="r.target" style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ r.target }}</td>
+                    <td style="word-break: break-all; min-width: 160px">{{ r.service }}</td>
+                    <td style="white-space: nowrap">{{ r.method }}</td>
+                    <td style="white-space: nowrap">{{ r.recorderName }}</td>
                   </tr>
                 </tbody>
               </table>
