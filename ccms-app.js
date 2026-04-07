@@ -1432,6 +1432,17 @@ createApp({
         this.showToast('編輯區已清空', 'info');
       });
     },
+    clearRecordDraftById(id) {
+      const student = this.cases.find(c => String(c.id) === String(id));
+      const name = student ? student.name : id;
+      this.confirmAction(`確定要清除個案「${name}」的所有紀錄草稿嗎？\n(此動作無法復原)`, () => {
+        if (this.recordDrafts[id]) {
+          delete this.recordDrafts[id];
+          localStorage.setItem('cms_record_drafts', JSON.stringify(this.recordDrafts));
+          this.showToast('草稿已清除', 'success');
+        }
+      });
+    },
     async saveRecordForm() {
       // 🎨 存檔前，強制將編輯器的 HTML 轉譯回 Markdown 語法
       const editorDiv = document.getElementById('record-editor');
