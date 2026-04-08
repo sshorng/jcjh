@@ -18,7 +18,15 @@ const CASE_TYPES = [
 const METHOD_OPTS = ['面談', '電聯', '訊息', '校訪', '其他'];
 const TARGET_OPTS = ['學生', '教職員', '家長', '專業人員'];
 const STATUS_OPTS = ['進行中', '已結案', '觀察中'];
-const SOURCE_OPTS = ['導師轉介', '輔導教師發現', '行政轉介', '家長轉介', '國小轉銜', '他校轉銜', '其他'];
+const SOURCE_OPTS = [
+  '1.學生主動求助',
+  '2.家長轉介',
+  '3.教師轉介（含教職員工）',
+  '4.同儕轉介',
+  '5.輔導老師約談',
+  '6.線上預約管道（僅限高中階段）',
+  '7.其他'
+];
 
 const SPECIAL_ED_OPTS = [
   '0.以下皆非', '1.智能障礙', '2.視覺障礙', '3.聽覺障礙', '4.語言障礙', '5.肢體障礙',
@@ -314,7 +322,7 @@ createApp({
         id: '', grade: '', class: '', seatNo: '', name: '', gender: '', reportDate: semester,
         situation: '', specialEdu: '0.以下皆非', foreignLowIncome: '',
         teacherReport: '',
-        serviceMethod: '', caseSource: '', caseType: '', identity: '',
+        serviceMethod: '', caseSource: '', customCaseSource: '', caseType: '', identity: '',
         referralStatus: '2.無轉介', referralMonth: '', // 🎯 預計格式: 115-03
         caseTypeArr: [], identityArr: [],
         entrySY: '',
@@ -637,9 +645,19 @@ createApp({
         const rawService = (base.serviceMethod || '').split(',').map(s => s.trim()).filter(Boolean);
         const rawIdentity = (base.identity || '').split(',').map(s => s.trim()).filter(Boolean);
 
+        let cs = base.caseSource || '';
+        let ccs = '';
+        const csMatch = cs.match(/^7\.其他\((.*?)\)$/);
+        if (csMatch) {
+          cs = '7.其他';
+          ccs = csMatch[1];
+        }
+
         this.caseForm = {
           ...this.emptyCaseForm(),
           ...base,
+          caseSource: cs,
+          customCaseSource: ccs,
           caseTypeArr: rawTypes,
           identityArr: rawIdentity.filter(id => id !== '特教生'),
           counselor: base.counselor || ''
@@ -769,13 +787,20 @@ createApp({
         this.caseForm.referralMonth = this.currentROCMonth;
       }
 
+      // 合併個案來源與自填內容
+      let finalCaseSource = this.caseForm.caseSource;
+      if (finalCaseSource === '7.其他' && this.caseForm.customCaseSource) {
+        finalCaseSource = `7.其他(${this.caseForm.customCaseSource})`;
+      }
+
       const data = {
         ...this.caseForm,
         '導師提報內容': this.caseForm.teacherReport,
         '專輔個案摘要': this.caseForm.situation, // 🎯 修正：對應 Code.gs 預期的 key
         caseType: this.caseForm.caseTypeArr.join(','),
         identity: this.caseForm.identityArr.join(','),
-        serviceMethod: this.caseForm.serviceMethod
+        serviceMethod: this.caseForm.serviceMethod,
+        caseSource: finalCaseSource
       };
       this.loadingMsg = '儲存個案...';
       this.loading = true;
@@ -1184,11 +1209,7 @@ createApp({
         if (c.gender === '男') genderText = '生理男';
         if (c.gender === '女') genderText = '生理女';
 
-        const sourceMap = {
-          '學生主動前來': 1, '家長轉介': 2, '導師轉介': 3, '行政轉介': 3,
-          '輔導教師發現': 5, '轉銜': 7, '其他': 7
-        };
-        const sourceCode = (isNew === 1) ? (sourceMap[c.caseSource] || 0) : 0;
+        const sourceCode = (isNew === 1) ? (getNum(c.caseSource) || 0) : 0;
 
         const types = (c.caseType || '').split(',').map(s => s.trim());
         const mainTypeNum = getNum(types[0]) || 19;
