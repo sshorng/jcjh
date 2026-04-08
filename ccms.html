@@ -979,7 +979,10 @@
               <div class="fg"><label>個案來源</label><select v-model="caseForm.caseSource">
                   <option value="">--</option>
                   <option v-for="o in SOURCE_OPTS" :key="o">{{ o }}</option>
-                </select></div>
+                </select>
+                <input v-if="caseForm.caseSource === '7.其他'" v-model="caseForm.customCaseSource" 
+                       placeholder="請輸入其他來源..." style="margin-top: 5px;">
+              </div>
               <div class="fg"><label>轉介概況 (配合月報表)</label>
                 <select v-model="caseForm.referralStatus">
                   <option v-for="o in REFERRAL_OPTS" :key="o" :value="o">{{ o }}</option>
