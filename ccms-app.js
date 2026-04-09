@@ -2324,12 +2324,14 @@ createApp({
 
         const pProps = {
           children: children,
-          spacing: { before: 120, after: 120 },
-          indent: { left: 720, hanging: 360 }
+          spacing: { before: 40, after: 40 }
         };
 
         if (isBullet === 'ul') {
           pProps.bullet = { level: 0 };
+          pProps.indent = { left: 440, hanging: 440 };
+        } else if (isBullet === 'ol') {
+          pProps.indent = { left: 440, hanging: 440 };
         }
 
         paragraphs.push(new Paragraph(pProps));
