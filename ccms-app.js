@@ -2174,12 +2174,14 @@ createApp({
           new TableCell({
             width: { size: 25, type: WidthType.PERCENTAGE },
             shading: { fill: "F8FAFC" }, verticalAlign: VerticalAlign.CENTER, borders: modernBorders,
+            margins: { top: 120, bottom: 120, left: 120, right: 120 },
             children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, size: FONT_SIZE_LABEL, color: "475569" })], alignment: AlignmentType.CENTER })],
           }),
           new TableCell({
             width: { size: 75, type: WidthType.PERCENTAGE },
             verticalAlign: VerticalAlign.CENTER, borders: modernBorders,
-            children: [new Paragraph({ children: [new TextRun({ text: String(value || '-'), size: FONT_SIZE, color: "1E293B" })], spacing: { before: 200, after: 200 }, indent: { left: 240, right: 240 } })],
+            margins: { top: 120, bottom: 120, left: 120, right: 120 },
+            children: [new Paragraph({ children: [new TextRun({ text: String(value || '-'), size: FONT_SIZE, color: "1E293B" })], spacing: { before: 40, after: 40 } })],
           }),
         ],
       });
@@ -2223,17 +2225,26 @@ createApp({
       ];
 
       records.forEach((r, idx) => {
+        const createDataCell = (text, width, align = AlignmentType.CENTER) => new TableCell({
+          borders: modernBorders, 
+          verticalAlign: VerticalAlign.CENTER, 
+          margins: { top: 120, bottom: 120, left: 120, right: 120 },
+          children: [new Paragraph({ children: [new TextRun({ text: String(text || '-'), size: FONT_SIZE })], alignment: align })]
+        });
+
         recordRows.push(new TableRow({
           children: [
-            new TableCell({ borders: modernBorders, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: String(idx + 1), size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-            new TableCell({ borders: modernBorders, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: this.formatDate(r.dateTime), size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-            new TableCell({ borders: modernBorders, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: String(r.target || '-'), size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-            new TableCell({ borders: modernBorders, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: String(r.method || '-'), size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
+            createDataCell(idx + 1, 5),
+            createDataCell(this.formatDate(r.dateTime), 10),
+            createDataCell(r.target, 8),
+            createDataCell(r.method, 8),
             new TableCell({
+              width: { size: 62, type: WidthType.PERCENTAGE },
               borders: modernBorders,
-              children: this.parseMarkdownToDocx(r.content, FONT_SIZE) // 🎨 調用語法解析器
+              margins: { top: 120, bottom: 120, left: 120, right: 120 },
+              children: this.parseMarkdownToDocx(r.content, FONT_SIZE) 
             }),
-            new TableCell({ borders: modernBorders, verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ children: [new TextRun({ text: String(r.recorderName || '-'), size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
+            createDataCell(r.recorderName, 7),
           ]
         }));
       });
