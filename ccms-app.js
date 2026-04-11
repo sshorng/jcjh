@@ -1508,8 +1508,12 @@ createApp({
         
         targetStr = this.recordForm.targetArr.join(', ');
       } else {
-        this.recordForm.serviceArr = [];
-        this.recordForm.targetArr = [];
+        // 單純記錄模式：不強制完整性驗證，但仍提取填寫的項目以供記錄顯示
+        const activeItems = (this.recordForm.serviceItems || []).filter(it => it.service || it.target);
+        this.recordForm.serviceArr = activeItems.map(it => it.service || ' '); 
+        this.recordForm.targetArr = activeItems.map(it => it.target ? `${it.target}[${it.gender || '男'}]` : ' ');
+        
+        targetStr = this.recordForm.targetArr.join(', ');
       }
 
       if (this.recordForm.customTarget && this.recordForm.customTarget.trim()) {
