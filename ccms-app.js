@@ -35,6 +35,7 @@ const SPECIAL_ED_OPTS = [
 ];
 const IDENTITY_OPTS = ['1.新住民子女', '2.低收入戶', '3.中低收入戶', '4.身心障礙', '5.原住民', '6.單親家庭', '7.隔代教養', '8.外配子女', '9.兒少保護', '10.其他'];
 const SERVICE_OPTS = [
+  '0.晤談',
   '1.團體輔導', '2.入班輔導', '3.家長諮詢', '4.教師諮詢', '5.個案會議',
   '6.心理測驗', '7.安心服務', '8.家庭處遇', '9.資源連結', '10.系統會談',
   '11.學生諮詢', '12.臨案協處', '13.方案計畫', '14.各項宣講', '15.危機處理',
@@ -1199,8 +1200,11 @@ createApp({
 
       cases.forEach(c => {
         const myRecords = recordMap.get(String(c.id)) || [];
-        const count = myRecords.length;
-        console.log(`[表A-1] 個案 ${c.id} (${c.name}): 找到 ${count} 筆紀錄`);
+        // 🎯 需求調整：表 A-1 的「當月累積次數」僅計算「0.晤談」類別
+        const count = myRecords.filter(r => String(r.service || '').includes('0.晤談')).length;
+        console.log(`[表A-1] 個案 ${c.id} (${c.name}): 晤談次數為 ${count}`);
+        
+        // 若該案主當月無晤談紀錄，則不列入表 A-1
         if (count === 0) return;
 
         const isNew = c.isNew || 1;
@@ -1307,6 +1311,10 @@ createApp({
 
         for (let i = 0; i < maxLen; i++) {
           const sRaw = services[i] || services[services.length - 1] || '11.學生諮詢';
+          
+          // 🎯 需求調整：「0.晤談」不列入表 A-2 相關服務統計
+          if (sRaw.includes('0.晤談')) continue;
+
           let tRaw = targets[i] || targets[targets.length - 1] || '學生';
 
           // 🎯 核心進化：從對象字串中解析出精確性別 (格式：對象[性別])
