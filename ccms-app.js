@@ -1475,17 +1475,36 @@ createApp({
 
       let targetStr = '';
       if (!this.recordForm.excludeFromReport) {
-        // 從 serviceItems 中提取非空的項目與對象
-        const activeItems = (this.recordForm.serviceItems || []).filter(it => it.service || it.target);
-        if (activeItems.length === 0) {
-          this.showToast('請務必選取或填寫至少一個服務項目與對象', 'error'); return;
+        // 1. 驗證服務項目與對象是否配對完整
+        const items = this.recordForm.serviceItems || [];
+        let completedItems = [];
+        
+        for (let i = 0; i < items.length; i++) {
+          const it = items[i];
+          if (!it.service && !it.target) continue; // 跳過全空的行
+          
+          if (!it.service || !it.target) {
+            this.showToast(`第 ${i+1} 組服務配對未填寫完整（項目與對象皆須選取）`, 'error');
+            return;
+          }
+          completedItems.push(it);
+        }
+        
+        if (completedItems.length === 0) {
+          this.showToast('非單純記錄時，請務必至少填寫一組完整的服務項目與對象', 'error');
+          return;
         }
 
-        this.recordForm.serviceArr = activeItems.map(it => it.service || ' '); 
-        // 🎯 儲存存檔編碼格式：對象[性別]，不使用 filter(Boolean) 確保與服務項目索引對齊
-        this.recordForm.targetArr = activeItems.map(it => {
-          return it.target ? `${it.target}[${it.gender || '男'}]` : ' ';
-        });
+        // 2. 驗證服務方式是否已勾選或填寫
+        const hasMethod = this.recordForm.methodArr.length > 0 || (this.recordForm.customMethod && this.recordForm.customMethod.trim());
+        if (!hasMethod) {
+          this.showToast('非單純記錄時，請務必勾選或填寫「服務方式」', 'error');
+          return;
+        }
+
+        // 3. 通過驗證，處理資料陣列
+        this.recordForm.serviceArr = completedItems.map(it => it.service); 
+        this.recordForm.targetArr = completedItems.map(it => `${it.target}[${it.gender || '男'}]`);
         
         targetStr = this.recordForm.targetArr.join(', ');
       } else {
