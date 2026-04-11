@@ -1114,8 +1114,8 @@ createApp({
       }
 
       const tCode = parseInt(teacherCode) || 1;
-      // 過濾掉註記為不計入月報表的紀錄
-      records = records.filter(r => !(r.service || '').includes('純紀錄_不計入月報表'));
+      // 過濾掉註記為不計入月報表的紀錄 (包含舊有的長標籤與新的短標籤)
+      records = records.filter(r => !(r.service || '').includes('純紀錄'));
 
       const workbook = new ExcelJS.Workbook();
       workbook.creator = '個案管理系統';
@@ -1386,8 +1386,8 @@ createApp({
         });
 
         const serviceArr = (rec.service || '').split(',').map(s => s.trim());
-        const excludeFromReport = serviceArr.includes('純紀錄_不計入月報表');
-        const cleanServiceArr = serviceArr.filter(s => s !== '純紀錄_不計入月報表');
+        const excludeFromReport = serviceArr.some(s => (s || '').includes('純紀錄'));
+        const cleanServiceArr = serviceArr.filter(s => !(s || '').includes('純紀錄'));
 
         // 🎯 智慧解析對應關係與性別
         const serviceItems = [];
@@ -1534,7 +1534,7 @@ createApp({
 
       const servicesToSave = [...this.recordForm.serviceArr];
       if (this.recordForm.excludeFromReport) {
-        servicesToSave.push('純紀錄_不計入月報表');
+        servicesToSave.push('純紀錄');
       }
       const serviceStr = servicesToSave.join(',');
 
