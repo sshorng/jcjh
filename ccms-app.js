@@ -84,6 +84,8 @@ createApp({
       isPrivacyMode: localStorage.getItem('cms_privacy_mode') === 'true', // 🔒 隱私遮罩模式
       // 配置與設定分頁
       settingsTab: 'export',
+      backupSettings: { email: '', enabled: true },
+      systemSettings: [],
       // 配置管理
       configType: 'classes', configItems: [],
       // 分頁
@@ -487,6 +489,36 @@ createApp({
         this.runHealthCheck();
       }
     },
+    async updateBackupSettings() {
+      if (!this.backupSettings.email) {
+        this.showToast('請填寫備份電子郵件', 'warning'); return;
+      }
+      this.loading = true;
+      this.loadingMsg = '正在更新備份設定...';
+      const r = await this.api('updateBackupSettings', {
+        backupEmail: this.backupSettings.email,
+        backupEnabled: this.backupSettings.enabled
+      });
+      this.loading = false;
+      if (r?.success) {
+        this.showToast(r.message, 'success');
+        await this.fetchData(true);
+      }
+    },
+    async testBackupEmail() {
+      if (!this.backupSettings.email) {
+        this.showToast('請填寫備份電子郵件', 'warning'); return;
+      }
+      this.loading = true;
+      this.loadingMsg = '正在發送測試郵件...';
+      const r = await this.api('testBackupEmail', {
+        backupEmail: this.backupSettings.email
+      });
+      this.loading = false;
+      if (r?.success) {
+        this.showToast(r.message, 'success');
+      }
+    },
 
     // ===== 整合資料讀取 =====
     async fetchData(silent = false) {
@@ -522,6 +554,13 @@ createApp({
               allCounselors: r.data.configs.allCounselors || [],
               classes: r.data.configs.classes || []
             };
+            if (r.data.configs.systemSettings) {
+              this.systemSettings = r.data.configs.systemSettings;
+              const emailSet = this.systemSettings.find(s => s['設定項目'] === 'BACKUP_EMAIL');
+              const enabledSet = this.systemSettings.find(s => s['設定項目'] === 'BACKUP_ENABLED');
+              if (emailSet) this.backupSettings.email = emailSet['設定值'];
+              if (enabledSet) this.backupSettings.enabled = enabledSet['設定值'] === 'true';
+            }
             if (this.page === 'settings') {
               this.openConfigModal('classes');
             }
@@ -862,12 +901,13 @@ createApp({
 
         this.loading = false;
 
-        // 🎯 究極容錯偵測：如果 r 存在，即使沒抓到 summary，我們優先採用 updatedCase
-        if (r && (r.summary || r.updatedCase)) {
+        // 🎯 究極容錯偵測：如果 r 存在，優先從 r.data 中提取結果
+        const resData = r && r.data ? r.data : r;
+        if (resData && (resData.summary || resData.updatedCase)) {
           const field = `s_${targetGradeNum}${sem === '1' ? 'a' : 'b'}`;
-          const newSummary = r.summary || (r.updatedCase ? r.updatedCase[field] : '');
+          const newSummary = resData.summary || (resData.updatedCase ? resData.updatedCase[field] : '');
 
-          if (!newSummary && (!r.updatedCase || !r.updatedCase[field])) {
+          if (!newSummary && (!resData.updatedCase || !resData.updatedCase[field])) {
             throw new Error('AI 回傳與資料庫同步檢索均為空，請確認資料庫內容。');
           }
 
@@ -879,7 +919,7 @@ createApp({
           }
 
           // 2. 同步更換 currentCase 與案例清單
-          const targetCase = r.updatedCase || { ...this.currentCase, [field]: newSummary };
+          const targetCase = resData.updatedCase || { ...this.currentCase, [field]: newSummary };
           if (this.currentCase && this.currentCase.id === targetCase.id) {
             this.currentCase = { ...targetCase };
           }
@@ -951,10 +991,10 @@ createApp({
             sem: this.batchConfig.sem
           });
 
-          if (r && r.updatedCase) {
-            const idx = this.cases.findIndex(c => c.id === r.updatedCase.id);
+          if (r && r.data && r.data.updatedCase) {
+            const idx = this.cases.findIndex(c => c.id === r.data.updatedCase.id);
             if (idx !== -1) {
-              this.cases[idx] = { ...r.updatedCase };
+              this.cases[idx] = { ...r.data.updatedCase };
             }
           }
           this.batchProgress.lastMsg = `✅ ${student.name} 完成`;
