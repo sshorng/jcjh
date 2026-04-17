@@ -2178,19 +2178,6 @@ mark {
     min-width: 120px !important;
   }
 
-  .table-wrap::after {
-    content: "← 全功能版：左右滑動檢視完整 13 欄位 →";
-    display: block;
-    text-align: center;
-    font-size: 12px;
-    font-weight: bold;
-    color: var(--p);
-    padding: 10px;
-    background: rgba(var(--p-alpha), 0.1);
-    position: sticky;
-    left: 0;
-  }
-
   .btn-sm {
     padding: 5px 10px;
     font-size: 12px;
