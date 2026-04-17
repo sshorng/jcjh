@@ -295,8 +295,48 @@ body {
 }
 
 .btn-secondary {
-  background: var(--sf2);
+  background: var(--sf3);
   color: var(--tx2);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--bd);
+  color: var(--tx2);
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--tx2);
+  color: var(--tx);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--sf2);
+  color: var(--tx);
+}
+
+/* ===== Form Controls ===== */
+.form-control {
+  width: 100%;
+  background: var(--sf2);
+  border: 1px solid var(--bd);
+  color: var(--tx);
+  padding: 10px 14px;
+  border-radius: var(--r2);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-control:focus {
+  border-color: var(--p);
+  box-shadow: 0 0 0 3px rgba(var(--p-alpha), 0.1);
+}
+
+.form-control::placeholder {
+  color: var(--tx3);
 }
 
 .btn-secondary:hover {
