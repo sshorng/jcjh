@@ -2099,7 +2099,8 @@ mark {
   .main-content {
     margin-left: 0;
     width: 100%;
-    padding: 20px 16px;
+    padding: 20px 12px;
+    overflow-x: visible !important; /* 確保主容器不截斷 */
   }
 
   .mobile-toggle {
@@ -2144,8 +2145,50 @@ mark {
     font-size: 20px;
   }
 
+  /* 🎯 徹底解除封印：表格包裝層 */
   .table-wrap {
     font-size: 13px;
+    border-radius: var(--r2);
+    overflow-x: auto !important; 
+    display: block !important;
+    width: 100% !important;
+    border: 1px solid var(--bd);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 🎯 暴力撐開：給予每個欄位物理寬度，絕對不可能消失 */
+  .table-wrap table {
+    width: auto !important;
+    min-width: 1200px !important; 
+    table-layout: fixed !important; /* 改用固定佈局確保寬度生效 */
+  }
+
+  .table-wrap table th,
+  .table-wrap table td {
+    display: table-cell !important;
+    visibility: visible !important;
+    white-space: nowrap !important;
+    padding: 12px 10px !important;
+    min-width: 80px !important; /* 確保每個欄位至少有 80px */
+  }
+
+  /* 針對特定寬度欄位補強 */
+  .table-wrap table th:nth-child(7), /* 姓名 */
+  .table-wrap table td:nth-child(7) {
+    min-width: 120px !important;
+  }
+
+  .table-wrap::after {
+    content: "← 全功能版：左右滑動檢視完整 13 欄位 →";
+    display: block;
+    text-align: center;
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--p);
+    padding: 10px;
+    background: rgba(var(--p-alpha), 0.1);
+    position: sticky;
+    left: 0;
   }
 
   .btn-sm {
