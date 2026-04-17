@@ -1090,6 +1090,12 @@ createApp({
     removeServiceItem(idx) {
       this.recordForm.serviceItems.splice(idx, 1);
     },
+    handleServiceChange(item) {
+      if (item.service === '0.晤談') {
+        item.target = '學生';
+        item.gender = this.currentCase?.gender || '男';
+      }
+    },
 
     // --- 開啟匯出 Modal ---
     openExportModal() {
