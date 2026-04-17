@@ -511,16 +511,16 @@
                     <div v-for="(item, idx) in recordForm.serviceItems" :key="idx" class="service-item-row fade-in">
                       <div class="row-index">{{ idx + 1 }}</div>
                       <div class="row-selects">
-                        <select v-model="item.service" class="table-input" style="flex: 1.5;" title="服務項目">
+                        <select v-model="item.service" class="table-input" style="flex: 1.5;" title="服務項目" @change="handleServiceChange(item)">
                           <option value="">-- 項目 --</option>
                           <option v-for="s in SERVICE_OPTS" :key="s" :value="s">{{ s }}</option>
                         </select>
                         <i class="fas fa-arrow-right" style="opacity: 0.2; font-size: 11px;"></i>
-                        <select v-model="item.target" class="table-input" style="flex: 0.8;" title="服務對象">
+                        <select v-model="item.target" class="table-input" style="flex: 0.8;" title="服務對象" :disabled="item.service === '0.晤談'">
                           <option value="">-- 對象 --</option>
                           <option v-for="t in TARGET_OPTS" :key="t" :value="t">{{ t }}</option>
                         </select>
-                        <select v-model="item.gender" class="table-input" style="flex: 0.5; min-width: 50px;" title="性別 (影響月報統計)">
+                        <select v-model="item.gender" class="table-input" style="flex: 0.5; min-width: 50px;" title="性別 (影響月報統計)" :disabled="item.service === '0.晤談'">
                           <option value="男">男</option>
                           <option value="女">女</option>
                           <option value="其他">其</option>
@@ -859,6 +859,48 @@
                 </div>
               </div>
 
+
+              <div class="batch-bar" style="margin-top: 0; margin-bottom: 25px; border-left-color: var(--pri);">
+                <div class="batch-actions" style="flex-direction: column; align-items: stretch; width: 100%; gap: 12px;">
+                  <!-- 第一列：標題與開關 -->
+                  <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                    <div class="action-group" style="margin-bottom: 0;">
+                      <i class="fas fa-history" style="font-size: 1.5rem; color:var(--pri);"></i>
+                      <div>
+                        <p style="font-weight: 600;">每月自動備份 (Email 異地備份)</p>
+                        <p style="font-size: 12px; color: var(--tx2);">每月 1 號凌晨 03:00 自動導出資料庫 Excel 資料。</p>
+                      </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span style="font-size: 12px; color: var(--tx3); font-weight: 500;">
+                        {{ backupSettings.enabled ? '自動排程執行中' : '排程已暫停' }}
+                      </span>
+                      <input type="checkbox" v-model="backupSettings.enabled" @change="updateBackupSettings"
+                        style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--pri);">
+                    </div>
+                  </div>
+                  <!-- 第二列：輸入框與操作 -->
+                  <div style="display: flex; gap: 10px; align-items: center; justify-content: flex-end;">
+                    <div style="flex: 1; position: relative; display: flex; align-items: center;">
+                      <i class="fas fa-envelope"
+                        style="position: absolute; left: 12px; font-size: 13px; color: var(--tx3);"></i>
+                      <input type="email" class="form-control" v-model="backupSettings.email" placeholder="輸入備份接收信箱"
+                        style="padding-left: 35px; height: 38px;">
+                    </div>
+                    <button type="button" class="btn btn-primary" @click="updateBackupSettings" :disabled="loading"
+                      style="height: 38px; padding: 0 16px;">
+                      <i class="fas fa-save"></i> 儲存設定
+                    </button>
+                    <button type="button" class="btn btn-secondary" @click="testBackupEmail"
+                      :disabled="loading || !backupSettings.email" style="height: 38px; padding: 0 16px;">
+                      <i class="fas fa-paper-plane" style="font-size: 12px;"></i> 測試發送
+                    </button>
+                  </div>
+                  <div style="font-size: 12px; color: var(--tx3); opacity: 0.8;">
+                    <i class="fas fa-info-circle"></i> 設定儲存於雲端後台，無需保持網頁開啟。
+                  </div>
+                </div>
+              </div>
 
               <h3 style="margin-bottom: 12px; font-size: 16px; color: var(--err);"><i
                   class="fas fa-triangle-exclamation"></i> 系統敏感操作區</h3>
