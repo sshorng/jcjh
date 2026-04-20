@@ -833,10 +833,12 @@ createApp({
         finalCaseSource = `7.其他(${this.caseForm.customCaseSource})`;
       }
 
+      console.log('[DEBUG] saveCaseForm start', { editingId: this.editingId, formId: this.caseForm.id });
+      
       const data = {
         ...this.caseForm,
         '導師提報內容': this.caseForm.teacherReport,
-        '專輔個案摘要': this.caseForm.situation, // 🎯 修正：對應 Code.gs 預期的 key
+        '專輔個案摘要': this.caseForm.situation,
         caseType: this.caseForm.caseTypeArr.join(','),
         identity: this.caseForm.identityArr.join(','),
         serviceMethod: this.caseForm.serviceMethod,
@@ -846,9 +848,19 @@ createApp({
       this.loading = true;
       let r;
       if (this.editingId) {
+        console.log('[DEBUG] Calling updateCase', { originalId: this.editingId });
         r = await this.api('updateCase', { ...data, originalId: this.editingId });
       } else {
-        r = await this.api('addCase', data);
+        // 🛡️ 防禦性偵測：若沒有 editingId 但編號已存在，進行最後警告（雖然前面有查重，但這是雙重保險）
+        const exists = this.cases.find(c => c.id === this.caseForm.id);
+        if (exists) {
+          console.warn('[DEBUG] Found existing ID while editingId is null. Redirecting to updateCase?');
+          // 如果真的發生這種情況，我們主動幫忙轉向 updateCase 以免重複
+          r = await this.api('updateCase', { ...data, originalId: this.caseForm.id });
+        } else {
+          console.log('[DEBUG] Calling addCase');
+          r = await this.api('addCase', data);
+        }
       }
       this.loading = false;
       if (r?.success) {
