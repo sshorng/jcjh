@@ -2075,9 +2075,29 @@ mark {
 
 /* ===== 最近服務紀錄捲軸優化 (Dashbord Optimization) ===== */
 .recent-records-card .table-wrap {
-  max-height: 480px; /* 固定高度，約顯示 10 筆 */
+  max-height: 400px; /* 固定高度，優化比例 */
   overflow-y: auto;
-  scrollbar-width: thin; /* Firefox 捲軸美化 */
+  scrollbar-width: thin;
+  scrollbar-color: var(--bd) transparent;
+}
+
+/* 🎯 現代感捲軸美化 (Webkit) */
+.recent-records-card .table-wrap::-webkit-scrollbar {
+  width: 6px;
+}
+
+.recent-records-card .table-wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.recent-records-card .table-wrap::-webkit-scrollbar-thumb {
+  background: rgba(var(--p-alpha), 0.3);
+  border-radius: 10px;
+  transition: background 0.3s;
+}
+
+.recent-records-card .table-wrap::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--p-alpha), 0.5);
 }
 
 /* 讓表頭在捲動時保持固定 */
