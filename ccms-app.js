@@ -138,13 +138,21 @@ createApp({
           });
         }
       }
-      // 2. 關鍵字搜尋
+      // 2. 關鍵字搜尋 (擴大範圍至全域欄位)
       if (this.searchQuery) {
         const q = this.searchQuery.toLowerCase();
         result = result.filter(c =>
           (c.name || '').toLowerCase().includes(q) ||
+          (c.id || '').toLowerCase().includes(q) ||
           (c.class || '').toString().includes(q) ||
-          (c.caseType || '').toLowerCase().includes(q)
+          (c.caseType || '').toLowerCase().includes(q) ||
+          (c.counselor || '').toLowerCase().includes(q) ||
+          (c.mentorTeacher || '').toLowerCase().includes(q) ||
+          (c.homeroom || '').toLowerCase().includes(q) ||
+          (c.identity || '').toLowerCase().includes(q) ||
+          (c.situation || '').toLowerCase().includes(q) ||
+          (c.teacherReport || '').toLowerCase().includes(q) ||
+          (c.caseSource || '').toLowerCase().includes(q)
         );
       }
 
@@ -328,6 +336,7 @@ createApp({
         serviceMethod: '', caseSource: '', customCaseSource: '', caseType: '', identity: '',
         referralStatus: '2.無轉介', referralMonth: '', // 🎯 預計格式: 115-03
         caseTypeArr: [], identityArr: [],
+        caseTypeMainOther: '', caseTypeSubOther: '',
         entrySY: '',
         s_7a: '', s_7b: '', s_8a: '', s_8b: '', s_9a: '', s_9b: '',
         generatingSummary: false 
@@ -681,7 +690,17 @@ createApp({
       if (c) {
         // 直接使用傳入的資料 c (已經由 fetchData 或 getCaseFull 確保最新)
         const base = c;
-        const rawTypes = (base.caseType || '').split(',').map(s => s.trim()).filter(Boolean);
+        const rawTypesRaw = (base.caseType || '').split(',').map(s => s.trim()).filter(Boolean);
+        let mainOther = '', subOther = '';
+        const rawTypes = rawTypesRaw.map((t, idx) => {
+          if (t.startsWith('19.其他') && t.includes('_')) {
+            const parts = t.split('_');
+            if (idx === 0) mainOther = parts[1];
+            else if (idx === 1) subOther = parts[1];
+            return parts[0]; // 回傳 '19.其他' 供勾選清單比對
+          }
+          return t;
+        });
         const rawService = (base.serviceMethod || '').split(',').map(s => s.trim()).filter(Boolean);
         const rawIdentity = (base.identity || '').split(',').map(s => s.trim()).filter(Boolean);
 
@@ -699,6 +718,8 @@ createApp({
           caseSource: cs,
           customCaseSource: ccs,
           caseTypeArr: rawTypes,
+          caseTypeMainOther: mainOther,
+          caseTypeSubOther: subOther,
           identityArr: rawIdentity.filter(id => id !== '特教生'),
           counselor: base.counselor || ''
         };
@@ -835,11 +856,19 @@ createApp({
 
       console.log('[DEBUG] saveCaseForm start', { editingId: this.editingId, formId: this.caseForm.id });
       
+      const typesToSave = this.caseForm.caseTypeArr.map((t, idx) => {
+        if (t === '19.其他') {
+          const desc = (idx === 0) ? this.caseForm.caseTypeMainOther : ((idx === 1) ? this.caseForm.caseTypeSubOther : '');
+          return desc ? `19.其他_${desc}` : '19.其他';
+        }
+        return t;
+      });
+
       const data = {
         ...this.caseForm,
         '導師提報內容': this.caseForm.teacherReport,
         '專輔個案摘要': this.caseForm.situation,
-        caseType: this.caseForm.caseTypeArr.join(','),
+        caseType: typesToSave.join(','),
         identity: this.caseForm.identityArr.join(','),
         serviceMethod: this.caseForm.serviceMethod,
         caseSource: finalCaseSource
@@ -1281,9 +1310,17 @@ createApp({
         if (c.gender === '女') genderText = '生理女';
 
         const sourceCode = (isNew === 1) ? (getNum(c.caseSource) || 0) : 0;
-        const types = (c.caseType || '').split(',').map(s => s.trim());
-        const mainTypeNum = getNum(types[0]) || 19;
-        const subTypeNum = getNum(types[1]) || 0;
+        
+        const typeStrings = (c.caseType || '').split(',').map(s => s.trim());
+        const mainTypeStr = typeStrings[0] || '';
+        const subTypeStr = typeStrings[1] || '';
+
+        const mainTypeNum = getNum(mainTypeStr) || 19;
+        const subTypeNum = getNum(subTypeStr) || 0;
+
+        // 解析嵌入式說明 (19.其他_說明)
+        const mainOther = mainTypeStr.includes('_') ? mainTypeStr.split('_')[1] : '';
+        const subOther = subTypeStr.includes('_') ? subTypeStr.split('_')[1] : '';
 
         const idStr = String(c.id);
         const formattedId = idStr.includes('-') ? idStr : (idStr.length >= 4 ? idStr.slice(0, 3) + '-' + idStr.slice(3) : idStr);
@@ -1294,7 +1331,7 @@ createApp({
           gradeMap[c.grade] || 8,
           genderText, '', getNum(c.specialEdu),
           isNew, sourceCode, c.referralStatus || 2,
-          mainTypeNum, 0, subTypeNum, 0, count
+          mainTypeNum, mainOther || 0, subTypeNum, subOther || 0, count
         ];
 
         const row = sheetA1.getRow(rowA1Idx++);
