@@ -989,6 +989,18 @@
                   <span v-if="caseForm.caseTypeArr.length > 2"
                     style="color: var(--text-mut); font-weight: normal; margin-left:8px;">(其餘不計入 A-1 表)</span>
                 </div>
+
+                <!-- 🎯 其他說明動態欄位 -->
+                <div v-if="caseForm.caseTypeArr.some(t => String(t).startsWith('19.'))" class="form-grid" style="margin-top:10px;">
+                  <div v-if="String(caseForm.caseTypeArr[0] || '').startsWith('19.')" class="fg">
+                    <label style="color:var(--acc)">主類別其他說明</label>
+                    <input v-model="caseForm.caseTypeMainOther" placeholder="請輸入主類別其他內容...">
+                  </div>
+                  <div v-if="String(caseForm.caseTypeArr[1] || '').startsWith('19.')" class="fg">
+                    <label style="color:var(--text-mut)">副類別其他說明</label>
+                    <input v-model="caseForm.caseTypeSubOther" placeholder="請輸入副類別其他內容...">
+                  </div>
+                </div>
               </div>
             </div>
           </div>
