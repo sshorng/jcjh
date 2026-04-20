@@ -355,9 +355,9 @@
                       :class="['badge', c.status==='進行中'?'badge-active':(c.status==='觀察中'?'badge-obs':'badge-closed')]">{{
                       c.status }}</span></td>
                   <td @click.stop class="align-right">
-                    <button v-if="canEditCase(c)" class="btn btn-icon btn-sm" @click="openCaseModal(c)" title="編輯"><i
+                    <button v-if="canEditCase(c)" class="btn btn-icon btn-sm" @click.stop="openCaseModal(c)" title="編輯"><i
                         class="fas fa-pen"></i></button>
-                    <button v-if="isAdmin" class="btn btn-icon btn-sm" @click="deleteCase(c.id)" title="刪除"><i
+                    <button v-if="isAdmin" class="btn btn-icon btn-sm" @click.stop="deleteCase(c.id)" title="刪除"><i
                         class="fas fa-trash" style="color:var(--err)"></i></button>
                   </td>
                 </tr>
