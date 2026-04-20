@@ -2073,6 +2073,26 @@ mark {
   margin: 1px 1px;
 }
 
+/* ===== 最近服務紀錄捲軸優化 (Dashbord Optimization) ===== */
+.recent-records-card .table-wrap {
+  max-height: 480px; /* 固定高度，約顯示 10 筆 */
+  overflow-y: auto;
+  scrollbar-width: thin; /* Firefox 捲軸美化 */
+}
+
+/* 讓表頭在捲動時保持固定 */
+.recent-records-card table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--sf2);
+  box-shadow: 0 1px 0 var(--bd); /* 增加底部分隔線感 */
+}
+
+.light-theme .recent-records-card table thead th {
+  background: var(--bg);
+}
+
 /* ===== RWD 響應式佈局 ===== */
 
 /* 平板：sidebar 縮為圖示欄位 */
