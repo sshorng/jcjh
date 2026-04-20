@@ -1249,40 +1249,48 @@ createApp({
       let writtenA1 = 0;
 
       // 🎯 效能優化：預先對紀錄進行分類 (Map)，避免在迴圈中重複 filter (O(n*m) -> O(n+m))
-      const recordMap = new Map();
+      // 🎯 核心進化：將紀錄先依據 (教師編碼 x 個案 ID) 進行分組
+      // 這樣同一位學生若被多位老師服務，會產出多列資料 (符合分離統計需求)
+      const teacherCaseGroups = new Map();
       records.forEach(r => {
-        const cid = String(r.caseId);
-        if (!recordMap.has(cid)) recordMap.set(cid, []);
-        recordMap.get(cid).push(r);
+        const key = `${r.teacherCode}|${r.caseId}`;
+        if (!teacherCaseGroups.has(key)) {
+          teacherCaseGroups.set(key, {
+            teacherCode: r.teacherCode,
+            caseId: r.caseId,
+            records: []
+          });
+        }
+        teacherCaseGroups.get(key).records.push(r);
       });
 
-      cases.forEach(c => {
-        const myRecords = recordMap.get(String(c.id)) || [];
+      teacherCaseGroups.forEach(group => {
+        const c = caseMap[String(group.caseId)];
+        if (!c) return;
+
+        const myRecords = group.records;
         // 🎯 需求調整：表 A-1 的「當月累積次數」僅計算「0.晤談」類別
         const count = myRecords.filter(r => String(r.service || '').includes('0.晤談')).length;
-        console.log(`[表A-1] 個案 ${c.id} (${c.name}): 晤談次數為 ${count}`);
         
-        // 若該案主當月無晤談紀錄，則不列入表 A-1
+        // 若該老師對該案主當月無晤談紀錄，則不列入表 A-1
         if (count === 0) return;
 
         const isNew = c.isNew || 1;
-
         let genderText = '其他';
         if (c.gender === '男') genderText = '生理男';
         if (c.gender === '女') genderText = '生理女';
 
         const sourceCode = (isNew === 1) ? (getNum(c.caseSource) || 0) : 0;
-
         const types = (c.caseType || '').split(',').map(s => s.trim());
         const mainTypeNum = getNum(types[0]) || 19;
         const subTypeNum = getNum(types[1]) || 0;
 
-        // 學生代碼格式化：確保格式為 114-0133
         const idStr = String(c.id);
         const formattedId = idStr.includes('-') ? idStr : (idStr.length >= 4 ? idStr.slice(0, 3) + '-' + idStr.slice(3) : idStr);
 
         const vals = [
-          tCode, 1, formattedId,
+          parseInt(group.teacherCode) || 1, // 採用該筆紀錄所屬老師的編碼
+          1, formattedId,
           gradeMap[c.grade] || 8,
           genderText, '', getNum(c.specialEdu),
           isNew, sourceCode, c.referralStatus || 2,
@@ -1385,9 +1393,9 @@ createApp({
 
           const sc = getNum(sRaw) || 17;
           const tc = getTargetCode(tRaw, gradeStr);
-          const k = `${sc}|${tc}`;
+          const k = `${r.teacherCode}|${sc}|${tc}`;
 
-          if (!serviceStats[k]) serviceStats[k] = { s: sc, t: tc, male: 0, female: 0, other: 0 };
+          if (!serviceStats[k]) serviceStats[k] = { tCode: r.teacherCode, s: sc, t: tc, male: 0, female: 0, other: 0 };
           if (rowGender === '男') serviceStats[k].male++;
           else if (rowGender === '女') serviceStats[k].female++;
           else serviceStats[k].other++;
@@ -1397,7 +1405,7 @@ createApp({
       let rowA2Idx = 4;
       Object.values(serviceStats).forEach(stat => {
         const row = sheetA2.getRow(rowA2Idx++);
-        const vals = [tCode, 1, stat.s, 0, stat.t, stat.male, stat.female, stat.other];
+        const vals = [parseInt(stat.tCode) || 1, 1, stat.s, 0, stat.t, stat.male, stat.female, stat.other];
         vals.forEach((v, i) => {
           const cell = row.getCell(i + 1);
           cell.value = v;
