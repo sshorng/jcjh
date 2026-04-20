@@ -2075,7 +2075,7 @@ mark {
 
 /* ===== 最近服務紀錄捲軸優化 (Dashbord Optimization) ===== */
 .recent-records-card .table-wrap {
-  max-height: 400px; /* 固定高度，優化比例 */
+  max-height: 275px; /* 回歸原本 5 筆內容的視覺高度 (約 275px) */
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--bd) transparent;
