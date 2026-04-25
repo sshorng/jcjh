@@ -919,7 +919,22 @@ createApp({
         this.loading = true;
         this.loadingMsg = 'AI 正在分析紀錄並生成摘要...';
 
-        let entryYearStr = String(this.currentCase.schoolYear || '').trim();
+        // 🔧 修正：正確欄位名是 entrySY（非 schoolYear）
+        let entryYearStr = String(this.currentCase.entrySY || '').trim();
+
+        // Fallback 1：從「目前年級 + 目前學年度」反推入學年度（最可靠）
+        if (!entryYearStr || isNaN(parseInt(entryYearStr))) {
+          const gradeOffsetMap = { '七': 0, '八': 1, '九': 2 };
+          if (this.currentCase.grade in gradeOffsetMap) {
+            const now = new Date();
+            const syNow = (now.getMonth() + 1 >= 8)
+              ? (now.getFullYear() - 1911)
+              : (now.getFullYear() - 1911 - 1);
+            entryYearStr = String(syNow - gradeOffsetMap[this.currentCase.grade]);
+          }
+        }
+
+        // Fallback 2：從個案編號前三碼推算（此碼是建檔學年，非入學學年，僅最後手段）
         if (!entryYearStr || isNaN(parseInt(entryYearStr))) {
           const match = String(this.currentCase.id || '').replace(/-/g, '').match(/^(\d{3})/);
           if (match) entryYearStr = match[1];
@@ -927,11 +942,12 @@ createApp({
 
         const entryYear = parseInt(entryYearStr);
         if (isNaN(entryYear)) {
-          throw new Error('無法抓取該學生的入學學年度，請手動確認資料。');
+          throw new Error('無法抓取該學生的入學學年度，請至個案資料確認並填寫「入學學年度」欄位。');
         }
 
         const targetYear = entryYear + (targetGradeNum - 7);
         const semesterStr = `${targetYear}-${sem}`;
+        console.log(`[generateSummary] 個案: ${this.currentCase.id}, 年級: ${this.currentCase.grade}, 入學學年: ${entryYear}, 目標學期: ${semesterStr}`);
 
         const r = await this.api('generateSummary', {
           caseId: this.currentCase.id,
