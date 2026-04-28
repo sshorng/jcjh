@@ -584,6 +584,9 @@
                     </div>
                     <!-- 🎯 所見即所得編輯區：透過 @input 即時同步回 Markdown 語法 -->
                     <div id="record-editor" class="editor-input" contenteditable="true"
+                      :style="isDragging ? 'border-color: var(--pri); background: rgba(var(--p-rgb), 0.1);' : ''"
+                      @dragover.prevent="isDragging = true" @dragleave.prevent="isDragging = false"
+                      @drop.prevent="handleDrop"
                       @input="recordForm.content = html2md($event.target.innerHTML)" placeholder="請輸入服務內容...">
                     </div>
                   </div>
