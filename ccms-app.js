@@ -442,55 +442,64 @@ createApp({
       },
       async processFiles(files) {
         this.loading = true;
-        for (let i = 0; i < files.length; i++) {
+        const total = files.length;
+        const results = [];
+        
+        for (let i = 0; i < total; i++) {
           const file = files[i];
+          this.loadingMsg = `[${i+1}/${total}] 正在處理: ${file.name}...`;
           
-          if (file.size > 5 * 1024 * 1024) {
-            this.showToast(`檔案 ${file.name} 超過 5MB 限制`, 'error');
+          if (file.size > 10 * 1024 * 1024) { // 稍微放寬到 10MB，反正會壓縮
+            this.showToast(`檔案 ${file.name} 超過 10MB 限制`, 'error');
             continue;
           }
 
-          let compressedDataUrl;
-          if (file.type.startsWith('image/')) {
-            this.loadingMsg = `正在壓縮圖片 ${file.name}...`;
-            try {
-              compressedDataUrl = await this.compressImage(file);
-            } catch(e) {
-              console.error('Compress error', e);
+          try {
+            let compressedDataUrl;
+            if (file.type.startsWith('image/')) {
+              try {
+                compressedDataUrl = await this.compressImage(file);
+              } catch(e) {
+                compressedDataUrl = await this.toBase64(file);
+              }
+            } else {
               compressedDataUrl = await this.toBase64(file);
             }
-          } else {
-            this.loadingMsg = `正在讀取檔案 ${file.name}...`;
-            compressedDataUrl = await this.toBase64(file);
-          }
 
-          const base64Str = compressedDataUrl.split(',')[1];
-          let thumbnailBase64 = null;
-          if (file.type.startsWith('image/')) {
-            try {
-              const thumbUrl = await this.compressImage(file, 400, 0.5);
-              thumbnailBase64 = thumbUrl.split(',')[1];
-            } catch(e) {}
+            const base64Str = compressedDataUrl.split(',')[1];
+            let thumbnailBase64 = null;
+            if (file.type.startsWith('image/')) {
+              try {
+                const thumbUrl = await this.compressImage(file, 400, 0.5);
+                thumbnailBase64 = thumbUrl.split(',')[1];
+              } catch(e) {}
+            }
+            
+            this.loadingMsg = `[${i+1}/${total}] 正在上傳: ${file.name}...`;
+            const res = await this.api('uploadRecordImage', {
+              caseId: this.currentCase ? this.currentCase.id : '',
+              fileName: file.name,
+              mimeType: file.type,
+              fileBase64: base64Str
+            });
+            
+            if (res && res.success) {
+              const attData = res.data;
+              if (thumbnailBase64) attData.thumbnailBase64 = thumbnailBase64;
+              // 🎯 這裡先收集，最後一次更新，或是使用函數式更新確保安全
+              results.push(attData);
+            } else {
+              this.showToast(`上傳失敗: ${file.name}`, 'error');
+            }
+          } catch (err) {
+            console.error('處理檔案出錯', err);
+            this.showToast(`檔案 ${file.name} 處理發生錯誤`, 'error');
           }
-          
-          this.loadingMsg = `正在上傳 ${file.name}...`;
-          const res = await this.api('uploadRecordImage', {
-            caseId: this.currentCase ? this.currentCase.id : '',
-            fileName: file.name,
-            mimeType: file.type,
-            fileBase64: base64Str
-          });
-          
-          if (res && res.success) {
-            const attData = res.data;
-            if (thumbnailBase64) attData.thumbnailBase64 = thumbnailBase64;
-            // 🎯 使用重新賦值來確保 Vue 2 能偵測到陣列變動
-            this.recordForm.attachments = [...(this.recordForm.attachments || []), attData];
-            this.showToast(`上傳成功: ${file.name}`, 'success');
-          } else {
-            console.error('上傳失敗詳細資訊:', res);
-            this.showToast(`上傳失敗: ${file.name} - ${res ? res.error : '無回應'}`, 'error');
-          }
+        }
+        
+        if (results.length > 0) {
+          this.recordForm.attachments = [...(this.recordForm.attachments || []), ...results];
+          this.showToast(`成功上傳 ${results.length} 個附件`, 'success');
         }
         this.loading = false;
       },
