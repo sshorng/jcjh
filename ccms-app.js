@@ -486,14 +486,13 @@ createApp({
             if (res && res.success) {
               const attData = res.data;
               if (thumbnailBase64) attData.thumbnailBase64 = thumbnailBase64;
-              // 🎯 這裡先收集，最後一次更新，或是使用函數式更新確保安全
               results.push(attData);
             } else {
-              this.showToast(`上傳失敗: ${file.name}`, 'error');
+              this.showToast(`上傳失敗: ${file.name} (${res ? res.error : '無回應'})`, 'error');
             }
           } catch (err) {
             console.error('處理檔案出錯', err);
-            this.showToast(`檔案 ${file.name} 處理發生錯誤`, 'error');
+            this.showToast(`檔案 ${file.name} 處理錯誤: ${err.message}`, 'error');
           }
         }
         
