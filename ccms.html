@@ -173,7 +173,8 @@
                       </span>
                       <small style="color:var(--tx2)">({{ r.caseId }})</small>
                     </td>
-                    <td :title="r.target" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ r.target }}</td>
+                    <td :title="r.target" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{
+                      r.target }}</td>
                     <td style="word-break: break-all; white-space: normal; min-width: 120px">{{ r.service }}</td>
                     <td style="white-space: nowrap">{{ r.method }}</td>
                     <td style="white-space: nowrap">{{ r.recorderName }}</td>
@@ -205,8 +206,8 @@
                       splitName(c.name).mid }}</strong><strong>{{ splitName(c.name).last }}</strong>
                   </span>
                   <small style="opacity:0.8; margin-right: 4px;">({{ c.id }})</small>
-                  <i class="fas fa-times-circle clear-draft-btn" 
-                     @click.stop="clearRecordDraftById(c.id)" title="清除此份草稿"></i>
+                  <i class="fas fa-times-circle clear-draft-btn" @click.stop="clearRecordDraftById(c.id)"
+                    title="清除此份草稿"></i>
                 </div>
               </div>
               <div v-else class="empty-state" style="padding: 40px 0;">
@@ -355,8 +356,8 @@
                       :class="['badge', c.status==='進行中'?'badge-active':(c.status==='觀察中'?'badge-obs':'badge-closed')]">{{
                       c.status }}</span></td>
                   <td @click.stop class="align-right">
-                    <button v-if="canEditCase(c)" class="btn btn-icon btn-sm" @click.stop="openCaseModal(c)" title="編輯"><i
-                        class="fas fa-pen"></i></button>
+                    <button v-if="canEditCase(c)" class="btn btn-icon btn-sm" @click.stop="openCaseModal(c)"
+                      title="編輯"><i class="fas fa-pen"></i></button>
                     <button v-if="isAdmin" class="btn btn-icon btn-sm" @click.stop="deleteCase(c.id)" title="刪除"><i
                         class="fas fa-trash" style="color:var(--err)"></i></button>
                   </td>
@@ -437,8 +438,8 @@
               <div class="info-item"><label>身分背景</label><span>{{ currentCase.identity || '-' }}</span></div>
               <div class="info-item"><label>轉介概況</label>
                 <span>{{ currentCase.referralStatus || '2.無轉介' }}
-                  <small v-if="currentCase.referralMonth && currentCase.referralMonth !== '-'" 
-                         style="opacity:0.6; margin-left:4px">({{ currentCase.referralMonth }})</small>
+                  <small v-if="currentCase.referralMonth && currentCase.referralMonth !== '-'"
+                    style="opacity:0.6; margin-left:4px">({{ currentCase.referralMonth }})</small>
                 </span>
               </div>
               <div class="info-item"><label>個案來源</label><span>{{ currentCase.caseSource || '-' }}</span></div>
@@ -499,10 +500,13 @@
               <div class="form-grid">
                 <div class="fg"><label>日期</label><input v-model="recordForm.date" type="date"></div>
                 <!-- 🎯 改造：服務項目與對象對應組合 (優化空間版) -->
-                <div class="fg full" style="background: rgba(var(--p-alpha), 0.02); padding: 10px; border-radius: 10px; border: 1px dashed var(--bd);">
+                <div class="fg full"
+                  style="background: rgba(var(--p-alpha), 0.02); padding: 10px; border-radius: 10px; border: 1px dashed var(--bd);">
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <label style="margin-bottom: 0; font-weight: 600; font-size: 13px; color: var(--pri);"><i class="fas fa-link"></i> 服務配對 (月報表資料來源)</label>
-                    <button type="button" class="btn btn-secondary btn-sm" @click="addServiceItem" style="padding: 3px 8px; font-size: 11px; opacity: 0.8;">
+                    <label style="margin-bottom: 0; font-weight: 600; font-size: 13px; color: var(--pri);"><i
+                        class="fas fa-link"></i> 服務配對 (月報表資料來源)</label>
+                    <button type="button" class="btn btn-secondary btn-sm" @click="addServiceItem"
+                      style="padding: 3px 8px; font-size: 11px; opacity: 0.8;">
                       <i class="fas fa-plus"></i> 新增一組對應
                     </button>
                   </div>
@@ -511,34 +515,42 @@
                     <div v-for="(item, idx) in recordForm.serviceItems" :key="idx" class="service-item-row fade-in">
                       <div class="row-index">{{ idx + 1 }}</div>
                       <div class="row-selects">
-                        <select v-model="item.service" class="table-input" style="flex: 1.5;" title="服務項目" @change="handleServiceChange(item)">
+                        <select v-model="item.service" class="table-input" style="flex: 1.5;" title="服務項目"
+                          @change="handleServiceChange(item)">
                           <option value="">-- 項目 --</option>
                           <option v-for="s in SERVICE_OPTS" :key="s" :value="s">{{ s }}</option>
                         </select>
                         <i class="fas fa-arrow-right" style="opacity: 0.2; font-size: 11px;"></i>
-                        <select v-model="item.target" class="table-input" style="flex: 0.8;" title="服務對象" :disabled="item.service === '0.晤談'">
+                        <select v-model="item.target" class="table-input" style="flex: 0.8;" title="服務對象"
+                          :disabled="item.service === '0.晤談'">
                           <option value="">-- 對象 --</option>
                           <option v-for="t in TARGET_OPTS" :key="t" :value="t">{{ t }}</option>
                         </select>
-                        <select v-model="item.gender" class="table-input" style="flex: 0.5; min-width: 50px;" title="性別 (影響月報統計)" :disabled="item.service === '0.晤談'">
+                        <select v-model="item.gender" class="table-input" style="flex: 0.5; min-width: 50px;"
+                          title="性別 (影響月報統計)" :disabled="item.service === '0.晤談'">
                           <option value="男">男</option>
                           <option value="女">女</option>
                           <option value="其他">其</option>
                         </select>
                       </div>
-                      <button type="button" class="btn btn-icon-danger btn-sm" @click="removeServiceItem(idx)" title="刪除此組">
+                      <button type="button" class="btn btn-icon-danger btn-sm" @click="removeServiceItem(idx)"
+                        title="刪除此組">
                         <i class="fas fa-trash"></i>
                       </button>
                     </div>
                   </div>
-                  <div v-else class="empty-hint" style="text-align: center; padding: 10px; color: var(--tx3); font-size: 13px;">
+                  <div v-else class="empty-hint"
+                    style="text-align: center; padding: 10px; color: var(--tx3); font-size: 13px;">
                     尚未新增任何服務對應，請點擊上方按鈕新增。
                   </div>
 
-                  <div v-if="recordForm.serviceItems && recordForm.serviceItems.length > 0" class="service-item-row" style="margin-top: 10px; border-style: dashed; border-color: rgba(var(--p-alpha), 0.3); opacity: 0.9;">
-                    <div class="row-index" style="opacity: 0.5;"><i class="fas fa-comment-dots" style="font-size: 10px;"></i></div>
+                  <div v-if="recordForm.serviceItems && recordForm.serviceItems.length > 0" class="service-item-row"
+                    style="margin-top: 10px; border-style: dashed; border-color: rgba(var(--p-alpha), 0.3); opacity: 0.9;">
+                    <div class="row-index" style="opacity: 0.5;"><i class="fas fa-comment-dots"
+                        style="font-size: 10px;"></i></div>
                     <div class="row-selects">
-                      <input v-model="recordForm.customTarget" class="table-input" placeholder="對象補充說明（例：爸爸、某某老師...）" style="flex: 1; border-style: none !important; background: transparent;">
+                      <input v-model="recordForm.customTarget" class="table-input" placeholder="對象補充說明（例：爸爸、某某老師...）"
+                        style="flex: 1; border-style: none !important; background: transparent;">
                     </div>
                   </div>
                 </div>
@@ -576,6 +588,46 @@
                     </div>
                   </div>
                 </div>
+
+                <!-- 📎 附件上傳區塊 -->
+                <div class="fg full"
+                  style="margin-top: 10px; padding: 10px; background: rgba(var(--p-alpha), 0.02); border-radius: 8px; border: 1px dashed var(--bd); transition: all 0.3s;"
+                  :style="isDragging ? 'border-color: var(--pri); background: rgba(var(--p-rgb), 0.1);' : ''"
+                  @dragover.prevent="isDragging = true" @dragleave.prevent="isDragging = false"
+                  @drop.prevent="handleDrop">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label style="margin-bottom: 0; font-weight: 600; font-size: 13px; color: var(--pri);"><i
+                        class="fas fa-paperclip"></i> 附件 (系統會自動壓縮圖片)</label>
+                    <button type="button" class="btn btn-secondary btn-sm" @click="triggerUpload"
+                      style="padding: 3px 8px; font-size: 11px;">
+                      <i class="fas fa-upload"></i> 上傳附件
+                    </button>
+                    <input type="file" id="attachmentInput" multiple accept="image/*,.pdf" style="display:none"
+                      @change="handleFileUpload">
+                  </div>
+
+                  <div v-if="recordForm.attachments && recordForm.attachments.length > 0"
+                    style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
+                    <div v-for="(att, idx) in recordForm.attachments" :key="idx"
+                      style="position: relative; border: 1px solid var(--bd); border-radius: 8px; padding: 10px; background: rgba(255, 255, 255, 0.05); color: var(--txt); display:flex; flex-direction: column; align-items:center; gap:8px; width: 140px;">
+                      <a :href="att.url" target="_blank" title="點擊預覽" style="display:block;">
+                        <img v-if="att.mimeType && att.mimeType.startsWith('image/')" :src="att.thumbnailUrl || att.url"
+                          style="max-height: 80px; max-width: 120px; border-radius: 4px; object-fit: cover;">
+                        <i v-else class="fas fa-file-pdf" style="font-size: 40px; color: #e2574c; margin: 10px 0;"></i>
+                      </a>
+                      <div
+                        style="font-size: 10px; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; opacity: 0.6;"
+                        :title="att.fileName">{{ att.fileName }}</div>
+                      <input type="text" v-model="att.desc" placeholder="輸入附件說明..." 
+                        style="width: 100%; font-size: 11px; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--bd); background: rgba(var(--p-rgb), 0.1); color: var(--txt);">
+                      
+                      <button type="button" class="btn btn-icon-danger btn-sm" @click="deleteAttachmentItem(idx)" title="刪除附件" style="position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); border-radius: 50%; padding: 0; width: 22px; height: 22px; min-width: auto; min-height: auto; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-times" style="font-size:10px;"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
               </div>
               <div style="margin-top:15px; display: flex; justify-content: space-between; align-items: center;">
                 <div>
@@ -604,6 +656,20 @@
                     <span><i class="fas fa-pen-nib"></i> {{ r.recorderName }}</span>
                   </div>
                   <div class="timeline-content" v-html="md2html(r.content)"></div>
+                  <div v-if="r.attachments && r.attachments.length > 0"
+                    style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <a v-for="(att, idx) in r.attachments" :key="idx" :href="att.url" target="_blank"
+                      style="display:inline-flex; align-items:center; gap:8px; border: 1px solid var(--bd); border-radius: 4px; padding: 4px; background: rgba(255,255,255,0.05); text-decoration: none; color: inherit; transition: all 0.2s;"
+                      class="attachment-link">
+                      <img v-if="att.mimeType && att.mimeType.startsWith('image/')" :src="att.thumbnailUrl || att.url"
+                        style="max-height: 40px; border-radius: 4px;">
+                      <i v-else class="fas fa-file-pdf" style="font-size: 20px; color: #e2574c;"></i>
+                      <div style="display:flex; flex-direction: column; max-width: 120px;">
+                        <span style="font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ att.desc || '查看附件' }}</span>
+                        <span v-if="att.desc" style="font-size: 9px; opacity: 0.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ att.fileName }}</span>
+                      </div>
+                    </a>
+                  </div>
                   <div class="timeline-actions" v-if="canEditRecord(r)">
                     <button class="btn btn-icon btn-sm" @click="openRecordModal(r)" title="編輯"><i
                         class="fas fa-pen"></i></button>
@@ -861,7 +927,8 @@
 
 
               <div class="batch-bar" style="margin-top: 0; margin-bottom: 25px; border-left-color: var(--pri);">
-                <div class="batch-actions" style="flex-direction: column; align-items: stretch; width: 100%; gap: 12px;">
+                <div class="batch-actions"
+                  style="flex-direction: column; align-items: stretch; width: 100%; gap: 12px;">
                   <!-- 第一列：標題與開關 -->
                   <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                     <div class="action-group" style="margin-bottom: 0;">
@@ -942,8 +1009,8 @@
                 <label>個案編號</label>
                 <div style="display: flex; gap: 5px;">
                   <input v-model="caseForm.id" placeholder="建議採 114-0112 格式" style="flex: 1;">
-                  <button class="btn btn-secondary btn-sm" @click="generateOfficialId"
-                    title="根據學年度與專輔代碼生成正式編號" style="white-space: nowrap;">
+                  <button class="btn btn-secondary btn-sm" @click="generateOfficialId" title="根據學年度與專輔代碼生成正式編號"
+                    style="white-space: nowrap;">
                     <i class="fas fa-magic"></i> 生成
                   </button>
                 </div>
@@ -991,7 +1058,8 @@
                 </div>
 
                 <!-- 🎯 其他說明動態欄位 -->
-                <div v-if="caseForm.caseTypeArr.some(t => String(t).startsWith('19.'))" class="form-grid" style="margin-top:10px;">
+                <div v-if="caseForm.caseTypeArr.some(t => String(t).startsWith('19.'))" class="form-grid"
+                  style="margin-top:10px;">
                   <div v-if="String(caseForm.caseTypeArr[0] || '').startsWith('19.')" class="fg">
                     <label style="color:var(--acc)">主類別其他說明</label>
                     <input v-model="caseForm.caseTypeMainOther" placeholder="請輸入主類別其他內容...">
@@ -1034,8 +1102,8 @@
                   <option value="">--</option>
                   <option v-for="o in SOURCE_OPTS" :key="o">{{ o }}</option>
                 </select>
-                <input v-if="caseForm.caseSource === '7.其他'" v-model="caseForm.customCaseSource" 
-                       placeholder="請輸入其他來源..." style="margin-top: 5px;">
+                <input v-if="caseForm.caseSource === '7.其他'" v-model="caseForm.customCaseSource"
+                  placeholder="請輸入其他來源..." style="margin-top: 5px;">
               </div>
               <div class="fg"><label>轉介概況 (配合月報表)</label>
                 <select v-model="caseForm.referralStatus">
