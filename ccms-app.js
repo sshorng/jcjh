@@ -1725,16 +1725,30 @@ createApp({
       }
       this.showRecordModal = true;
     },
-    clearRecordDraft() {
-      this.confirmAction('🛠️ 確定要重排裝修計畫（清空目前編輯區）嗎？\n這將會清除您本個案所有打到一半的內容與選取，且無法還原。', () => {
-        // 1. 初始化表單 (重置為今天與空白)
+    async clearRecordDraft() {
+      const atts = this.recordForm.attachments || [];
+      this.confirmAction(`🛠️ 確定要清空目前編輯區嗎？\n這將會清除所有內容，且已上傳的 ${atts.length} 個附件也會從雲端硬碟刪除。`, async () => {
+        // 1. 刪除雲端硬碟中的附件
+        if (atts.length > 0) {
+          this.loading = true;
+          this.loadingMsg = '正在清理雲端附件...';
+          for (const att of atts) {
+            try {
+              await this.api('deleteAttachment', { fileId: att.fileId });
+            } catch (e) { console.error('刪除附件失敗', e); }
+          }
+          this.loading = false;
+        }
+
+        // 2. 初始化表單 (重置為今天與空白)
         this.recordForm = this.emptyRecordForm();
-        // 2. 徹底同步保險櫃與緩存
+
+        // 3. 徹底同步保險櫃與緩存
         if (this.currentCase && this.recordDrafts[this.currentCase.id]) {
           delete this.recordDrafts[this.currentCase.id];
           localStorage.setItem('cms_record_drafts', JSON.stringify(this.recordDrafts));
         }
-        this.showToast('編輯區已清空', 'info');
+        this.showToast('編輯區已清空且附件已清理', 'info');
       });
     },
     clearRecordDraftById(id) {
