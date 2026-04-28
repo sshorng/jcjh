@@ -74,6 +74,7 @@ createApp({
       showCaseModal: false, showRecordModal: false, showUserModal: false,
       showSettings: false, showHelp: false, showConfigModal: false, showChangePwd: false,
       showHealthModal: false, healthReport: null,
+      isDragging: false, // 拖曳上傳狀態
       pwdForm: { oldPwd: '', newPwd: '', confirmPwd: '' },
       exportModal: { show: false, yearMonth: '' },
       feedbackModal: { show: false, targetSem: '', currentSem: '' },
@@ -358,7 +359,8 @@ createApp({
         serviceItems: [{ service: '', target: '', gender: this.currentCase?.gender || '男' }], // 🎯 預設帶入個案性別
         content: '',
         contentHTML: '', 
-        excludeFromReport: false
+        excludeFromReport: false,
+        attachments: []
       };
     },
 
@@ -422,6 +424,152 @@ createApp({
     },
 
     // ===== 登入/登出 =====
+      // === 📎 附件上傳與處理邏輯 ===
+      async triggerUpload() {
+        document.getElementById('attachmentInput').click();
+      },
+      async handleFileUpload(event) {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+        await this.processFiles(files);
+        event.target.value = '';
+      },
+      async handleDrop(event) {
+        this.isDragging = false;
+        const files = event.dataTransfer.files;
+        if (!files || files.length === 0) return;
+        await this.processFiles(files);
+      },
+      async processFiles(files) {
+        this.loading = true;
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          
+          if (file.size > 5 * 1024 * 1024) {
+            this.showToast(`檔案 ${file.name} 超過 5MB 限制`, 'error');
+            continue;
+          }
+
+          let compressedDataUrl;
+          if (file.type.startsWith('image/')) {
+            this.loadingMsg = `正在壓縮圖片 ${file.name}...`;
+            try {
+              compressedDataUrl = await this.compressImage(file);
+            } catch(e) {
+              console.error('Compress error', e);
+              compressedDataUrl = await this.toBase64(file);
+            }
+          } else {
+            this.loadingMsg = `正在讀取檔案 ${file.name}...`;
+            compressedDataUrl = await this.toBase64(file);
+          }
+
+          const base64Str = compressedDataUrl.split(',')[1];
+          let thumbnailBase64 = null;
+          if (file.type.startsWith('image/')) {
+            try {
+              const thumbUrl = await this.compressImage(file, 400, 0.5);
+              thumbnailBase64 = thumbUrl.split(',')[1];
+            } catch(e) {}
+          }
+          
+          this.loadingMsg = `正在上傳 ${file.name}...`;
+          const res = await this.api('uploadRecordImage', {
+            caseId: this.currentCase ? this.currentCase.id : '',
+            fileName: file.name,
+            mimeType: file.type,
+            fileBase64: base64Str
+          });
+          
+          if (res && res.success) {
+            const attData = res.data;
+            if (thumbnailBase64) attData.thumbnailBase64 = thumbnailBase64;
+            // 🎯 使用重新賦值來確保 Vue 2 能偵測到陣列變動
+            this.recordForm.attachments = [...(this.recordForm.attachments || []), attData];
+            this.showToast(`上傳成功: ${file.name}`, 'success');
+          } else {
+            console.error('上傳失敗詳細資訊:', res);
+            this.showToast(`上傳失敗: ${file.name} - ${res ? res.error : '無回應'}`, 'error');
+          }
+        }
+        this.loading = false;
+      },
+      toBase64(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = error => reject(error);
+        });
+      },
+      compressImage(file, maxWidth = 1000, quality = 0.6) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = event => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              const MAX_WIDTH = maxWidth;
+              const MAX_HEIGHT = maxWidth;
+              let width = img.width;
+              let height = img.height;
+
+              if (width > height) {
+                if (width > MAX_WIDTH) {
+                  height *= MAX_WIDTH / width;
+                  width = MAX_WIDTH;
+                }
+              } else {
+                if (height > MAX_HEIGHT) {
+                  width *= MAX_HEIGHT / height;
+                  height = MAX_HEIGHT;
+                }
+              }
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, width, height);
+              resolve(canvas.toDataURL('image/jpeg', quality));
+            };
+            img.onerror = error => reject(error);
+          };
+          reader.onerror = error => reject(error);
+        });
+      },
+      async deleteAttachmentItem(idx) {
+        const att = this.recordForm.attachments[idx];
+        if (!att) return;
+        if (!confirm(`確定要刪除附件「${att.fileName}」嗎？這會從 Google Drive 中移至垃圾桶。`)) return;
+        
+        this.loading = true;
+        this.loadingMsg = '刪除附件中...';
+        const res = await this.api('deleteAttachment', { fileId: att.fileId });
+        this.loading = false;
+        
+        if (res && res.success) {
+          this.recordForm.attachments.splice(idx, 1);
+          this.showToast('附件已刪除', 'success');
+        } else {
+          this.showToast('刪除失敗: ' + (res ? res.error : ''), 'error');
+        }
+      },
+      
+    async checkToken() {
+      const token = localStorage.getItem('cms_token');
+      if (!token) return;
+
+      const r = await this.api('checkToken');
+      if (r && r.success) {
+        this.user = r.user;
+        this.loadCache();
+        await this.fetchData();
+        if (this.isAdmin) this.loadUsers();
+      } else {
+        this.logout(true);
+      }
+    },
     async login() {
       if (!this.loginForm.account || !this.loginForm.password) {
         this.showToast('請輸入帳號和密碼', 'error'); return;
@@ -1551,7 +1699,8 @@ createApp({
           serviceItems: serviceItems, // 🎯 放入對應項目
           content: rec.content,
           contentHTML: this.md2html(rec.content), // 🎨 載入時轉換為網頁樣式
-          excludeFromReport: excludeFromReport
+          excludeFromReport: excludeFromReport,
+          attachments: rec.attachments || []
         };
       } else {
         this.editingRecordId = null;
@@ -1674,8 +1823,9 @@ createApp({
           method: methodStr,
           service: serviceStr,
           content: this.recordForm.content,
-          recorderName: this.user.name // 確保更新時也帶上姓名以供後端記錄（若有需要）
-        });
+          recorderName: this.user.name,
+            attachments: this.recordForm.attachments
+          });
       } else {
         r = await this.api('addRecord', {
           caseId: this.currentCase.id,
@@ -1684,8 +1834,9 @@ createApp({
           method: methodStr,
           service: serviceStr,
           content: this.recordForm.content,
-          recorderName: this.user.name // 顯式傳遞，對應後端載入與存檔
-        });
+          recorderName: this.user.name,
+            attachments: this.recordForm.attachments
+          });
       }
       this.loading = false;
       if (r?.success) {
@@ -2311,7 +2462,7 @@ createApp({
 
     // ===== 系統備份與維護 =====
     generateWordDocDef(c, records) {
-      const { Document, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, VerticalAlign, BorderStyle } = window.docx;
+      const { Document, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, VerticalAlign, BorderStyle, ExternalHyperlink } = window.docx;
 
       const FONT_SIZE = 24;
       const FONT_SIZE_TITLE = 36;
@@ -2382,6 +2533,59 @@ createApp({
           children: [new Paragraph({ children: [new TextRun({ text: String(text || '-'), size: FONT_SIZE })], alignment: align })]
         });
 
+        let contentChildren = this.parseMarkdownToDocx(r.content, FONT_SIZE);
+        if (r.attachments && r.attachments.length > 0) {
+          const { ImageRun, Paragraph, TextRun, ExternalHyperlink } = window.docx;
+          contentChildren.push(new Paragraph({ children: [new TextRun({ text: "【附件】", bold: true, size: FONT_SIZE })], spacing: { before: 100 } }));
+          
+          for (let att of r.attachments) {
+            const displayTitle = att.desc || att.fileName;
+            if (att.thumbnailBase64) {
+              // 1. 如果是圖片，僅加入圖片，若有說明則加上說明文字
+              try {
+                const byteCharacters = atob(att.thumbnailBase64);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                  byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                
+                contentChildren.push(new Paragraph({
+                  children: [
+                    new ImageRun({
+                      data: byteArray,
+                      transformation: { width: 160, height: 160 } 
+                    }),
+                    att.desc ? new TextRun({ text: " " + att.desc, size: FONT_SIZE, bold: true }) : null
+                  ].filter(Boolean),
+                  spacing: { before: 80 }
+                }));
+              } catch(e) { 
+                console.error('匯出 Word 圖片錯誤', e); 
+                contentChildren.push(new Paragraph({ children: [new TextRun({ text: `📎 ${displayTitle}`, size: FONT_SIZE })], spacing: { before: 80 } }));
+              }
+            } else {
+              // 2. 如果是非圖片，加入可點擊的超連結，優先顯示說明
+              contentChildren.push(new Paragraph({
+                children: [
+                  new ExternalHyperlink({
+                    children: [
+                      new TextRun({ 
+                        text: "📎 " + displayTitle, 
+                        size: FONT_SIZE, 
+                        color: "2563EB", 
+                        underline: { color: "2563EB" } 
+                      })
+                    ],
+                    link: att.url
+                  })
+                ],
+                spacing: { before: 80 }
+              }));
+            }
+          }
+        }
+
         recordRows.push(new TableRow({
           children: [
             createDataCell(idx + 1, 5),
@@ -2392,7 +2596,7 @@ createApp({
               width: { size: 62, type: WidthType.PERCENTAGE },
               borders: modernBorders,
               margins: { top: 120, bottom: 120, left: 120, right: 120 },
-              children: this.parseMarkdownToDocx(r.content, FONT_SIZE) 
+              children: contentChildren 
             }),
             createDataCell(r.recorderName, 7),
           ]
@@ -2786,3 +2990,6 @@ createApp({
     }
   }
 }).mount('#app');
+
+
+
