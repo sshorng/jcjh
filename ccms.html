@@ -529,9 +529,7 @@
                           <option v-for="t in TARGET_OPTS" :key="t" :value="t">{{ t }}</option>
                         </select>
                         <select v-model="item.gender" class="table-input" style="flex: 0.5; min-width: 50px;"
-                          title="性別 (影響月報統計)" 
-                          :disabled="item.service === '0.晤談' || /^3\./.test(item.service) || /^4\./.test(item.service)"
-                          :style="item.service === '0.晤談' || /^3\./.test(item.service) || /^4\./.test(item.service) ? 'opacity:0.7; cursor:not-allowed;' : ''">
+                          title="性別 (影響月報統計)">
                           <option value="男">男</option>
                           <option value="女">女</option>
                           <option value="其他">其</option>
