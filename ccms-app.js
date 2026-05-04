@@ -16,7 +16,7 @@ const CASE_TYPES = [
   '16.中離(輟)拒學', '17.藥物濫用', '18.精神疾患', '19.其他'
 ];
 const METHOD_OPTS = ['面談', '電聯', '訊息', '校訪', '其他'];
-const TARGET_OPTS = ['11.學生', '12.導師', '13.教職員', '14.家長', '15.專業人員'];
+const TARGET_OPTS = ['學生', '12.導師', '13.教職員', '14.家長', '15.專業人員'];
 const STATUS_OPTS = ['進行中', '已結案', '觀察中'];
 const SOURCE_OPTS = [
   '1.學生主動求助',
@@ -73,7 +73,7 @@ createApp({
       // Modal 控制
       showCaseModal: false, showRecordModal: false, showUserModal: false,
       showSettings: false, showHelp: false, showConfigModal: false, showChangePwd: false,
-      showHealthModal: false, healthReport: null,
+      showHealthModal: false, healthReport: null, healthDetail: null,
       isDragging: false, // 拖曳上傳狀態
       pwdForm: { oldPwd: '', newPwd: '', confirmPwd: '' },
       exportModal: { show: false, yearMonth: '' },
@@ -623,7 +623,6 @@ createApp({
       this.showToast('已安全登出', 'info');
     },
 
-    // ===== 系統健檢 =====
     async runHealthCheck() {
       if (this.loading) return;
       this.loading = true;
@@ -632,7 +631,7 @@ createApp({
       this.loading = false;
       if (r?.success) {
         this.healthReport = r.report;
-        this.showHealthModal = true;
+        this.healthDetail = null; // 重置展開明細
         if (r.hasIssues) {
           this.showToast('掃描完成，系統發現異常狀況', 'warning');
         } else {
@@ -640,16 +639,25 @@ createApp({
         }
       }
     },
-    async repairData() {
-      if (!confirm('💡 治療方案確認：\n系統將自動修復個案與紀錄的編號格式錯誤。這不會刪除任何資料。確認執行？')) return;
+    async repairData(repairType = 'all') {
+      const typeLabels = {
+        orphans: '孤兒紀錄',
+        invalidIds: '編號格式錯誤',
+        logicErrors: '對應邏輯錯誤',
+        orphanAttachments: '孤兒附件',
+        all: '全部異常'
+      };
+      const label = typeLabels[repairType] || '異常';
+      if (!confirm(`💡 確認修復【${label}】\n系統將自動修復選定項目。確認執行？`)) return;
 
       this.loading = true;
-      this.loadingMsg = '正在執行一鍵自動醫療程序...';
-      const r = await this.api('repairData');
+      this.loadingMsg = `正在修復《${label}》...`;
+      const r = await this.api('repairData', { repairType });
       this.loading = false;
 
       if (r?.success) {
         this.showToast(r.message, 'success');
+        this.healthDetail = null;
         // 修復完後自動重新診斷，展現成果
         this.runHealthCheck();
       }
@@ -1322,7 +1330,7 @@ createApp({
     },
     handleServiceChange(item) {
       if (item.service === '0.晤談') {
-        item.target = '11.學生';
+        item.target = '學生';
         item.gender = this.currentCase?.gender || '男';
       } else if (item.service === '3.家長諮詢') {
         item.target = '14.家長';
@@ -1622,7 +1630,17 @@ createApp({
           }
 
           const sc = getNum(sRaw) || 17;
-          const tc = getTargetCode(tRaw, gradeStr);
+          
+          // 🎯 月報表服務→對象強制修正：以服務代號決定對象代號，避免舊資料錯誤影響統計
+          let tc;
+          if (sc === 3) {
+            tc = 14; // 家長諮詢 → 必定是家長(14)
+          } else if (sc === 4) {
+            tc = 13; // 教師諮詢 → 必定是教職員(13)
+          } else {
+            tc = getTargetCode(tRaw, gradeStr);
+          }
+          
           const k = `${r.teacherCode}|${sc}|${tc}`;
 
           if (!serviceStats[k]) serviceStats[k] = { tCode: r.teacherCode, s: sc, t: tc, male: 0, female: 0, other: 0 };
@@ -1672,13 +1690,19 @@ createApp({
         const targetArr = [];
         const customTargets = customTxt ? [customTxt] : [];
         baseTargetsArr.forEach(t => {
-          // 🎯 修正：辨識時需忽略 [性別] 編碼，且支援舊版無數字編號的匹配
+          // 🎯 修正：辨識時需忽略 [性別] 編碼，且支援舊版無數字編號或舊編號 (如 11.學生) 的匹配
           const cleanT = t.replace(/\[.*?\]$/, '').trim();
-          const matchedOpt = this.TARGET_OPTS.find(opt => opt === cleanT || (cleanT && opt.endsWith(cleanT)));
+          const matchedOpt = this.TARGET_OPTS.find(opt => {
+            if (opt === cleanT) return true;
+            if (!cleanT) return false;
+            // 處理「學生」<->「11.學生」的雙向轉換相容
+            if (opt === '學生' && cleanT === '11.學生') return true;
+            return opt.endsWith(cleanT);
+          });
           
           if (matchedOpt || cleanT === '') {
-            // 如果是舊版字串，自動升級為新版帶編號的字串
-            const upgradedT = t.replace(cleanT, matchedOpt || '');
+            // 自動更新為目前選單中的標準字串
+            const upgradedT = matchedOpt ? t.replace(cleanT, matchedOpt) : t;
             targetArr.push(upgradedT);
           } else if (t.trim() && t.trim() !== '其他') {
             customTargets.push(t);
