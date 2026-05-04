@@ -899,7 +899,7 @@
                     <i class="fas fa-heartbeat" style="font-size: 1.5rem; color:var(--suc);"></i>
                     <div>
                       <p style="font-weight: 600;">系統健康檢查</p>
-                      <p style="font-size: 12px; color: var(--tx2);">分析試算表資料一致性，偵測孤兒紀錄或重複編號。</p>
+                      <p style="font-size: 12px; color: var(--tx2);">分析試算表資料一致性，偵測孤兒紀錄、重複編號或雲端孤兒附件。</p>
                     </div>
                   </div>
                 </div>
@@ -909,7 +909,7 @@
               </div>
 
               <!-- 系統診斷報告摘要 (簡化版) -->
-              <div v-if="healthReport && healthReport.totalCases > 0" class="stat-grid" style="margin-bottom: 20px;">
+              <div v-if="healthReport && healthReport.totalCases > 0" class="stat-grid" style="margin-bottom: 20px; grid-template-columns: repeat(5, 1fr);">
                 <div class="stat-card">
                   <div class="stat-val">{{ healthReport.totalCases }}</div>
                   <div class="stat-label">總個案數</div>
@@ -925,6 +925,10 @@
                 <div class="stat-card" :class="{ 'text-err': healthReport.duplicates.length > 0 }">
                   <div class="stat-val">{{ healthReport.duplicates.length }}</div>
                   <div class="stat-label">重複編號</div>
+                </div>
+                <div class="stat-card" :class="{ 'text-err': healthReport.orphanAttachments && healthReport.orphanAttachments.length > 0 }">
+                  <div class="stat-val">{{ healthReport.orphanAttachments ? healthReport.orphanAttachments.length : 0 }}</div>
+                  <div class="stat-label">孤兒附件</div>
                 </div>
               </div>
 
@@ -1064,11 +1068,11 @@
                 <div v-if="caseForm.caseTypeArr.some(t => String(t).startsWith('19.'))" class="form-grid"
                   style="margin-top:10px;">
                   <div v-if="String(caseForm.caseTypeArr[0] || '').startsWith('19.')" class="fg">
-                    <label style="color:var(--acc)">主類別其他說明</label>
+                    <label style="color:var(--acc)">主類別其他說明 <span style="color:red">*必填</span></label>
                     <input v-model="caseForm.caseTypeMainOther" placeholder="請輸入主類別其他內容...">
                   </div>
                   <div v-if="String(caseForm.caseTypeArr[1] || '').startsWith('19.')" class="fg">
-                    <label style="color:var(--text-mut)">副類別其他說明</label>
+                    <label style="color:var(--text-mut)">副類別其他說明 <span style="color:red">*必填</span></label>
                     <input v-model="caseForm.caseTypeSubOther" placeholder="請輸入副類別其他內容...">
                   </div>
                 </div>
