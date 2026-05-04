@@ -16,7 +16,7 @@ const CASE_TYPES = [
   '16.中離(輟)拒學', '17.藥物濫用', '18.精神疾患', '19.其他'
 ];
 const METHOD_OPTS = ['面談', '電聯', '訊息', '校訪', '其他'];
-const TARGET_OPTS = ['學生', '教職員', '家長', '專業人員'];
+const TARGET_OPTS = ['11.學生', '12.導師', '13.教職員', '14.家長', '15.專業人員'];
 const STATUS_OPTS = ['進行中', '已結案', '觀察中'];
 const SOURCE_OPTS = [
   '1.學生主動求助',
@@ -1006,11 +1006,28 @@ createApp({
 
       // 合併個案來源與自填內容
       let finalCaseSource = this.caseForm.caseSource;
-      if (finalCaseSource === '7.其他' && this.caseForm.customCaseSource) {
+      if (finalCaseSource === '7.其他') {
+        if (!this.caseForm.customCaseSource || !this.caseForm.customCaseSource.trim()) {
+          this.showToast('選取「7.其他」個案來源時，請務必填寫詳細說明', 'error');
+          return;
+        }
         finalCaseSource = `7.其他(${this.caseForm.customCaseSource})`;
       }
 
       console.log('[DEBUG] saveCaseForm start', { editingId: this.editingId, formId: this.caseForm.id });
+
+      // 🎯 驗證：如果個案類別包含「19.其他」，說明欄位必填
+      if (this.caseForm.caseTypeArr && this.caseForm.caseTypeArr.length > 0) {
+        for (let i = 0; i < this.caseForm.caseTypeArr.length; i++) {
+          if (this.caseForm.caseTypeArr[i] === '19.其他') {
+            const desc = (i === 0) ? this.caseForm.caseTypeMainOther : this.caseForm.caseTypeSubOther;
+            if (!desc || !desc.trim()) {
+              this.showToast(`選取「19.其他」個案類別時，請務必填寫詳細說明`, 'error');
+              return;
+            }
+          }
+        }
+      }
       
       const typesToSave = this.caseForm.caseTypeArr.map((t, idx) => {
         if (t === '19.其他') {
@@ -1305,8 +1322,12 @@ createApp({
     },
     handleServiceChange(item) {
       if (item.service === '0.晤談') {
-        item.target = '學生';
+        item.target = '11.學生';
         item.gender = this.currentCase?.gender || '男';
+      } else if (item.service === '3.家長諮詢') {
+        item.target = '14.家長';
+      } else if (item.service === '4.教師諮詢') {
+        item.target = '13.教職員';
       }
     },
 
@@ -1651,11 +1672,15 @@ createApp({
         const targetArr = [];
         const customTargets = customTxt ? [customTxt] : [];
         baseTargetsArr.forEach(t => {
-          // 🎯 修正：辨識時需忽略 [性別] 編碼
+          // 🎯 修正：辨識時需忽略 [性別] 編碼，且支援舊版無數字編號的匹配
           const cleanT = t.replace(/\[.*?\]$/, '').trim();
-          if (this.TARGET_OPTS.includes(cleanT) || cleanT === '') {
-            targetArr.push(t);
-          } else if (t.trim() !== '其他') {
+          const matchedOpt = this.TARGET_OPTS.find(opt => opt === cleanT || (cleanT && opt.endsWith(cleanT)));
+          
+          if (matchedOpt || cleanT === '') {
+            // 如果是舊版字串，自動升級為新版帶編號的字串
+            const upgradedT = t.replace(cleanT, matchedOpt || '');
+            targetArr.push(upgradedT);
+          } else if (t.trim() && t.trim() !== '其他') {
             customTargets.push(t);
           }
         });
