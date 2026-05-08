@@ -85,7 +85,7 @@ createApp({
       isPrivacyMode: localStorage.getItem('cms_privacy_mode') === 'true', // 🔒 隱私遮罩模式
       // 配置與設定分頁
       settingsTab: 'export',
-      backupSettings: { email: '', enabled: true },
+      backupSettings: { email: '', enabled: false },
       systemSettings: [],
       // 配置管理
       configType: 'classes', configItems: [],
@@ -678,12 +678,16 @@ createApp({
         });
         if (r?.success) {
           this.showToast(r.message, 'success');
-          // 成功後手動更新 systemSettings 快取，不再呼叫 fetchData 避免競爭覆蓋
           if (this.systemSettings) {
-            const emailSet = this.systemSettings.find(s => s['設定項目'] === 'BACKUP_EMAIL');
-            const enabledSet = this.systemSettings.find(s => s['設定項目'] === 'BACKUP_ENABLED');
+            // 更新或新增 Email 設定
+            let emailSet = this.systemSettings.find(s => s['設定項目'] === 'BACKUP_EMAIL');
             if (emailSet) emailSet['設定值'] = this.backupSettings.email;
+            else this.systemSettings.push({ '設定項目': 'BACKUP_EMAIL', '設定值': this.backupSettings.email });
+
+            // 更新或新增啟用狀態
+            let enabledSet = this.systemSettings.find(s => s['設定項目'] === 'BACKUP_ENABLED');
             if (enabledSet) enabledSet['設定值'] = String(this.backupSettings.enabled);
+            else this.systemSettings.push({ '設定項目': 'BACKUP_ENABLED', '設定值': String(this.backupSettings.enabled) });
           }
         } else {
           this.backupSettings.enabled = originalEnabled;
@@ -740,7 +744,12 @@ createApp({
               const emailSet = this.systemSettings.find(s => s['設定項目'] === 'BACKUP_EMAIL');
               const enabledSet = this.systemSettings.find(s => s['設定項目'] === 'BACKUP_ENABLED');
               if (emailSet) this.backupSettings.email = emailSet['設定值'];
-              if (enabledSet) this.backupSettings.enabled = enabledSet['設定值'] === 'true';
+              if (enabledSet) {
+                this.backupSettings.enabled = (enabledSet['設定值'] === 'true');
+              } else {
+                // 如果後端沒這項設定，預設為關閉
+                this.backupSettings.enabled = false;
+              }
             }
             if (this.page === 'settings') {
               this.openConfigModal('classes');
