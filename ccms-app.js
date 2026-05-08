@@ -664,18 +664,35 @@ createApp({
     },
     async updateBackupSettings() {
       if (!this.backupSettings.email) {
-        this.showToast('請填寫備份電子郵件', 'warning'); return;
+        this.showToast('請填寫備份電子郵件', 'warning');
+        this.backupSettings.enabled = false;
+        return;
       }
+      const originalEnabled = !this.backupSettings.enabled;
       this.loading = true;
       this.loadingMsg = '正在更新備份設定...';
-      const r = await this.api('updateBackupSettings', {
-        backupEmail: this.backupSettings.email,
-        backupEnabled: this.backupSettings.enabled
-      });
-      this.loading = false;
-      if (r?.success) {
-        this.showToast(r.message, 'success');
-        await this.fetchData(true);
+      try {
+        const r = await this.api('updateBackupSettings', {
+          backupEmail: this.backupSettings.email,
+          backupEnabled: this.backupSettings.enabled
+        });
+        if (r?.success) {
+          this.showToast(r.message, 'success');
+          // 成功後手動更新 systemSettings 快取，不再呼叫 fetchData 避免競爭覆蓋
+          if (this.systemSettings) {
+            const emailSet = this.systemSettings.find(s => s['設定項目'] === 'BACKUP_EMAIL');
+            const enabledSet = this.systemSettings.find(s => s['設定項目'] === 'BACKUP_ENABLED');
+            if (emailSet) emailSet['設定值'] = this.backupSettings.email;
+            if (enabledSet) enabledSet['設定值'] = String(this.backupSettings.enabled);
+          }
+        } else {
+          this.backupSettings.enabled = originalEnabled;
+        }
+      } catch (e) {
+        this.backupSettings.enabled = originalEnabled;
+        this.showToast('更新失敗，請檢查網路連線', 'error');
+      } finally {
+        this.loading = false;
       }
     },
     async testBackupEmail() {
