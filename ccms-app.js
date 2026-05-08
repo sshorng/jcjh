@@ -727,15 +727,6 @@ createApp({
       try {
         const r = await this.api('getDashboard');
         if (r?.success && r.data) {
-          // 2. 效能優化：比對資料是否有變動 (簡單的比對，避免無謂的重新渲染)
-          const newDataStr = JSON.stringify(r.data);
-          const oldDataStr = localStorage.getItem('cms_dash_cache');
-
-          if (newDataStr === oldDataStr && this.cases.length > 0) {
-            // 資料完全一樣，跳過更新
-            return;
-          }
-
           this.dashData = r.data;
           this.cases = r.data.cases || [];
           if (r.data.configs) {
