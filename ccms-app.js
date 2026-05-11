@@ -745,7 +745,7 @@ createApp({
               const enabledSet = this.systemSettings.find(s => s['設定項目'] === 'BACKUP_ENABLED');
               if (emailSet) this.backupSettings.email = emailSet['設定值'];
               if (enabledSet) {
-                this.backupSettings.enabled = (enabledSet['設定值'] === 'true');
+                this.backupSettings.enabled = (String(enabledSet['設定值']).toLowerCase() === 'true');
               } else {
                 // 如果後端沒這項設定，預設為關閉
                 this.backupSettings.enabled = false;
