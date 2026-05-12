@@ -449,7 +449,7 @@
           <!-- 提報內容與遭遇情況 (全寬度) -->
           <div class="card detail-summary-card" v-if="currentCase.teacherReport || currentCase.situation">
             <div class="report-section" v-if="currentCase.teacherReport">
-              <h4 class="report-title"><i class="fas fa-file-lines text-acc"></i> 導師提報內容</h4>
+              <h4 class="report-title"><i class="fas fa-file-lines text-acc"></i> 提報內容</h4>
               <div class="report-body">{{ currentCase.teacherReport }}</div>
             </div>
             <div class="report-section"
@@ -588,8 +588,8 @@
                     <div id="record-editor" class="editor-input" contenteditable="true"
                       :style="isDragging ? 'border-color: var(--pri); background: rgba(var(--p-rgb), 0.1);' : ''"
                       @dragover.prevent="isDragging = true" @dragleave.prevent="isDragging = false"
-                      @drop.prevent="handleDrop"
-                      @input="recordForm.content = html2md($event.target.innerHTML)" placeholder="請輸入服務內容...">
+                      @drop.prevent="handleDrop" @input="recordForm.content = html2md($event.target.innerHTML)"
+                      placeholder="請輸入服務內容...">
                     </div>
                   </div>
                 </div>
@@ -623,10 +623,12 @@
                       <div
                         style="font-size: 10px; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; opacity: 0.6;"
                         :title="att.fileName">{{ att.fileName }}</div>
-                      <input type="text" v-model="att.desc" placeholder="輸入附件說明..." 
+                      <input type="text" v-model="att.desc" placeholder="輸入附件說明..."
                         style="width: 100%; font-size: 11px; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--bd); background: rgba(var(--p-rgb), 0.1); color: var(--txt);">
-                      
-                      <button type="button" class="btn btn-icon-danger btn-sm" @click="deleteAttachmentItem(idx)" title="刪除附件" style="position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); border-radius: 50%; padding: 0; width: 22px; height: 22px; min-width: auto; min-height: auto; display: flex; align-items: center; justify-content: center;">
+
+                      <button type="button" class="btn btn-icon-danger btn-sm" @click="deleteAttachmentItem(idx)"
+                        title="刪除附件"
+                        style="position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); border-radius: 50%; padding: 0; width: 22px; height: 22px; min-width: auto; min-height: auto; display: flex; align-items: center; justify-content: center;">
                         <i class="fas fa-times" style="font-size:10px;"></i>
                       </button>
                     </div>
@@ -670,8 +672,12 @@
                         style="max-height: 40px; border-radius: 4px;">
                       <i v-else class="fas fa-file-pdf" style="font-size: 20px; color: #e2574c;"></i>
                       <div style="display:flex; flex-direction: column; max-width: 120px;">
-                        <span style="font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ att.desc || '查看附件' }}</span>
-                        <span v-if="att.desc" style="font-size: 9px; opacity: 0.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ att.fileName }}</span>
+                        <span
+                          style="font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{
+                          att.desc || '查看附件' }}</span>
+                        <span v-if="att.desc"
+                          style="font-size: 9px; opacity: 0.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{
+                          att.fileName }}</span>
                       </div>
                     </a>
                   </div>
@@ -919,30 +925,39 @@
                     <div class="stat-val">{{ healthReport.totalCases }}</div>
                     <div class="stat-label">總個案數</div>
                   </div>
-                  <div class="stat-card" :class="{ 'text-err': healthReport.orphans.length > 0 }" style="cursor:pointer" @click="healthDetail='orphans'">
+                  <div class="stat-card" :class="{ 'text-err': healthReport.orphans.length > 0 }" style="cursor:pointer"
+                    @click="healthDetail='orphans'">
                     <div class="stat-val">{{ healthReport.orphans.length }}</div>
                     <div class="stat-label">孤兒紀錄</div>
                   </div>
-                  <div class="stat-card" :class="{ 'text-err': healthReport.invalidIds.length > 0 }" style="cursor:pointer" @click="healthDetail='invalidIds'">
+                  <div class="stat-card" :class="{ 'text-err': healthReport.invalidIds.length > 0 }"
+                    style="cursor:pointer" @click="healthDetail='invalidIds'">
                     <div class="stat-val">{{ healthReport.invalidIds.length }}</div>
                     <div class="stat-label">格式異常</div>
                   </div>
-                  <div class="stat-card" :class="{ 'text-err': healthReport.duplicates.length > 0 }" style="cursor:pointer" @click="healthDetail='duplicates'">
+                  <div class="stat-card" :class="{ 'text-err': healthReport.duplicates.length > 0 }"
+                    style="cursor:pointer" @click="healthDetail='duplicates'">
                     <div class="stat-val">{{ healthReport.duplicates.length }}</div>
                     <div class="stat-label">重複編號</div>
                   </div>
-                  <div class="stat-card" :class="{ 'text-err': healthReport.logicErrors && healthReport.logicErrors.length > 0 }" style="cursor:pointer" @click="healthDetail='logicErrors'">
+                  <div class="stat-card"
+                    :class="{ 'text-err': healthReport.logicErrors && healthReport.logicErrors.length > 0 }"
+                    style="cursor:pointer" @click="healthDetail='logicErrors'">
                     <div class="stat-val">{{ healthReport.logicErrors ? healthReport.logicErrors.length : 0 }}</div>
                     <div class="stat-label">對應邏輯</div>
                   </div>
-                  <div class="stat-card" :class="{ 'text-err': healthReport.orphanAttachments && healthReport.orphanAttachments.length > 0 }" style="cursor:pointer" @click="healthDetail='orphanAttachments'">
-                    <div class="stat-val">{{ healthReport.orphanAttachments ? healthReport.orphanAttachments.length : 0 }}</div>
+                  <div class="stat-card"
+                    :class="{ 'text-err': healthReport.orphanAttachments && healthReport.orphanAttachments.length > 0 }"
+                    style="cursor:pointer" @click="healthDetail='orphanAttachments'">
+                    <div class="stat-val">{{ healthReport.orphanAttachments ? healthReport.orphanAttachments.length : 0
+                      }}</div>
                     <div class="stat-label">孤兒附件</div>
                   </div>
                 </div>
 
                 <!-- 全部健康 -->
-                <div v-if="!healthReport.orphans.length && !healthReport.invalidIds.length && !healthReport.duplicates.length && !(healthReport.logicErrors && healthReport.logicErrors.length) && !(healthReport.orphanAttachments && healthReport.orphanAttachments.length)"
+                <div
+                  v-if="!healthReport.orphans.length && !healthReport.invalidIds.length && !healthReport.duplicates.length && !(healthReport.logicErrors && healthReport.logicErrors.length) && !(healthReport.orphanAttachments && healthReport.orphanAttachments.length)"
                   style="text-align:center; padding: 12px; color: var(--suc); font-size: 13px;">
                   <i class="fas fa-check-circle"></i> 所有紀錄均正常，系統目前非常健康！
                 </div>
@@ -950,86 +965,119 @@
                 <!-- 明細展開區 (點擊統計格切換) -->
 
                 <!-- 孤兒紀錄 -->
-                <div v-if="healthDetail === 'orphans' && healthReport.orphans.length > 0" class="report-section" style="margin-bottom:10px; border:1px solid var(--border); border-radius:8px; padding:12px;">
+                <div v-if="healthDetail === 'orphans' && healthReport.orphans.length > 0" class="report-section"
+                  style="margin-bottom:10px; border:1px solid var(--border); border-radius:8px; padding:12px;">
                   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                    <h4 class="text-err" style="margin:0;"><i class="fas fa-ghost"></i> 孤兒紀錄 ({{ healthReport.orphans.length }} 筆)</h4>
+                    <h4 class="text-err" style="margin:0;"><i class="fas fa-ghost"></i> 孤兒紀錄 ({{
+                      healthReport.orphans.length }} 筆)</h4>
                     <span style="font-size:11px; color:var(--tx3);">定義：紀錄中存在的編號，在個案檔中找不到對應的人</span>
                   </div>
                   <div style="max-height:160px; overflow-y:auto; font-size:13px; margin-bottom:10px;">
-                    <div v-for="o in healthReport.orphans" style="padding:3px 0; border-bottom:1px solid var(--border);">
+                    <div v-for="o in healthReport.orphans"
+                      style="padding:3px 0; border-bottom:1px solid var(--border);">
                       [第 {{ o.row }} 列] 編號: {{ o.id }}（{{ o.date }}）
                     </div>
                   </div>
                   <div style="text-align:right;">
-                    <button class="btn btn-sm" style="background:var(--err); color:#fff; font-size:12px; padding:4px 12px;" @click="repairData('orphans')" :disabled="loading"><i class="fas fa-wrench"></i> 修復此項</button>
+                    <button class="btn btn-sm"
+                      style="background:var(--err); color:#fff; font-size:12px; padding:4px 12px;"
+                      @click="repairData('orphans')" :disabled="loading"><i class="fas fa-wrench"></i> 修復此項</button>
                   </div>
                 </div>
 
                 <!-- 格式錯誤 -->
-                <div v-if="healthDetail === 'invalidIds' && healthReport.invalidIds.length > 0" class="report-section" style="margin-bottom:10px; border:1px solid var(--border); border-radius:8px; padding:12px;">
+                <div v-if="healthDetail === 'invalidIds' && healthReport.invalidIds.length > 0" class="report-section"
+                  style="margin-bottom:10px; border:1px solid var(--border); border-radius:8px; padding:12px;">
                   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                    <h4 class="text-err" style="margin:0;"><i class="fas fa-exclamation-triangle"></i> 編號格式錯誤 ({{ healthReport.invalidIds.length }} 筆)</h4>
+                    <h4 class="text-err" style="margin:0;"><i class="fas fa-exclamation-triangle"></i> 編號格式錯誤 ({{
+                      healthReport.invalidIds.length }} 筆)</h4>
                     <span style="font-size:11px; color:var(--tx3);">可自動修復：7位數字補連字號</span>
                   </div>
                   <div style="max-height:160px; overflow-y:auto; font-size:13px; margin-bottom:10px;">
-                    <div v-for="inv in healthReport.invalidIds" style="padding:3px 0; border-bottom:1px solid var(--border);">
+                    <div v-for="inv in healthReport.invalidIds"
+                      style="padding:3px 0; border-bottom:1px solid var(--border);">
                       [第 {{ inv.row }} 列] {{ inv.name }} / {{ inv.id }}
                     </div>
                   </div>
                   <div style="text-align:right;">
-                    <button class="btn btn-sm" style="background:var(--pri); color:#fff; font-size:12px; padding:4px 12px;" @click="repairData('invalidIds')" :disabled="loading"><i class="fas fa-wrench"></i> 修復此項</button>
+                    <button class="btn btn-sm"
+                      style="background:var(--pri); color:#fff; font-size:12px; padding:4px 12px;"
+                      @click="repairData('invalidIds')" :disabled="loading"><i class="fas fa-wrench"></i> 修復此項</button>
                   </div>
                 </div>
 
                 <!-- 重複編號 -->
-                <div v-if="healthDetail === 'duplicates' && healthReport.duplicates.length > 0" class="report-section" style="margin-bottom:10px; border:1px solid var(--border); border-radius:8px; padding:12px;">
+                <div v-if="healthDetail === 'duplicates' && healthReport.duplicates.length > 0" class="report-section"
+                  style="margin-bottom:10px; border:1px solid var(--border); border-radius:8px; padding:12px;">
                   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                    <h4 class="text-err" style="margin:0;"><i class="fas fa-copy"></i> 重複編號 ({{ healthReport.duplicates.length }} 筆)</h4>
+                    <h4 class="text-err" style="margin:0;"><i class="fas fa-copy"></i> 重複編號 ({{
+                      healthReport.duplicates.length }} 筆)</h4>
                     <span style="font-size:11px; color:var(--tx3);">需人工複查</span>
                   </div>
                   <div style="max-height:160px; overflow-y:auto; font-size:13px;">
-                    <div v-for="d in healthReport.duplicates" style="padding:3px 0; border-bottom:1px solid var(--border);">
+                    <div v-for="d in healthReport.duplicates"
+                      style="padding:3px 0; border-bottom:1px solid var(--border);">
                       {{ d.name }} / {{ d.id }}
                     </div>
                   </div>
                 </div>
 
                 <!-- 邏輯錯誤 -->
-                <div v-if="healthDetail === 'logicErrors' && healthReport.logicErrors && healthReport.logicErrors.length > 0" class="report-section" style="margin-bottom:10px; border:1px solid var(--border); border-radius:8px; padding:12px;">
+                <div
+                  v-if="healthDetail === 'logicErrors' && healthReport.logicErrors && healthReport.logicErrors.length > 0"
+                  class="report-section"
+                  style="margin-bottom:10px; border:1px solid var(--border); border-radius:8px; padding:12px;">
                   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                    <h4 class="text-err" style="margin:0;"><i class="fas fa-link-slash"></i> 對應邏輯錯誤 ({{ healthReport.logicErrors.length }} 筆)</h4>
+                    <h4 class="text-err" style="margin:0;"><i class="fas fa-link-slash"></i> 對應邏輯錯誤 ({{
+                      healthReport.logicErrors.length }} 筆)</h4>
                     <span style="font-size:11px; color:var(--tx3);">僅限 2026/4 後紀錄 · 可自動修復</span>
                   </div>
                   <div style="max-height:160px; overflow-y:auto; font-size:13px; margin-bottom:10px;">
-                    <div v-for="l in healthReport.logicErrors" style="padding:3px 0; border-bottom:1px solid var(--border);">
-                      [第 {{ l.row }} 列] 編號: {{ l.id }}（{{ l.date }}）<span v-if="l.detail" style="color:var(--tx3);"> · {{ l.detail }}</span>
+                    <div v-for="l in healthReport.logicErrors"
+                      style="padding:3px 0; border-bottom:1px solid var(--border);">
+                      [第 {{ l.row }} 列] 編號: {{ l.id }}（{{ l.date }}）<span v-if="l.detail" style="color:var(--tx3);"> ·
+                        {{ l.detail }}</span>
                     </div>
                   </div>
                   <div style="text-align:right;">
-                    <button class="btn btn-sm" style="background:var(--pri); color:#fff; font-size:12px; padding:4px 12px;" @click="repairData('logicErrors')" :disabled="loading"><i class="fas fa-wrench"></i> 自動修復對應邏輯</button>
+                    <button class="btn btn-sm"
+                      style="background:var(--pri); color:#fff; font-size:12px; padding:4px 12px;"
+                      @click="repairData('logicErrors')" :disabled="loading"><i class="fas fa-wrench"></i>
+                      自動修復對應邏輯</button>
                   </div>
                 </div>
 
                 <!-- 孤兒附件 -->
-                <div v-if="healthDetail === 'orphanAttachments' && healthReport.orphanAttachments && healthReport.orphanAttachments.length > 0" class="report-section" style="margin-bottom:10px; border:1px solid var(--border); border-radius:8px; padding:12px;">
+                <div
+                  v-if="healthDetail === 'orphanAttachments' && healthReport.orphanAttachments && healthReport.orphanAttachments.length > 0"
+                  class="report-section"
+                  style="margin-bottom:10px; border:1px solid var(--border); border-radius:8px; padding:12px;">
                   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                    <h4 class="text-err" style="margin:0;"><i class="fas fa-file-circle-exclamation"></i> 孤兒附件 ({{ healthReport.orphanAttachments.length }} 筆)</h4>
+                    <h4 class="text-err" style="margin:0;"><i class="fas fa-file-circle-exclamation"></i> 孤兒附件 ({{
+                      healthReport.orphanAttachments.length }} 筆)</h4>
                     <span style="font-size:11px; color:var(--tx3);">將移入雲端垃圾桶</span>
                   </div>
                   <div style="max-height:160px; overflow-y:auto; font-size:13px; margin-bottom:10px;">
-                    <div v-for="a in healthReport.orphanAttachments" style="padding:3px 0; border-bottom:1px solid var(--border);">
-                      <i class="fas fa-file"></i> {{ a.name }} <span style="color:var(--tx3); font-size:11px;">({{ a.id.slice(0,8) }}...)</span>
+                    <div v-for="a in healthReport.orphanAttachments"
+                      style="padding:3px 0; border-bottom:1px solid var(--border);">
+                      <i class="fas fa-file"></i> {{ a.name }} <span style="color:var(--tx3); font-size:11px;">({{
+                        a.id.slice(0,8) }}...)</span>
                     </div>
                   </div>
                   <div style="text-align:right;">
-                    <button class="btn btn-sm" style="background:var(--err); color:#fff; font-size:12px; padding:4px 12px;" @click="repairData('orphanAttachments')" :disabled="loading"><i class="fas fa-trash"></i> 清除孤兒附件</button>
+                    <button class="btn btn-sm"
+                      style="background:var(--err); color:#fff; font-size:12px; padding:4px 12px;"
+                      @click="repairData('orphanAttachments')" :disabled="loading"><i class="fas fa-trash"></i>
+                      清除孤兒附件</button>
                   </div>
                 </div>
 
                 <!-- 全部修復 -->
-                <div v-if="healthReport.orphans.length > 0 || healthReport.invalidIds.length > 0 || (healthReport.logicErrors && healthReport.logicErrors.length > 0) || (healthReport.orphanAttachments && healthReport.orphanAttachments.length > 0)"
+                <div
+                  v-if="healthReport.orphans.length > 0 || healthReport.invalidIds.length > 0 || (healthReport.logicErrors && healthReport.logicErrors.length > 0) || (healthReport.orphanAttachments && healthReport.orphanAttachments.length > 0)"
                   style="text-align:right; margin-top:8px;">
-                  <button class="btn btn-primary" style="font-size:12px; padding:6px 16px;" @click="repairData('all')" :disabled="loading">
+                  <button class="btn btn-primary" style="font-size:12px; padding:6px 16px;" @click="repairData('all')"
+                    :disabled="loading">
                     <i class="fas fa-magic"></i> 一鍵修復全部
                   </button>
                 </div>
@@ -1186,8 +1234,8 @@
           <div class="form-section">
             <h4>📝 狀況與提報內容</h4>
             <div class="form-grid">
-              <div class="fg full"><label>導師提報內容</label><textarea v-model="caseForm.teacherReport" rows="3"
-                  placeholder="導師整合提報之問題與期望內容"></textarea></div>
+              <div class="fg full"><label>提報內容</label><textarea v-model="caseForm.teacherReport" rows="3"
+                  placeholder="提報之問題與期望內容"></textarea></div>
               <div class="fg full"><label>專輔個案摘要</label><textarea v-model="caseForm.situation" rows="3"
                   placeholder="請輸入專輔個案摘要"></textarea></div>
               <div class="fg full"><label>個案服務方式（手動輸入）</label>
