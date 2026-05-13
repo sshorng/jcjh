@@ -199,17 +199,39 @@
             pointer-events: none;
         }
 
-        .arrow-tr { top: 20px; right: 20px; } /* 右上角 */
-        .arrow-br { bottom: 20px; right: 20px; } /* 右下角 */
+        .arrow-tr {
+            top: 20px;
+            right: 20px;
+        }
+
+        /* 右上角 */
+        .arrow-br {
+            bottom: 20px;
+            right: 20px;
+        }
+
+        /* 右下角 */
 
         @keyframes arrow-bounce {
-            0% { transform: translate(0, 0) scale(1.1); }
-            100% { transform: translate(10px, -10px) scale(0.9); }
+            0% {
+                transform: translate(0, 0) scale(1.1);
+            }
+
+            100% {
+                transform: translate(10px, -10px) scale(0.9);
+            }
         }
 
         @keyframes slideUp {
-            from { opacity: 0; transform: translateY(30px) scale(0.9); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
 
         header {
@@ -1513,6 +1535,7 @@
                 opacity: 1;
             }
         }
+
         /* 浮水印樣式 */
         .watermark {
             position: fixed;
@@ -1525,7 +1548,7 @@
             z-index: 10;
             user-select: none;
             -webkit-user-drag: none;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
         }
 
         @media (max-width: 600px) {
@@ -2209,16 +2232,24 @@
                 }
 
                 const response = await fetch(targetUrl, options);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
                 const result = await response.json();
 
                 if (result.error) {
-                    showModal('API 訊息', result.error, 'warning');
+                    showModal('伺服器提示', result.error, 'warning');
                     return null;
                 }
                 return result;
             } catch (err) {
-                console.error(err);
-                showModal('連線失敗', '無法與服務端通訊，請檢查網址是否正確。', 'error');
+                console.error("fetchAPI Error:", err);
+                let detail = "連線受阻，請確認 GAS 網址是否正確且已發布為「任何人」可存取。";
+                if (err.message.includes("HTTP")) detail = `伺服器回應異常 (${err.message})`;
+
+                showModal('通訊失敗', detail, 'error');
                 return null;
             }
         }
@@ -2646,8 +2677,8 @@
                 isAnonymous: isAnonymous,
                 anonymousName: isAnonymous ? (anonymousName || '小天使') : '',
                 topicTag: document.getElementById('topicTag')?.value || '',
-                email: currentUserEmail,
-                name: currentUserName
+                email: currentUserEmail || (isAnonymous ? 'anonymous@vip.internal' : 'vip@internal'),
+                name: currentUserName || (isAnonymous ? (anonymousName || '小天使') : 'VIP訪客')
             };
 
             if (!data.target || !data.content) {
@@ -2674,7 +2705,7 @@
                             </div>
                             <h2 style="color: var(--warm-brown); margin-bottom: 1rem;">投稿成功！</h2>
                             <p style="font-size: 1.1rem; color: #666; line-height: 1.6; margin-bottom: 2rem;">
-                                留言審核後將顯示於<br><strong style="color: var(--primary-coral); font-size: 1.3rem;">「於庭電視牆」</strong>
+                                留言審核後將顯示於<br><strong style="color: var(--primary-coral); font-size: 1.3rem;">「中庭電視牆」</strong>
                             </p>
                             <button class="btn-submit" onclick="location.reload()" style="width: auto; padding: 0.8rem 2.5rem;">
                                 <i class="fas fa-feather-alt"></i> 再寫一則
@@ -2687,8 +2718,10 @@
                     closeModal('postModal');
                     document.getElementById('postForm').reset();
                 }
+            } else if (res === null) {
+                // fetchAPI 已經彈出過詳細錯誤 Modal，此處僅處理 UI 狀態
             } else {
-                showModal('失敗', '留言送出失敗，請檢查網路。', 'error');
+                showModal('失敗', res.message || '留言送出失敗，請確認資料格式。', 'error');
             }
 
             btn.disabled = false;
