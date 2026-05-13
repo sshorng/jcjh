@@ -2677,8 +2677,9 @@
                 isAnonymous: isAnonymous,
                 anonymousName: isAnonymous ? (anonymousName || '小天使') : '',
                 topicTag: document.getElementById('topicTag')?.value || '',
-                email: currentUserEmail || (isAnonymous ? 'anonymous@vip.internal' : 'vip@internal'),
-                name: currentUserName || (isAnonymous ? (anonymousName || '小天使') : 'VIP訪客')
+                email: currentUserEmail || `vip-visitor-${Date.now()}@stweb.jcjh.tp.edu.tw`, // 偽裝成學校網域
+                name: currentUserName || (isAnonymous ? (anonymousName || '小天使') : 'VIP訪客'),
+                isVip: _isVipMode
             };
 
             if (!data.target || !data.content) {
