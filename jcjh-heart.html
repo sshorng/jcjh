@@ -3551,29 +3551,34 @@
                 const anonymousNameInput = document.getElementById('anonymousName');
 
                 if (currentSubmissionMode === 'public' || _isVipMode) {
-                    if (googleLogin) googleLogin.style.display = 'none';
+                    if (googleLogin) googleLogin.style.display = 'block'; // VIP 模式下仍保留登入選項
 
-                    // 讓外層容器也與下方一致 (移除白色底色與邊框)
+                    // 調整外層容器樣式，使其更簡約
                     if (identitySection) {
-                        identitySection.style.background = 'none';
-                        identitySection.style.border = 'none';
-                        identitySection.style.padding = '0';
+                        identitySection.style.background = '#fff';
+                        identitySection.style.border = '1px solid #eee';
+                        identitySection.style.padding = '0.8rem';
                     }
 
-                    // 讓欄位樣式跟下面一致 (移除背景與虛線)
-                    customNameContainer.style.background = 'none';
-                    customNameContainer.style.border = 'none';
-                    customNameContainer.style.padding = '0';
-                    customNameContainer.style.flexDirection = 'column';
-                    customNameContainer.style.alignItems = 'flex-start';
+                    // 讓欄位樣式
+                    customNameContainer.style.background = 'rgba(139, 90, 43, 0.04)';
+                    customNameContainer.style.border = '1px dashed rgba(139, 90, 43, 0.1)';
+                    customNameContainer.style.padding = '0.5rem 0.8rem';
+                    customNameContainer.style.flexDirection = 'row';
+                    customNameContainer.style.alignItems = 'center';
 
-                    isAnonymousWrapper.style.display = 'none';
-                    anonymousNameLabel.style.display = 'block';
+                    isAnonymousWrapper.style.display = 'flex';
+                    anonymousNameLabel.style.display = 'none';
                     anonymousNameWrapper.style.display = 'block';
 
-                    document.getElementById('isAnonymous').checked = true;
+                    // 如果還沒登入，預設開啟自訂名稱
+                    if (!currentUserEmail) {
+                        document.getElementById('isAnonymous').checked = true;
+                        toggleAnonymousName();
+                    }
+
                     anonymousNameInput.placeholder = "您的稱呼 (選填)";
-                    document.querySelector('#postModal h2').textContent = _isVipMode ? "✨ 寫下暖心留言 (VIP 模式已開啟)" : "✨ 寫下暖心留言 (外賓開放中)";
+                    document.querySelector('#postModal h2').textContent = _isVipMode ? "✨ 寫下暖心留言 (VIP 通道)" : "✨ 寫下暖心留言 (外賓開放中)";
                 } else {
                     if (googleLogin) googleLogin.style.display = 'block';
 
