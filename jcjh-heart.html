@@ -1646,16 +1646,9 @@
                 <div id="identity-section"
                     style="background: #fff; padding: 0.8rem; border-radius: 12px; border: 1px solid #eee; display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap;">
 
-                    <!-- Google 登入 (左側) -->
+                    <!-- Google 登入 (左側) - 由 JS 動態渲染 -->
                     <div id="google-login-container" style="position: relative; z-index: 1002; flex: 0 0 auto;">
-                        <div id="g_id_onload"
-                            data-client_id="236765538215-6o3ol1tl1brqhbd2qfavomq38l7j17aq.apps.googleusercontent.com"
-                            data-context="signin" data-ux_mode="popup" data-callback="handleCredentialResponse"
-                            data-auto_prompt="false" style="z-index: 2000;">
-                        </div>
-                        <div class="g_id_signin" data-type="standard" data-shape="rectangular" data-theme="outline"
-                            data-text="signin_with" data-size="large" style="z-index: 2000;">
-                        </div>
+                        <div id="g_id_signin_btn" style="z-index: 2000;"></div>
                     </div>
 
                     <!-- 自訂顯示名稱 (右側) -->
@@ -2621,6 +2614,47 @@
 
 
 
+        // --- 動態渲染 Google 登入按鈕 (解決 Modal 內 popup 被封鎖問題) ---
+        let _gsiInitialized = false;
+        function _renderGoogleSignInButton() {
+            // 如果已經登入，不需要再渲染
+            if (currentUserEmail) return;
+
+            const btnContainer = document.getElementById('g_id_signin_btn');
+            if (!btnContainer) return;
+
+            // 等待 GSI 庫載入完成
+            if (typeof google === 'undefined' || !google.accounts) {
+                // GSI 庫還沒載入完，延遲重試
+                setTimeout(_renderGoogleSignInButton, 500);
+                return;
+            }
+
+            try {
+                if (!_gsiInitialized) {
+                    google.accounts.id.initialize({
+                        client_id: '236765538215-6o3ol1tl1brqhbd2qfavomq38l7j17aq.apps.googleusercontent.com',
+                        callback: handleCredentialResponse,
+                        auto_select: false,
+                        ux_mode: 'popup'
+                    });
+                    _gsiInitialized = true;
+                }
+
+                // 清空舊按鈕並重新渲染
+                btnContainer.innerHTML = '';
+                google.accounts.id.renderButton(btnContainer, {
+                    type: 'standard',
+                    shape: 'rectangular',
+                    theme: 'outline',
+                    text: 'signin_with',
+                    size: 'large'
+                });
+            } catch (e) {
+                console.warn('GSI 渲染失敗:', e);
+            }
+        }
+
         // --- Google 登入處理 ---
         function handleCredentialResponse(response) {
             const payload = parseJwt(response.credential);
@@ -3522,6 +3556,9 @@
             loadTopicConfig();
             const modal = document.getElementById('postModal');
             const form = document.getElementById('postForm');
+
+            // 動態初始化 Google 登入按鈕 (確保在 Modal 可見後渲染)
+            _renderGoogleSignInButton();
 
             // 根據模式調整 UI
             if (currentSubmissionMode === 'closed') {
