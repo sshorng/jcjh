@@ -2617,11 +2617,10 @@
         // --- 動態渲染 Google 登入按鈕 (解決 popup 被封鎖問題) ---
         let _gsiInitialized = false;
         function _renderGoogleSignInButton() {
-            // 如果已經登入，不需要再渲染
             if (currentUserEmail) return;
 
-            const btnContainer = document.getElementById('g_id_signin_btn');
-            if (!btnContainer) return;
+            const container = document.getElementById('google-login-container');
+            if (!container) return;
 
             // 等待 GSI 庫載入完成
             if (typeof google === 'undefined' || !google.accounts) {
@@ -2629,50 +2628,33 @@
                 return;
             }
 
-            try {
-                if (!_gsiInitialized) {
-                    google.accounts.id.initialize({
-                        client_id: '236765538215-6o3ol1tl1brqhbd2qfavomq38l7j17aq.apps.googleusercontent.com',
-                        callback: handleCredentialResponse,
-                        auto_select: false
+            if (!_gsiInitialized) {
+                google.accounts.id.initialize({
+                    client_id: '236765538215-6o3ol1tl1brqhbd2qfavomq38l7j17aq.apps.googleusercontent.com',
+                    callback: handleCredentialResponse,
+                    auto_select: false
+                });
+                _gsiInitialized = true;
+            }
+
+            // 只渲染一個自訂樣式按鈕
+            if (!document.getElementById('custom-google-btn')) {
+                container.innerHTML = '';
+                const btn = document.createElement('button');
+                btn.id = 'custom-google-btn';
+                btn.type = 'button';
+                btn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:18px; height:18px; vertical-align:middle; margin-right:8px;">使用 Google 帳號登入';
+                btn.style.cssText = 'display:flex; align-items:center; justify-content:center; background:#fff; border:1px solid #dadce0; color:#3c4043; padding:10px 20px; border-radius:8px; cursor:pointer; font-size:0.9rem; font-weight:500; font-family:inherit; transition:all 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.08);';
+                btn.onmouseover = () => { btn.style.boxShadow = '0 2px 8px rgba(66,133,244,0.3)'; btn.style.borderColor = '#4285F4'; };
+                btn.onmouseout = () => { btn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.08)'; btn.style.borderColor = '#dadce0'; };
+                btn.onclick = () => {
+                    google.accounts.id.prompt((n) => {
+                        if (n.isNotDisplayed() || n.isSkippedMoment()) {
+                            showModal('登入提示', '請確認瀏覽器已登入 Google 帳號，或允許彈出視窗後重試。', 'info');
+                        }
                     });
-                    _gsiInitialized = true;
-                }
-
-                // 方案 1: 渲染標準 Google 按鈕
-                btnContainer.innerHTML = '';
-                google.accounts.id.renderButton(btnContainer, {
-                    type: 'standard',
-                    shape: 'rectangular',
-                    theme: 'outline',
-                    text: 'signin_with',
-                    size: 'large'
-                });
-
-                // 方案 2: 自動觸發 One Tap (iframe 覆蓋層，不受 popup blocker 影響)
-                google.accounts.id.prompt((notification) => {
-                    if (notification.isNotDisplayed()) {
-                        console.log('One Tap 未顯示:', notification.getNotDisplayedReason());
-                    }
-                });
-
-                // 方案 3: 加入手動觸發按鈕 (備用)
-                if (!document.getElementById('manual-google-login-btn')) {
-                    const fallbackBtn = document.createElement('button');
-                    fallbackBtn.id = 'manual-google-login-btn';
-                    fallbackBtn.type = 'button';
-                    fallbackBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> 點此登入 Google 帳號';
-                    fallbackBtn.style.cssText = 'margin-top:8px; background:none; border:1px solid #4285F4; color:#4285F4; padding:8px 16px; border-radius:8px; cursor:pointer; font-size:0.85rem; font-weight:600; width:100%; transition:all 0.2s;';
-                    fallbackBtn.onmouseover = () => { fallbackBtn.style.background = '#4285F4'; fallbackBtn.style.color = '#fff'; };
-                    fallbackBtn.onmouseout = () => { fallbackBtn.style.background = 'none'; fallbackBtn.style.color = '#4285F4'; };
-                    fallbackBtn.onclick = () => {
-                        // 使用者直接點擊 → 有 user gesture → popup 不會被封鎖
-                        google.accounts.id.prompt();
-                    };
-                    btnContainer.parentElement.appendChild(fallbackBtn);
-                }
-            } catch (e) {
-                console.warn('GSI 渲染失敗:', e);
+                };
+                container.appendChild(btn);
             }
         }
 
