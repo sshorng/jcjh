@@ -2135,7 +2135,7 @@
             _intervalIds = [];
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
+        window.onload = () => {
             checkLineBrowser(); // 執行 LINE 偵測
             const urlParams = new URLSearchParams(window.location.search);
             const isDisplayMode = urlParams.has('view') && urlParams.get('view') === 'wall';
@@ -2194,9 +2194,9 @@
                 });
 
                 // 電視牆穩定性：每 8 分鐘自動重新整理一次網頁，釋放記憶體 (舊硬體友善)
-                // 修正：這是維持系統穩定的操作，即使分頁隱藏也該計時，改回 setInterval 以免被暫停清除
+                // 修正：改用 managedSetInterval，使其能配合頁面不可見時的暫停機制
                 if (isDisplayMode) {
-                    setInterval(() => location.reload(), 480000);
+                    managedSetInterval(() => location.reload(), 480000);
                     startMemoryGuard(); // 啟動記憶體安全閥門
                 }
             }
@@ -2214,7 +2214,7 @@
             if (urlParams.has('admin')) {
                 setTimeout(openAdminModal, 500);
             }
-        });
+        };
 
         // --- 生成寫留言專用 QR Code (優化：使用靜態 Vercel 網址) ---
         function generateWriteQrCode() {
@@ -2294,12 +2294,6 @@
             }
         }
         // --- API 串接 ---
-        const POST_ACTIONS = new Set([
-            'submitMessage', 'updateStatus', 'updatePin', 'adminGetMessages',
-            'updateAnnouncements', 'updateSystemConfig', 'updateKeywordEffects',
-            'updateTopicConfig', 'updateMessage', 'renameTopicTag'
-        ]);
-
         async function fetchAPI(action, data = null, params = null) {
             if (!_G) {
                 showModal('錯誤', '未設定 GAS 網址', 'error');
@@ -2307,8 +2301,8 @@
             }
 
             try {
-                // 判斷哪些行動應該使用 POST
-                const isPost = POST_ACTIONS.has(action);
+                // 修正邏輯：判斷哪些行動應該使用 POST
+                const isPost = (action === 'submitMessage' || action === 'updateStatus' || action === 'updatePin' || action === 'adminGetMessages' || action === 'updateAnnouncements' || action === 'updateSystemConfig' || action === 'updateKeywordEffects' || action === 'updateTopicConfig' || action === 'updateMessage' || action === 'renameTopicTag');
 
                 const options = {
                     method: isPost ? 'POST' : 'GET',
@@ -3669,12 +3663,6 @@
                 _renderGoogleSignInButton();
                 initVipTrigger();
                 updatePreview();
-
-                // 修正 UI：若使用者已登入，恢復送出按鈕的文字狀態
-                if (currentUserEmail) {
-                    const btn = document.getElementById('submitBtn');
-                    if (btn) btn.textContent = "確認送出留言";
-                }
             } else {
                 // 備份不存在（不應發生），最後才 reload
                 location.reload();
