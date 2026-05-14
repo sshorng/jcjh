@@ -1870,18 +1870,18 @@
                         style="padding: 0.6rem; margin-bottom: 1.2rem; background: transparent; border: none;">
                         <div class="admin-tabs"
                             style="justify-content: flex-start; gap: 0.4rem; overflow-x: auto; padding-bottom: 5px;">
-                            <div class="tab-btn active" onclick="switchTab('待審核')"><i class="fas fa-clock"></i> 待審核
+                            <div class="tab-btn active" data-tab="待審核" onclick="switchTab('待審核')"><i class="fas fa-clock"></i> 待審核
                             </div>
-                            <div class="tab-btn" onclick="switchTab('通過')"><i class="fas fa-check-circle"></i> 通過</div>
-                            <div class="tab-btn" onclick="switchTab('駁回')"><i class="fas fa-times-circle"></i> 駁回</div>
-                            <div class="tab-btn" onclick="switchTab('已下架')"><i class="fas fa-archive"></i> 下架</div>
+                            <div class="tab-btn" data-tab="通過" onclick="switchTab('通過')"><i class="fas fa-check-circle"></i> 通過</div>
+                            <div class="tab-btn" data-tab="駁回" onclick="switchTab('駁回')"><i class="fas fa-times-circle"></i> 駁回</div>
+                            <div class="tab-btn" data-tab="已下架" onclick="switchTab('已下架')"><i class="fas fa-archive"></i> 下架</div>
                             <div
                                 style="width: 1px; height: 20px; background: rgba(0,0,0,0.1); margin: 0 4px; align-self: center;">
                             </div>
-                            <div class="tab-btn" onclick="switchTab('跑馬燈管理')"><i class="fas fa-bullhorn"></i> 跑馬燈</div>
-                            <div class="tab-btn" onclick="switchTab('標籤管理')"><i class="fas fa-tags"></i> 標籤</div>
-                            <div class="tab-btn" onclick="switchTab('特效設定')"><i class="fas fa-magic"></i> 特效</div>
-                            <div class="tab-btn" onclick="switchTab('系統設定')"><i class="fas fa-tools"></i> 設定</div>
+                            <div class="tab-btn" data-tab="跑馬燈管理" onclick="switchTab('跑馬燈管理')"><i class="fas fa-bullhorn"></i> 跑馬燈</div>
+                            <div class="tab-btn" data-tab="標籤管理" onclick="switchTab('標籤管理')"><i class="fas fa-tags"></i> 標籤</div>
+                            <div class="tab-btn" data-tab="特效設定" onclick="switchTab('特效設定')"><i class="fas fa-magic"></i> 特效</div>
+                            <div class="tab-btn" data-tab="系統設定" onclick="switchTab('系統設定')"><i class="fas fa-tools"></i> 設定</div>
                         </div>
                     </div>
 
@@ -2198,8 +2198,9 @@
                 });
 
                 // 電視牆穩定性：每 8 分鐘自動重新整理一次網頁，釋放記憶體 (舊硬體友善)
+                // 修正：改用 managedSetInterval，使其能配合頁面不可見時的暫停機制
                 if (isDisplayMode) {
-                    setInterval(() => location.reload(), 480000);
+                    managedSetInterval(() => location.reload(), 480000);
                     startMemoryGuard(); // 啟動記憶體安全閥門
                 }
             }
@@ -2208,8 +2209,9 @@
             generateWriteQrCode();
 
             // 關鍵功能：投稿偵測（預設模式也會自動開啟）
+            // 縮短延遲：從 1500ms 改為 300ms，減少使用者等待感
             if (urlParams.has('write') || (!isDisplayMode && !isAdminMode)) {
-                setTimeout(openPostModal, 1500);
+                setTimeout(openPostModal, 300);
             }
 
             // 直接進入管理後台檢測
@@ -2490,7 +2492,7 @@
                 const randomPick = getNextMessageIndex();
                 if (randomPick !== undefined) {
                     displayingIndexes.add(randomPick);
-                    createCard(allMessages[randomPick], boardWidth, boardHeight, randomPick);
+                    createMessageCard(allMessages[randomPick], randomPick, false);
                 }
             }
         }
@@ -2709,11 +2711,6 @@
             return card;
         }
 
-        // --- 舊函式相容層 ---
-        function createCard(msg, bw, bh, index) {
-            return createMessageCard(msg, index, false);
-        }
-
 
 
         // --- 動態渲染 Google 登入按鈕 (解決 popup 被封鎖問題) ---
@@ -2847,7 +2844,7 @@
                             <p style="font-size: 1.1rem; color: #666; line-height: 1.6; margin-bottom: 2rem;">
                                 留言審核後將顯示於<br><strong style="color: var(--primary-coral); font-size: 1.3rem;">「中庭電視牆」</strong>
                             </p>
-                            <button class="btn-submit" onclick="location.reload()" style="width: auto; padding: 0.8rem 2.5rem;">
+                            <button class="btn-submit" onclick="resetAndRewriteMessage()" style="width: auto; padding: 0.8rem 2.5rem;">
                                 <i class="fas fa-feather-alt"></i> 再寫一則
                             </button>
                         </div>
@@ -2926,17 +2923,9 @@
         function switchTab(tab) {
             currentTab = tab;
             currentAdminLimit = ADMIN_PAGE_SIZE; // 切換標籤時重置顯示數量
-            document.querySelectorAll('.tab-btn').forEach(b => {
-                const btnText = b.textContent.trim();
-                const isActive = (btnText === tab ||
-                    (tab === '通過' && btnText === '通過') ||
-                    (tab === '駁回' && btnText === '駁回') ||
-                    (tab === '已下架' && btnText === '下架') ||
-                    (tab === '標籤管理' && btnText === '標籤庫') ||
-                    (tab === '特效設定' && btnText === '特效鈕') ||
-                    (tab === '系統設定' && btnText === '設定') ||
-                    (tab === '跑馬燈管理' && btnText === '跑馬燈'));
-                b.classList.toggle('active', isActive);
+            // 品質改善：改用 data-tab 屬性比對，避免 textContent 比對脆弱問題
+            document.querySelectorAll('.tab-btn[data-tab]').forEach(b => {
+                b.classList.toggle('active', b.dataset.tab === tab);
             });
 
             // 切換面版
@@ -3655,12 +3644,38 @@
             });
         }
 
+        // --- 快取：避免每次開 Modal 都重複呼叫 API ---
+        let _lastConfigFetchTime = 0;
+        const CONFIG_CACHE_TTL = 30000; // 30 秒內不重複 fetch
+
+        // --- 重置投稿表單並重新開啟 Modal (取代 location.reload) ---
+        function resetAndRewriteMessage() {
+            const form = document.getElementById('postForm');
+            const modalContent = document.querySelector('#postModal .modal-content');
+            // 還原 modal-content 為表單（因為投稿成功後被感謝畫面取代）
+            if (!document.getElementById('postForm') || form.style.display === 'none') {
+                // 如果表單被取代，重新載入頁面（只有這個 edge case 才 reload）
+                location.reload();
+                return;
+            }
+            form.reset();
+            document.getElementById('charCount').textContent = '0 / 60';
+            document.getElementById('google-login-container').innerHTML = '';
+            _renderGoogleSignInButton();
+            updatePreview();
+        }
+
         async function openPostModal() {
             // 初始化 VIP 觸發器 (僅在第一次開啟時綁定)
             initVipTrigger();
 
-            await checkSystemConfig();
-            loadTopicConfig();
+            // 效能優化：30 秒內不重複呼叫 API（快取機制）
+            const now = Date.now();
+            if (now - _lastConfigFetchTime > CONFIG_CACHE_TTL) {
+                await checkSystemConfig();
+                loadTopicConfig();
+                _lastConfigFetchTime = now;
+            }
             const modal = document.getElementById('postModal');
             const form = document.getElementById('postForm');
 
@@ -3694,59 +3709,35 @@
                 const anonymousNameWrapper = document.getElementById('anonymousNameWrapper');
                 const anonymousNameInput = document.getElementById('anonymousName');
 
+                // 品質改善：提取共用樣式，消除 if/else 重複程式碼
+                if (googleLogin) googleLogin.style.display = 'block';
+                if (identitySection) {
+                    identitySection.style.background = '#fff';
+                    identitySection.style.border = '1px solid #eee';
+                    identitySection.style.padding = '0.8rem';
+                }
+                Object.assign(customNameContainer.style, {
+                    background: 'rgba(139, 90, 43, 0.04)',
+                    border: '1px dashed rgba(139, 90, 43, 0.1)',
+                    padding: '0.5rem 0.8rem',
+                    flexDirection: 'row',
+                    alignItems: 'center'
+                });
+                isAnonymousWrapper.style.display = 'flex';
+                anonymousNameLabel.style.display = 'none';
+                anonymousNameInput.placeholder = "您的稱呼 (選填)";
+
                 if (currentSubmissionMode === 'public' || _isVipMode) {
-                    if (googleLogin) googleLogin.style.display = 'block'; // VIP 模式下仍保留登入選項
-
-                    // 調整外層容器樣式，使其更簡約
-                    if (identitySection) {
-                        identitySection.style.background = '#fff';
-                        identitySection.style.border = '1px solid #eee';
-                        identitySection.style.padding = '0.8rem';
-                    }
-
-                    // 讓欄位樣式
-                    customNameContainer.style.background = 'rgba(139, 90, 43, 0.04)';
-                    customNameContainer.style.border = '1px dashed rgba(139, 90, 43, 0.1)';
-                    customNameContainer.style.padding = '0.5rem 0.8rem';
-                    customNameContainer.style.flexDirection = 'row';
-                    customNameContainer.style.alignItems = 'center';
-
-                    isAnonymousWrapper.style.display = 'flex';
-                    anonymousNameLabel.style.display = 'none';
                     anonymousNameWrapper.style.display = 'block';
-
                     // 如果還沒登入，預設開啟自訂名稱
                     if (!currentUserEmail) {
                         document.getElementById('isAnonymous').checked = true;
                         toggleAnonymousName();
                     }
-
-                    anonymousNameInput.placeholder = "您的稱呼 (選填)";
                     document.querySelector('#postModal h2').textContent = _isVipMode ? "✨ 寫下暖心留言 (VIP 通道)" : "✨ 寫下暖心留言 (外賓開放中)";
                 } else {
-                    if (googleLogin) googleLogin.style.display = 'block';
-
-                    // 恢復原有的白色底座樣式
-                    if (identitySection) {
-                        identitySection.style.background = '#fff';
-                        identitySection.style.border = '1px solid #eee';
-                        identitySection.style.padding = '0.8rem';
-                    }
-
-                    // 恢復原有的並排樣式
-                    customNameContainer.style.background = 'rgba(139, 90, 43, 0.04)';
-                    customNameContainer.style.border = '1px dashed rgba(139, 90, 43, 0.1)';
-                    customNameContainer.style.padding = '0.5rem 0.8rem';
-                    customNameContainer.style.flexDirection = 'row';
-                    customNameContainer.style.alignItems = 'center';
-
-                    isAnonymousWrapper.style.display = 'flex';
-                    anonymousNameLabel.style.display = 'none';
-
-                    // 根據原本的 toggle 邏輯決定 wrapper 是否顯示
+                    // 根據 toggle 邏輯決定 wrapper 是否顯示
                     toggleAnonymousName();
-
-                    anonymousNameInput.placeholder = "您的稱呼 (選填)";
                     document.querySelector('#postModal h2').textContent = "✨ 寫下暖心留言";
                 }
             }
@@ -4189,11 +4180,19 @@
                 showModal('已複製', '網址已複製到剪貼簿', 'success');
             });
         }
+        // 效能優化：加入防重疊 flag，避免多處同時呼叫產生重複請求
+        let _isLoadingTopic = false;
         async function loadTopicConfig() {
-            const res = await fetchAPI('getTopicConfig');
-            if (res && !res.error) {
-                topicConfig = res;
-                applyTopicConfig();
+            if (_isLoadingTopic) return;
+            _isLoadingTopic = true;
+            try {
+                const res = await fetchAPI('getTopicConfig');
+                if (res && !res.error) {
+                    topicConfig = res;
+                    applyTopicConfig();
+                }
+            } finally {
+                _isLoadingTopic = false;
             }
         }
     </script>
