@@ -345,10 +345,6 @@
             display: none;
         }
 
-        .header-actions {
-            display: none;
-        }
-
         /* 整合式功能區組件 */
         .fab-container {
             position: fixed;
@@ -762,14 +758,6 @@
             display: flex;
             align-items: center;
             gap: 6px;
-        }
-
-        .card-tag {
-            font-size: 0.75rem;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
         }
 
         /* 莫蘭迪和諧色標籤 */
@@ -1558,6 +1546,121 @@
                 left: 1rem;
             }
         }
+
+        /* =====================================================
+           SweetAlert2 全域主題覆蓋 - 統一暖珊瑚色系
+           ===================================================== */
+
+        /* 彈窗容器：圓角、暖白背景、精緻陰影 */
+        .swal2-popup {
+            border-radius: 24px !important;
+            background: #fffdf9 !important;
+            box-shadow: 0 24px 60px rgba(107, 79, 79, 0.18) !important;
+            font-family: var(--font-main) !important;
+            padding: 2rem 2rem 1.8rem !important;
+        }
+
+        /* 標題 */
+        .swal2-title {
+            color: #4a3e3e !important;
+            font-size: 1.3rem !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.5px !important;
+        }
+
+        /* 內文 */
+        .swal2-html-container,
+        .swal2-content {
+            color: #636e72 !important;
+            font-size: 0.95rem !important;
+        }
+
+        /* 輸入框：統一邊框、圓角、字型 */
+        .swal2-input,
+        .swal2-textarea,
+        .swal2-select {
+            border: 1.5px solid #e8d5d5 !important;
+            border-radius: 12px !important;
+            font-family: var(--font-main) !important;
+            font-size: 1rem !important;
+            color: #4a3e3e !important;
+            box-shadow: none !important;
+            transition: border-color 0.25s ease, box-shadow 0.25s ease !important;
+            padding: 0.75rem 1rem !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            margin: 0.5rem 0 !important;
+        }
+
+        /* 輸入框 focus 狀態：珊瑚色框線 + 輕量光暈 */
+        .swal2-input:focus,
+        .swal2-textarea:focus,
+        .swal2-select:focus {
+            border-color: var(--primary-coral) !important;
+            box-shadow: 0 0 0 3px rgba(230, 103, 103, 0.15) !important;
+            outline: none !important;
+        }
+
+        /* 確認按鈕：珊瑚色漸層 */
+        .swal2-confirm {
+            background: linear-gradient(135deg, #e66767 0%, #f27979 100%) !important;
+            border: none !important;
+            border-radius: 12px !important;
+            font-family: var(--font-main) !important;
+            font-weight: 600 !important;
+            font-size: 0.95rem !important;
+            padding: 0.7rem 1.8rem !important;
+            box-shadow: 0 4px 14px rgba(230, 103, 103, 0.35) !important;
+            transition: all 0.25s ease !important;
+        }
+
+        .swal2-confirm:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 8px 20px rgba(230, 103, 103, 0.45) !important;
+        }
+
+        /* 取消按鈕：柔和灰 */
+        .swal2-cancel {
+            background: #f0ebe8 !important;
+            color: #8d7b70 !important;
+            border: none !important;
+            border-radius: 12px !important;
+            font-family: var(--font-main) !important;
+            font-weight: 600 !important;
+            font-size: 0.95rem !important;
+            padding: 0.7rem 1.8rem !important;
+            transition: all 0.25s ease !important;
+        }
+
+        .swal2-cancel:hover {
+            background: #e2dbd7 !important;
+        }
+
+        /* 進度條：珊瑚色 */
+        .swal2-timer-progress-bar {
+            background: var(--primary-coral) !important;
+        }
+
+        /* 圖示顏色修正 */
+        .swal2-icon.swal2-success {
+            border-color: #27ae60 !important;
+            color: #27ae60 !important;
+        }
+
+        .swal2-icon.swal2-success [class^="swal2-success-line"] {
+            background-color: #27ae60 !important;
+        }
+
+        .swal2-icon.swal2-success .swal2-success-ring {
+            border-color: rgba(39, 174, 96, 0.3) !important;
+        }
+
+        /* 遮罩層：配合整體溫暖色調 */
+        .swal2-backdrop-show {
+            background: rgba(74, 62, 62, 0.45) !important;
+            backdrop-filter: blur(6px) !important;
+            -webkit-backdrop-filter: blur(6px) !important;
+        }
     </style>
 </head>
 
@@ -1806,7 +1909,6 @@
                         <button class="btn-submit" onclick="saveAnnouncements()"
                             style="margin-top: 1.5rem; width: 100%;">
                             儲存並更新跑馬燈
-                        </button>
                         </button>
                     </div>
 
@@ -2144,7 +2246,7 @@
                 wrapper.style.display = 'none';
                 btn.classList.remove('active');
             } else {
-                generateWriteQrCode(); // 確保 QR Code 是最新的
+                // QR Code 已於 window.onload 預生成，無需重複呼叫
                 wrapper.style.display = 'block';
                 btn.classList.add('active');
 
@@ -2981,14 +3083,14 @@
             }
 
             const password = localStorage.getItem('admin_password');
-            let successCount = 0;
 
             Swal.fire({ title: '批次處理中...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
-            for (const id of ids) {
-                const res = await fetchAPI('updateStatus', { id, status, password });
-                if (res && res.status === "success") successCount++;
-            }
+            // 效能優化：Promise.all 並行送出，避免串行等待 N 次 RTT
+            const results = await Promise.all(
+                ids.map(id => fetchAPI('updateStatus', { id, status, password }))
+            );
+            const successCount = results.filter(r => r && r.status === "success").length;
 
             Swal.close();
             showModal('完成', `已成功處理 ${successCount} 則留言。`, 'success');
@@ -3339,6 +3441,8 @@
                 this.canvas.height = h * this.dpr * this.scale;
                 this.canvas.style.width = w + 'px';
                 this.canvas.style.height = h + 'px';
+                // 效能修正：先 resetTransform 防止每次 resize 時 scale 累積疊加
+                this.ctx.resetTransform();
                 this.ctx.scale(this.dpr * this.scale, this.dpr * this.scale);
             }
 
@@ -3761,23 +3865,34 @@
             }
 
             const { value: code } = await Swal.fire({
-                title: '請輸入通行碼',
-                input: 'password',
-                inputPlaceholder: '請輸入 VIP 通行碼',
+                title: '🔑 請輸入通行碼',
+                html: `
+                    <p style="font-size:0.88rem; color:#b07d62; margin: 0 0 1rem; line-height:1.5;">
+                        此為授權通道，限持通行碼者使用
+                    </p>
+                    <input id="vip-code-input" type="password"
+                        class="swal2-input"
+                        placeholder="請輸入通行碼"
+                        autocomplete="off"
+                        style="letter-spacing: 0.2em;"
+                    >
+                `,
                 showCancelButton: true,
-                confirmButtonText: '驗證',
+                confirmButtonText: '<i class="fas fa-unlock-alt"></i> 驗證',
                 cancelButtonText: '取消',
-                customClass: {
-                    input: 'vip-swal-input'
+                focusConfirm: false,
+                preConfirm: () => {
+                    const val = document.getElementById('vip-code-input')?.value;
+                    if (!val) {
+                        Swal.showValidationMessage('請輸入通行碼');
+                        return false;
+                    }
+                    return val;
                 },
                 didOpen: () => {
-                    const input = Swal.getInput();
-                    if (input) {
-                        input.style.setProperty('width', '100%', 'important');
-                        input.style.setProperty('box-sizing', 'border-box', 'important');
-                        input.style.setProperty('margin-left', '0', 'important');
-                        input.style.setProperty('margin-right', '0', 'important');
-                    }
+                    // 自動 focus 輸入框
+                    const input = document.getElementById('vip-code-input');
+                    if (input) setTimeout(() => input.focus(), 100);
                 }
             });
 
@@ -4054,7 +4169,8 @@
                 } else {
                     submissionWrapper.style.display = 'none';
                 }
-                loadMessages();
+                // 移除多餘的 loadMessages()：此函式由 loadMessages → applyTopicConfig 呼叫，
+                // 在這裡再次呼叫會造成雙重 API 請求
             } else {
                 submissionWrapper.style.display = 'none';
             }
