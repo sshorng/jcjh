@@ -2060,10 +2060,7 @@
             return SENSITIVE_WORDS.some(word => lowerText.includes(word.toLowerCase()));
         }
 
-        // --- 優先順序邏輯 ---
-        function getGasUrl() {
-            return _G;
-        }
+
 
 
 
@@ -2149,13 +2146,12 @@
                 document.body.classList.add('post-only-mode');
             }
 
-            const url = getGasUrl();
             // 載入標籤設定
-            if (url) loadTopicConfig();
-            if (url) checkSystemConfig();
+            if (_G) loadTopicConfig();
+            if (_G) checkSystemConfig();
 
             // 只有在顯示模式或管理模式下，才載入留言與公告
-            if (url && (isDisplayMode || isAdminMode)) {
+            if (_G && (isDisplayMode || isAdminMode)) {
                 loadAnnouncements();
                 loadKeywordEffects();
 
@@ -2234,10 +2230,8 @@
         function toggleShareWriteQr() {
             const wrapper = document.getElementById('shareWriteQrWrapper');
             const btn = document.getElementById('shareWriteBtn');
-            const gasUrl = getGasUrl();
-
             // 檢查是否已設定 GAS URL
-            if (!gasUrl || gasUrl === '') {
+            if (!_G) {
                 showModal('尚未設定', '請先在管理後台設定 GAS 連線網址後，才能生成分享用的 QR Code', 'warning');
                 return;
             }
@@ -2301,8 +2295,7 @@
         }
         // --- API 串接 ---
         async function fetchAPI(action, data = null, params = null) {
-            const url = getGasUrl();
-            if (!url) {
+            if (!_G) {
                 showModal('錯誤', '未設定 GAS 網址', 'error');
                 return null;
             }
@@ -2316,7 +2309,7 @@
                     mode: 'cors'
                 };
 
-                let targetUrl = url;
+                let targetUrl = _G;
                 if (!isPost) {
                     // 全面修復：所有 GET 請求都必須包含 action 與參數
                     targetUrl += `?action=${action}`;
@@ -2774,7 +2767,7 @@
             const loginContainer = document.getElementById('google-login-container');
             loginContainer.innerHTML = `<p style="color: #27ae60; font-weight: bold;">✅ 已認證：${currentUserName}</p>`;
 
-            document.querySelector('.btn-submit[onclick="submitDraft()"]').textContent = "確認送出留言";
+            document.getElementById('submitBtn').textContent = "確認送出留言";
         }
 
         function parseJwt(token) {
@@ -2823,7 +2816,7 @@
                 return;
             }
 
-            const btn = document.querySelector('.btn-submit[onclick="submitDraft()"]');
+            const btn = document.getElementById('submitBtn');
             btn.disabled = true;
             btn.textContent = "傳送中...";
 
@@ -3648,26 +3641,43 @@
         let _lastConfigFetchTime = 0;
         const CONFIG_CACHE_TTL = 30000; // 30 秒內不重複 fetch
 
-        // --- 重置投稿表單並重新開啟 Modal (取代 location.reload) ---
+        // 備份原始 modal HTML，避免「再寫一則」可能觸發 location.reload()
+        let _postModalOriginalHTML = null;
+
+        // --- 重置投稿表單並重新開啟 Modal (100% 不 reload) ---
         function resetAndRewriteMessage() {
-            const form = document.getElementById('postForm');
             const modalContent = document.querySelector('#postModal .modal-content');
-            // 還原 modal-content 為表單（因為投稿成功後被感謝畫面取代）
-            if (!document.getElementById('postForm') || form.style.display === 'none') {
-                // 如果表單被取代，重新載入頁面（只有這個 edge case 才 reload）
+
+            // 如果備份存在，直接復原（避免 reload）
+            if (_postModalOriginalHTML) {
+                modalContent.innerHTML = _postModalOriginalHTML;
+                // 重新綁定事件監聽器（innerHTML 替換後原事件會丟失）
+                const fields = ['target', 'content', 'tag', 'topicTag', 'isAnonymous', 'anonymousName'];
+                fields.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.addEventListener('input', updatePreview);
+                        el.addEventListener('change', updatePreview);
+                    }
+                });
+                _renderGoogleSignInButton();
+                initVipTrigger();
+                updatePreview();
+            } else {
+                // 備份不存在（不應發生），最後才 reload
                 location.reload();
-                return;
             }
-            form.reset();
-            document.getElementById('charCount').textContent = '0 / 60';
-            document.getElementById('google-login-container').innerHTML = '';
-            _renderGoogleSignInButton();
-            updatePreview();
         }
 
         async function openPostModal() {
             // 初始化 VIP 觸發器 (僅在第一次開啟時綁定)
             initVipTrigger();
+
+            // 第一次開啟時備份原始 HTML，供「再寫一則」使用
+            if (!_postModalOriginalHTML) {
+                const modalContent = document.querySelector('#postModal .modal-content');
+                if (modalContent) _postModalOriginalHTML = modalContent.innerHTML;
+            }
 
             // 效能優化：30 秒內不重複呼叫 API（快取機制）
             const now = Date.now();
