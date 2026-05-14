@@ -672,10 +672,13 @@
             flex: 1;
             min-height: 0;
             padding: 10px 0;
-            word-break: break-all;
+            word-break: normal;
+            overflow-wrap: break-word; /* 強化溢出保護：優先在單字間斷行 */
+            word-wrap: break-word;
             white-space: pre-wrap;
             /* 確保原始換行生效 */
             overflow: hidden;
+            text-overflow: ellipsis; /* 如果真的塞不下，以省略號結尾 */
             text-align: center;
             display: flex;
             flex-direction: column;
@@ -2381,8 +2384,22 @@
                     ticker.style.display = 'flex';
                     // 根據公告長度動態調整動畫時間 (回復至每則 45s，維持最舒適的慢節奏)
                     content.style.animationDuration = `${res.length * 45}s`;
+                    localStorage.setItem('jcjh_backup_ann', JSON.stringify(res)); // 快取備援
                 } else {
                     ticker.style.display = 'none';
+                }
+            } catch (err) {
+                console.warn('公告載入失敗，嘗試快取...', err);
+                const cached = localStorage.getItem('jcjh_backup_ann');
+                if (cached) {
+                    const res = JSON.parse(cached);
+                    const ticker = document.getElementById('announcement-ticker');
+                    const content = document.getElementById('ann-content');
+                    if (res.length > 0) {
+                        ticker.style.display = 'flex';
+                        content.innerHTML = res.map(a => `<span><i class="fas fa-bullhorn"></i> ${a}</span>`).join('');
+                        content.style.animationDuration = `${res.length * 45}s`;
+                    }
                 }
             } finally { _isLoadingAnn = false; }
         }
@@ -2417,11 +2434,20 @@
                         board.innerHTML = '';
                     }
 
+                    localStorage.setItem('jcjh_backup_msg', JSON.stringify(result)); // 快取備援
+
                     // 若剛載入且畫面全空，立即觸發第一張，避免等待
                     if (board.querySelectorAll('.message-card').length === 0) {
                         rotateMessages();
                     }
-                    // 不再執行 board.innerHTML = ''，讓 rotateMessages 自然更迭留言
+                }
+            } catch (err) {
+                console.warn('留言載入失敗，嘗試快取...', err);
+                const cached = localStorage.getItem('jcjh_backup_msg');
+                if (cached && allMessages.length === 0) {
+                    allMessages = JSON.parse(cached);
+                    if (pendingSequence.length === 0) refreshSequence();
+                    rotateMessages();
                 }
             } finally { _isLoadingMsg = false; }
         }
