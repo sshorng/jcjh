@@ -2155,7 +2155,8 @@
         window.addEventListener('DOMContentLoaded', () => {
             checkLineBrowser(); // 執行 LINE 偵測
             const urlParams = new URLSearchParams(window.location.search);
-            const isDisplayMode = urlParams.has('view') && urlParams.get('view') === 'wall';
+            const viewParam = (urlParams.get('view') || "").toLowerCase();
+            const isDisplayMode = viewParam === 'wall';
             const isAdminMode = urlParams.has('admin');
 
             // 預設皆為投稿模式，除非明確開啟顯示牆或管理模式
@@ -2209,11 +2210,17 @@
                     }
                 });
 
-                // 電視牆穩定性：每 8 分鐘自動重新整理一次網頁，釋放記憶體 (舊硬體友善)
-                // 修正：reload 是維護性動作，不應隨分頁切換而暫停，改回原生 setInterval 確保長時穩定
+                // 電視牆穩定性：每 8 分鐘自動重新整理一次網頁，釋放記憶體 (修正：強化重整邏輯)
                 if (isDisplayMode) {
-                    setInterval(() => location.reload(), 480000);
-                    startMemoryGuard(); // 啟動記憶體安全閥門
+                    console.log("[System] 電視牆模式已啟動，排定 8 分鐘後自動重整。");
+                    setInterval(() => {
+                        console.log("[System] 執行排程重整...");
+                        // 透過增加隨機參數強制跳過瀏覽器快取
+                        const currentUrl = new URL(window.location.href);
+                        currentUrl.searchParams.set('_t', Date.now());
+                        window.location.href = currentUrl.toString();
+                    }, 480000);
+                    startMemoryGuard(); 
                 }
             }
 
