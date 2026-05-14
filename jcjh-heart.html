@@ -370,6 +370,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden; /* 關鍵：裁切內部的方形標籤角 */
         }
 
         .fab-qr-wrapper:hover {
@@ -385,13 +386,16 @@
             width: 100%;
             background: var(--primary-coral);
             color: white;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 700;
             text-align: center;
-            padding: 4px 0;
+            padding: 6px 0;
             opacity: 0;
             transform: translateY(100%);
             transition: all 0.3s ease;
+            letter-spacing: 1px;
+            pointer-events: none;
+            z-index: 5;
         }
 
         .fab-qr-wrapper:hover::before {
@@ -1870,18 +1874,26 @@
                         style="padding: 0.6rem; margin-bottom: 1.2rem; background: transparent; border: none;">
                         <div class="admin-tabs"
                             style="justify-content: flex-start; gap: 0.4rem; overflow-x: auto; padding-bottom: 5px;">
-                            <div class="tab-btn active" data-tab="待審核" onclick="switchTab('待審核')"><i class="fas fa-clock"></i> 待審核
+                            <div class="tab-btn active" data-tab="待審核" onclick="switchTab('待審核')"><i
+                                    class="fas fa-clock"></i> 待審核
                             </div>
-                            <div class="tab-btn" data-tab="通過" onclick="switchTab('通過')"><i class="fas fa-check-circle"></i> 通過</div>
-                            <div class="tab-btn" data-tab="駁回" onclick="switchTab('駁回')"><i class="fas fa-times-circle"></i> 駁回</div>
-                            <div class="tab-btn" data-tab="已下架" onclick="switchTab('已下架')"><i class="fas fa-archive"></i> 下架</div>
+                            <div class="tab-btn" data-tab="通過" onclick="switchTab('通過')"><i
+                                    class="fas fa-check-circle"></i> 通過</div>
+                            <div class="tab-btn" data-tab="駁回" onclick="switchTab('駁回')"><i
+                                    class="fas fa-times-circle"></i> 駁回</div>
+                            <div class="tab-btn" data-tab="已下架" onclick="switchTab('已下架')"><i
+                                    class="fas fa-archive"></i> 下架</div>
                             <div
                                 style="width: 1px; height: 20px; background: rgba(0,0,0,0.1); margin: 0 4px; align-self: center;">
                             </div>
-                            <div class="tab-btn" data-tab="跑馬燈管理" onclick="switchTab('跑馬燈管理')"><i class="fas fa-bullhorn"></i> 跑馬燈</div>
-                            <div class="tab-btn" data-tab="標籤管理" onclick="switchTab('標籤管理')"><i class="fas fa-tags"></i> 標籤</div>
-                            <div class="tab-btn" data-tab="特效設定" onclick="switchTab('特效設定')"><i class="fas fa-magic"></i> 特效</div>
-                            <div class="tab-btn" data-tab="系統設定" onclick="switchTab('系統設定')"><i class="fas fa-tools"></i> 設定</div>
+                            <div class="tab-btn" data-tab="跑馬燈管理" onclick="switchTab('跑馬燈管理')"><i
+                                    class="fas fa-bullhorn"></i> 跑馬燈</div>
+                            <div class="tab-btn" data-tab="標籤管理" onclick="switchTab('標籤管理')"><i class="fas fa-tags"></i>
+                                標籤</div>
+                            <div class="tab-btn" data-tab="特效設定" onclick="switchTab('特效設定')"><i
+                                    class="fas fa-magic"></i> 特效</div>
+                            <div class="tab-btn" data-tab="系統設定" onclick="switchTab('系統設定')"><i
+                                    class="fas fa-tools"></i> 設定</div>
                         </div>
                     </div>
 
@@ -2303,8 +2315,8 @@
             try {
                 // 修正邏輯：判斷哪些行動應該使用 POST (品質改善：使用 Set 提升可讀性與維護性)
                 const POST_ACTIONS = new Set([
-                    'submitMessage', 'updateStatus', 'updatePin', 'adminGetMessages', 
-                    'updateAnnouncements', 'updateSystemConfig', 'updateKeywordEffects', 
+                    'submitMessage', 'updateStatus', 'updatePin', 'adminGetMessages',
+                    'updateAnnouncements', 'updateSystemConfig', 'updateKeywordEffects',
                     'updateTopicConfig', 'updateMessage', 'renameTopicTag'
                 ]);
                 const isPost = POST_ACTIONS.has(action);
