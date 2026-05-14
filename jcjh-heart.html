@@ -2061,6 +2061,8 @@
         let _vipClickCount = 0;
         let _vipClickTimer = null;
         let _vipLongPressTimer = null;
+        let cardPool = []; // DOM 回收池
+        const MAX_POOL_SIZE = 20; // 池子最大容量
 
         // --- 敏感詞清單（可自行擴充） ---
         const SENSITIVE_WORDS = [
@@ -2173,13 +2175,12 @@
                 // 檢查 URL 參數中的標籤過濾 (回復標準解析)
                 currentFilterTag = urlParams.get('tag') || "";
 
-                // loadMessages 移除 setTimeout，改由相依資料載入後觸發
-                loadMessages(); // 立即載入，不等待 setInterval
-
+                // 啟動統一同步機制
+                syncAllData(); // 立即同步第一次
+                
                 function startPollingIntervals() {
-                    managedSetInterval(loadMessages, 20000);
-                    managedSetInterval(loadAnnouncements, 45000);
-                    managedSetInterval(checkSystemConfig, 60000);
+                    // 每 20 秒進行一次全量同步，取代原本多個分散的計時器
+                    managedSetInterval(syncAllData, 20000);
                 }
                 startPollingIntervals();
 
@@ -2364,90 +2365,97 @@
             }
         }
 
-        // --- 核心功能：讀取公告跑馬燈 ---
-        let currentAnnouncements = [];
-        let _isLoadingAnn = false;
-        async function loadAnnouncements() {
-            if (_isLoadingAnn) return; // 防止 fetch 堆疊
-            _isLoadingAnn = true;
+        // --- [API Batching] 核心同步功能 ---
+        let _isSyncing = false;
+        async function syncAllData() {
+            if (_isSyncing) return;
+            _isSyncing = true;
+            console.log("[Sync] 開始全量同步資料...");
+            
             try {
-                const ticker = document.getElementById('announcementTicker');
-                const content = document.getElementById('tickerContent');
-                const res = await fetchAPI('getAnnouncements');
-
-                if (res && Array.isArray(res) && res.length > 0) {
-                    currentAnnouncements = res;
-                    content.innerHTML = '';
-                    // 重複兩次以實現無縫滾動效果
-                    const items = res.map(a => `<div class="ticker-item"><i class="fas fa-bullhorn"></i> ${a.content}</div>`).join('');
-                    content.innerHTML = items + items; // 雙倍內容確保循環
-                    ticker.style.display = 'flex';
-                    // 根據公告長度動態調整動畫時間 (回復至每則 45s，維持最舒適的慢節奏)
-                    content.style.animationDuration = `${res.length * 45}s`;
-                    localStorage.setItem('jcjh_backup_ann', JSON.stringify(res)); // 快取備援
+                // 嘗試使用整合型 API，若失敗則回退到舊版分散請求
+                const res = await fetchAPI('syncAppData');
+                
+                if (res && res.status === "success") {
+                    // 1. 處理留言
+                    if (res.messages) {
+                        allMessages = res.messages;
+                        if (pendingSequence.length === 0 && allMessages.length > 0) refreshSequence();
+                        updateMessageBoardUI();
+                    }
+                    // 2. 處理公告
+                    if (res.announcements) {
+                        renderAnnouncementTicker(res.announcements);
+                    }
+                    // 3. 處理設定
+                    if (res.config) {
+                        if (typeof res.config.isInternalTest !== 'undefined') isInternalTest = res.config.isInternalTest;
+                        if (typeof res.config.submissionMode !== 'undefined') currentSubmissionMode = res.config.submissionMode;
+                        applySystemConfig();
+                    }
+                    localStorage.setItem('jcjh_full_backup', JSON.stringify(res));
+                    console.log("[Sync] 資料同步成功 (Batch Mode)");
                 } else {
-                    ticker.style.display = 'none';
+                    // 後端尚未支援 syncAppData，回退到分散請求
+                    console.warn("[Sync] 後端未支援 Batch 模式，回退到分散請求...");
+                    await Promise.all([
+                        loadMessages(),
+                        loadAnnouncements(),
+                        checkSystemConfig()
+                    ]);
                 }
             } catch (err) {
-                console.warn('公告載入失敗，嘗試快取...', err);
-                const cached = localStorage.getItem('jcjh_backup_ann');
-                if (cached) {
-                    const res = JSON.parse(cached);
-                    const ticker = document.getElementById('announcement-ticker');
-                    const content = document.getElementById('ann-content');
-                    if (res.length > 0) {
-                        ticker.style.display = 'flex';
-                        content.innerHTML = res.map(a => `<span><i class="fas fa-bullhorn"></i> ${a}</span>`).join('');
-                        content.style.animationDuration = `${res.length * 45}s`;
-                    }
-                }
+                console.error("[Sync] 同步發生錯誤:", err);
+            } finally {
+                _isSyncing = false;
+            }
+        }
+
+        // 輔助 UI 更新函數
+        function updateMessageBoardUI() {
+            const board = document.getElementById('messageBoard');
+            if (allMessages.length === 0) {
+                board.innerHTML = '<div style="opacity:0.5;">目前還沒有溫暖的留言，快來寫第一則吧！</div>';
+            } else if (board.innerHTML.includes('目前還沒有')) {
+                board.innerHTML = '';
+            }
+            if (board.querySelectorAll('.message-card').length === 0) rotateMessages();
+        }
+
+        function renderAnnouncementTicker(res) {
+            const ticker = document.getElementById('announcementTicker');
+            const content = document.getElementById('tickerContent');
+            if (res && res.length > 0) {
+                currentAnnouncements = res;
+                content.innerHTML = '';
+                const items = res.map(a => `<div class="ticker-item"><i class="fas fa-bullhorn"></i> ${a.content}</div>`).join('');
+                content.innerHTML = items + items;
+                ticker.style.display = 'flex';
+                content.style.animationDuration = `${res.length * 45}s`;
+            } else {
+                ticker.style.display = 'none';
+            }
+        }
+
+        let _isLoadingAnn = false;
+        async function loadAnnouncements() {
+            if (_isLoadingAnn) return;
+            _isLoadingAnn = true;
+            try {
+                const res = await fetchAPI('getAnnouncements');
+                if (res && Array.isArray(res)) renderAnnouncementTicker(res);
             } finally { _isLoadingAnn = false; }
         }
+
         let _isLoadingMsg = false;
         async function loadMessages() {
-            if (_isLoadingMsg) return; // 防止 fetch 堆疊
+            if (_isLoadingMsg) return;
             _isLoadingMsg = true;
             try {
-                const board = document.getElementById('messageBoard');
                 const result = await fetchAPI('getMessages');
                 if (result && !result.error) {
                     allMessages = result;
-
-                    // 標籤過濾邏輯
-                    let filterToUse = currentFilterTag || (topicConfig.defaultWallTags ? topicConfig.defaultWallTags.split(',').map(t => t.trim()) : []);
-                    if (typeof filterToUse === 'string') filterToUse = [filterToUse];
-                    filterToUse = filterToUse.filter(t => t);
-
-                    if (filterToUse.length > 0) {
-                        allMessages = allMessages.filter(m => {
-                            const mTag = m.topicTag ? m.topicTag.trim() : "";
-                            return filterToUse.some(f => mTag === f.trim());
-                        });
-                    }
-
-                    if (pendingSequence.length === 0 && allMessages.length > 0) {
-                        refreshSequence();
-                    }
-                    if (allMessages.length === 0) {
-                        board.innerHTML = '<div style="opacity:0.5;">目前還沒有溫暖的留言，快來寫第一則吧！</div>';
-                    } else if (board.innerHTML.includes('目前還沒有')) {
-                        board.innerHTML = '';
-                    }
-
-                    localStorage.setItem('jcjh_backup_msg', JSON.stringify(result)); // 快取備援
-
-                    // 若剛載入且畫面全空，立即觸發第一張，避免等待
-                    if (board.querySelectorAll('.message-card').length === 0) {
-                        rotateMessages();
-                    }
-                }
-            } catch (err) {
-                console.warn('留言載入失敗，嘗試快取...', err);
-                const cached = localStorage.getItem('jcjh_backup_msg');
-                if (cached && allMessages.length === 0) {
-                    allMessages = JSON.parse(cached);
-                    if (pendingSequence.length === 0) refreshSequence();
-                    rotateMessages();
+                    updateMessageBoardUI();
                 }
             } finally { _isLoadingMsg = false; }
         }
@@ -2603,29 +2611,43 @@
         }
 
         // --- 追蹤釘選公告垂直堆疊狀態 ---
-        // --- 核心功能：建立留言卡片 ---
+        // --- [DOM Recycling] 核心功能：建立或回收留言卡片 ---
         function createMessageCard(msg, index, isPreview = false) {
-            const card = document.createElement('div');
-            card.className = `message-card ${isPreview ? '' : 'animate-float'}`;
+            let card;
+            
+            // 1. 嘗試從回收池 (Card Pool) 借用節點
+            if (!isPreview && cardPool.length > 0) {
+                card = cardPool.pop();
+                // 清理舊的狀態與計時器
+                if (card._timers) {
+                    card._timers.forEach(t => clearTimeout(t));
+                    card._timers = [];
+                }
+                card.className = 'message-card animate-float';
+                console.log("[Recycle] 從池中回收了一張卡片", cardPool.length);
+            } else {
+                // 池中無可用節點，建立新節點
+                card = document.createElement('div');
+                card.className = 'message-card';
+                if (!isPreview) card.className += ' animate-float';
+            }
 
-            // --- 郵戳日期處理 ---
+            // 2. 更新內容 (不論是新建立還是回收，皆重新填充資料)
             const dateObj = new Date(msg.timestamp);
             const stampMonth = (dateObj.getMonth() + 1).toString().padStart(2, '0');
             const stampDay = dateObj.getDate().toString().padStart(2, '0');
             const stampRot = (Math.random() * 20 - 10);
             card.style.setProperty('--stamp-rot', `${stampRot}deg`);
 
-            // 隨機膠帶位置
             const tapePos = Math.random() > 0.5 ? '20px' : '230px';
             const tapeRot = (Math.random() * 20 - 10) + (tapePos === '20px' ? -15 : 15);
             card.style.setProperty('--tape-pos', tapePos);
             card.style.setProperty('--tape-rot', tapeRot + 'deg');
 
-            // --- 內容處理：動態計算字級 ---
-            const content = msg.content || "";
-            const lineCount = content.split('\n').length;
+            const contentText = msg.content || "";
+            const lineCount = contentText.split('\n').length;
             const charPerLine = 14;
-            const autoWrappedLines = Math.ceil(content.length / charPerLine);
+            const autoWrappedLines = Math.ceil(contentText.length / charPerLine);
             const effectiveLines = Math.max(lineCount, autoWrappedLines);
 
             let dynamicFontSize;
@@ -2636,27 +2658,29 @@
             else if (effectiveLines <= 5) dynamicFontSize = 1.0;
             else dynamicFontSize = 0.9;
 
-            const hasNewline = content.includes('\n');
+            const hasNewline = contentText.includes('\n');
 
-            // --- 關鍵字特效 ---
+            // 處理特效標記
+            let matchedEffect = null;
             if (currentEffects && currentEffects.length > 0) {
-                let matchedEffect = null;
                 let firstIndex = Infinity;
                 currentEffects.forEach(eff => {
                     const keywords = eff.keyword.split(',').map(k => k.trim());
                     keywords.forEach(kw => {
-                        const idx = content.indexOf(kw);
+                        const idx = contentText.indexOf(kw);
                         if (idx !== -1 && idx < firstIndex) {
                             firstIndex = idx;
                             matchedEffect = eff;
                         }
                     });
                 });
-                if (matchedEffect) {
-                    card.dataset.autoEffect = "true";
-                    card.dataset.effectMode = matchedEffect.mode;
-                    card.dataset.effectIcon = matchedEffect.icon;
-                }
+            }
+            if (matchedEffect) {
+                card.dataset.autoEffect = "true";
+                card.dataset.effectMode = matchedEffect.mode;
+                card.dataset.effectIcon = matchedEffect.icon;
+            } else {
+                delete card.dataset.autoEffect;
             }
 
             card.innerHTML = `
@@ -2673,15 +2697,14 @@
                     <div class="card-author">${msg.displayName}</div>
                 </div>
             `;
-            card.querySelector('.card-content').textContent = content;
+            card.querySelector('.card-content').textContent = contentText;
 
             if (!isPreview) {
-                // 處理電視牆位置邏輯
                 const board = document.getElementById('messageBoard');
                 const bw = window.innerWidth;
                 const bh = window.innerHeight;
 
-                const existingCards = Array.from(board.querySelectorAll('.message-card')).map(el => {
+                const existingCards = Array.from(board.querySelectorAll('.message-card:not(.fade-out)')).map(el => {
                     const rect = el.getBoundingClientRect();
                     return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
                 });
@@ -2690,7 +2713,6 @@
 
                 let bestPos = gridPositions[0];
                 let maxMinDist = -1;
-
                 for (const pos of gridPositions) {
                     const centerX = pos.x + 175;
                     const centerY = pos.y + 130;
@@ -2715,12 +2737,14 @@
                 card.style.setProperty('--rot', `${bestPos.rot}deg`);
                 card.style.top = `${safeY}px`;
                 card.style.left = `${safeX}px`;
+                card.style.opacity = "1";
+                card.style.display = "flex";
 
                 board.appendChild(card);
 
                 if (card.dataset.autoEffect === "true") {
                     const effectTimer = setTimeout(() => {
-                        if (!card.isConnected) return; // 卡片已被移除則跳過
+                        if (!card.isConnected) return;
                         const contentEl = card.querySelector('.card-content');
                         if (contentEl) createParticles(contentEl, card.dataset.effectMode, card.dataset.effectIcon);
                     }, 1000);
@@ -2729,17 +2753,28 @@
 
                 const lifeTime = Math.floor(Math.random() * (20000 - 12000 + 1) + 12000);
                 const lifeTimer = setTimeout(() => {
-                    if (!card.isConnected) return; // 已被移除則跳過
+                    if (!card.isConnected) return;
                     card.classList.add('fade-out');
+                    
                     const fadeTimer = setTimeout(() => {
-                        card.remove();
+                        // 3. 歸還節點：不 remove()，而是重置並放入回收池
+                        if (card.parentNode) card.parentNode.removeChild(card);
                         displayingIndexes.delete(index);
-                        // 清理所有計時器引用
-                        if (card._timers) { card._timers.length = 0; card._timers = null; }
+                        
+                        // 重置節點樣式，準備下次借用
+                        card.classList.remove('fade-out', 'animate-float');
+                        card.style.display = "none";
+                        
+                        if (cardPool.length < MAX_POOL_SIZE) {
+                            cardPool.push(card);
+                        }
+                        
+                        // 安排下一張卡片
                         setTimeout(() => rotateMessages(), 4000);
                     }, 1000);
                     if (card._timers) card._timers.push(fadeTimer);
                 }, lifeTime);
+                
                 if (!card._timers) card._timers = [];
                 card._timers.push(lifeTimer);
             }
