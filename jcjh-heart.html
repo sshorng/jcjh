@@ -2135,7 +2135,7 @@
             _intervalIds = [];
         }
 
-        window.onload = () => {
+        window.addEventListener('DOMContentLoaded', () => {
             checkLineBrowser(); // 執行 LINE 偵測
             const urlParams = new URLSearchParams(window.location.search);
             const isDisplayMode = urlParams.has('view') && urlParams.get('view') === 'wall';
@@ -2194,9 +2194,9 @@
                 });
 
                 // 電視牆穩定性：每 8 分鐘自動重新整理一次網頁，釋放記憶體 (舊硬體友善)
-                // 修正：改用 managedSetInterval，使其能配合頁面不可見時的暫停機制
+                // 修正：reload 是維護性動作，不應隨分頁切換而暫停，改回原生 setInterval 確保長時穩定
                 if (isDisplayMode) {
-                    managedSetInterval(() => location.reload(), 480000);
+                    setInterval(() => location.reload(), 480000);
                     startMemoryGuard(); // 啟動記憶體安全閥門
                 }
             }
@@ -2214,7 +2214,7 @@
             if (urlParams.has('admin')) {
                 setTimeout(openAdminModal, 500);
             }
-        };
+        });
 
         // --- 生成寫留言專用 QR Code (優化：使用靜態 Vercel 網址) ---
         function generateWriteQrCode() {
@@ -2301,8 +2301,13 @@
             }
 
             try {
-                // 修正邏輯：判斷哪些行動應該使用 POST
-                const isPost = (action === 'submitMessage' || action === 'updateStatus' || action === 'updatePin' || action === 'adminGetMessages' || action === 'updateAnnouncements' || action === 'updateSystemConfig' || action === 'updateKeywordEffects' || action === 'updateTopicConfig' || action === 'updateMessage' || action === 'renameTopicTag');
+                // 修正邏輯：判斷哪些行動應該使用 POST (品質改善：使用 Set 提升可讀性與維護性)
+                const POST_ACTIONS = new Set([
+                    'submitMessage', 'updateStatus', 'updatePin', 'adminGetMessages', 
+                    'updateAnnouncements', 'updateSystemConfig', 'updateKeywordEffects', 
+                    'updateTopicConfig', 'updateMessage', 'renameTopicTag'
+                ]);
+                const isPost = POST_ACTIONS.has(action);
 
                 const options = {
                     method: isPost ? 'POST' : 'GET',
@@ -3662,6 +3667,19 @@
                 });
                 _renderGoogleSignInButton();
                 initVipTrigger();
+
+                // 品質改善：還原 HTML 後，若使用者已登入，需更新按鈕文字與狀態
+                if (currentUserEmail) {
+                    const loginContainer = document.getElementById('google-login-container');
+                    if (loginContainer) {
+                        loginContainer.innerHTML = `<p style="color: #27ae60; font-weight: bold;">✅ 已認證：${currentUserName}</p>`;
+                    }
+                    const submitBtn = document.getElementById('submitBtn');
+                    if (submitBtn) {
+                        submitBtn.textContent = "確認送出留言";
+                    }
+                }
+
                 updatePreview();
             } else {
                 // 備份不存在（不應發生），最後才 reload
