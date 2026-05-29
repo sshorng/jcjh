@@ -108,15 +108,39 @@
     /* Category Bar */
     .category-bar {
       display: flex;
-      overflow-x: auto;
+      flex-wrap: wrap;
       gap: 0.5rem;
       padding-bottom: 1rem;
-      scrollbar-width: none;
-      -webkit-overflow-scrolling: touch;
     }
 
-    .category-bar::-webkit-scrollbar {
-      display: none;
+    .btn-edit-inline {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 0.9rem;
+      margin-left: 0.5rem;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+      vertical-align: middle;
+    }
+
+    .btn-edit-inline:hover {
+      opacity: 1;
+    }
+
+    .btn-star-inline {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 1.1rem;
+      margin-left: 0.25rem;
+      vertical-align: middle;
+      transition: transform 0.2s;
+      outline: none;
+    }
+
+    .btn-star-inline:hover {
+      transform: scale(1.25);
     }
 
     .btn-category {
@@ -566,14 +590,7 @@
 
       <div id="addForm" class="add-form">
         <h4 style="margin-bottom:1rem">新增現場貴賓</h4>
-        <div class="form-group">
-          <label>類別</label>
-          <select id="newCategory" onchange="checkCustomCategory()">
-            <option value="現場">現場</option>
-            <option value="custom">➕ 自訂新類別...</option>
-          </select>
-          <input type="text" id="newCategoryCustom" placeholder="請輸入自訂類別" style="display:none; margin-top:0.5rem;">
-        </div>
+
         <div class="form-group"><label>單位</label><input type="text" id="newUnit" placeholder="例如：教育局"></div>
         <div class="form-group"><label>職稱</label><input type="text" id="newTitle" placeholder="例如：局長"></div>
         <div class="form-group"><label>姓名</label><input type="text" id="newName" placeholder="請輸入姓名"></div>
@@ -622,6 +639,37 @@
       <p style="font-size:0.85rem; color:var(--text-light)">請貴賓掃描此碼自行填寫資料</p>
       <div id="qrcode"></div>
       <button class="btn-cancel" style="width:100%" onclick="closeQRCode()">關閉</button>
+    </div>
+  </div>
+
+  <!-- 編輯貴賓彈窗 -->
+  <div id="editModal" class="modal" onclick="closeEditModal()">
+    <div class="modal-content" style="width: 400px; text-align: left;" onclick="event.stopPropagation()">
+      <h3 style="margin-bottom: 1.25rem; text-align: center;">✏️ 編輯貴賓資料</h3>
+      <input type="hidden" id="editOldName">
+      <div class="form-group">
+        <label>類別</label>
+        <select id="editCategory" onchange="checkEditCustomCategory()">
+          <!-- 動態載入類別 -->
+        </select>
+        <input type="text" id="editCategoryCustom" placeholder="請輸入自訂類別" style="display: none; margin-top: 0.5rem;">
+      </div>
+      <div class="form-group">
+        <label>單位</label>
+        <input type="text" id="editUnit" placeholder="例如：教育局">
+      </div>
+      <div class="form-group">
+        <label>職稱</label>
+        <input type="text" id="editTitle" placeholder="例如：局長">
+      </div>
+      <div class="form-group">
+        <label>姓名</label>
+        <input type="text" id="editName" placeholder="請輸入姓名">
+      </div>
+      <div class="form-actions">
+        <button class="btn-cancel" style="flex: 1;" onclick="closeEditModal()">取消</button>
+        <button id="btnSaveEdit" class="btn-save" style="flex: 2;" onclick="saveEditGuest()">確認修改</button>
+      </div>
     </div>
   </div>
 
@@ -716,11 +764,17 @@
       if (selectedCategory !== '全部') filtered = filtered.filter(g => g.category === selectedCategory);
       if (searchTerm) filtered = filtered.filter(g => g.name.toLowerCase().includes(searchTerm) || g.unit.toLowerCase().includes(searchTerm));
 
-      // 排序邏輯：未抵達的在前 (0)，已抵達的在後 (1)
+      // 排序邏輯：
+      // 1. 未報到且確認出席 (最優先置頂，分數 0)
+      // 2. 未報到且未確認出席 (次優先，分數 10)
+      // 3. 已報到 (沉底，分數 100)
       filtered.sort((a, b) => {
-        const aVal = a.status === '已抵達' ? 1 : 0;
-        const bVal = b.status === '已抵達' ? 1 : 0;
-        return aVal - bVal;
+        const getScore = (g) => {
+          if (g.status === '已抵達') return 100;
+          if (g.confirmed) return 0;
+          return 10;
+        };
+        return getScore(a) - getScore(b);
       });
 
       if (filtered.length === 0) { container.innerHTML = '<div class="empty-state">找不到相關貴賓</div>'; return; }
@@ -731,7 +785,15 @@
         card.className = `guest-card ${isArrived ? 'arrived' : ''}`;
         card.innerHTML = `
           <div class="guest-info">
-            <h3><span class="cat-tag" style="background-color: ${getCategoryColor(guest.category)}">${guest.category}</span>${guest.name} ${isArrived ? `<span class="status-badge badge-arrived">${guest.arrivalTime}</span>` : ''}</h3>
+            <h3>
+              <span class="cat-tag" style="background-color: ${getCategoryColor(guest.category)}">${guest.category}</span>
+              ${guest.name}
+              <button class="btn-edit-inline" onclick="openEditModal('${guest.name.replace(/'/g, "\\'")}')" title="編輯貴賓資料">✏️</button>
+              <button class="btn-star-inline" onclick="toggleConfirmAction('${guest.name.replace(/'/g, "\\'")}', ${!guest.confirmed}); event.stopPropagation();" title="${guest.confirmed ? '取消確認出席' : '標記確認出席'}">
+                ${guest.confirmed ? '⭐' : '☆'}
+              </button>
+              ${isArrived ? `<span class="status-badge badge-arrived">${guest.arrivalTime}</span>` : ''}
+            </h3>
             <p>${guest.unit} / ${guest.title}</p>
           </div>
           <div class="guest-actions">
@@ -813,16 +875,7 @@
       const name = document.getElementById(prefix + 'Name').value;
       const unit = document.getElementById(prefix + 'Unit').value;
       const title = document.getElementById(prefix + 'Title').value;
-
-      let cat = '現場';
-      if (type === 'self') {
-        cat = '現場';
-      } else {
-        cat = document.getElementById('newCategory').value;
-        if (cat === 'custom') {
-          cat = document.getElementById('newCategoryCustom').value || '現場';
-        }
-      }
+      const cat = '現場';
 
       const btn = document.getElementById(type === 'self' ? 'btnSelfSave' : 'btnSaveGuest');
 
@@ -860,17 +913,6 @@
       }
     }
 
-    function checkCustomCategory() {
-      const select = document.getElementById('newCategory');
-      const customInput = document.getElementById('newCategoryCustom');
-      if (select.value === 'custom') {
-        customInput.style.display = 'block';
-        customInput.focus();
-      } else {
-        customInput.style.display = 'none';
-      }
-    }
-
     function toggleAddForm() { const form = document.getElementById('addForm'); form.style.display = form.style.display === 'block' ? 'none' : 'block'; }
 
     function showQRCode() {
@@ -879,6 +921,109 @@
       document.getElementById('qrModal').style.display = 'flex';
     }
     function closeQRCode() { document.getElementById('qrModal').style.display = 'none'; }
+
+    function openEditModal(name) {
+      const guest = allGuests.find(g => g.name === name);
+      if (!guest) return;
+      
+      document.getElementById('editOldName').value = guest.name;
+      document.getElementById('editName').value = guest.name;
+      document.getElementById('editUnit').value = guest.unit || '';
+      document.getElementById('editTitle').value = guest.title || '';
+      
+      // 動態更新編輯下拉選單中的類別
+      const uniqueCats = [...new Set(allGuests.map(g => g.category))].filter(c => c && c !== '未分類');
+      const select = document.getElementById('editCategory');
+      if (select) {
+        select.innerHTML = uniqueCats.map(c => `<option value="${c}">${c}</option>`).join('');
+        if (!uniqueCats.includes('現場')) select.innerHTML += `<option value="現場">現場</option>`;
+        select.innerHTML += `<option value="custom">➕ 自訂新類別...</option>`;
+        select.value = guest.category;
+      }
+      
+      // 重設自訂類別輸入框
+      const customInput = document.getElementById('editCategoryCustom');
+      if (customInput) {
+        customInput.value = '';
+        customInput.style.display = 'none';
+      }
+      
+      document.getElementById('editModal').style.display = 'flex';
+    }
+
+    function checkEditCustomCategory() {
+      const select = document.getElementById('editCategory');
+      const customInput = document.getElementById('editCategoryCustom');
+      if (select && customInput) {
+        if (select.value === 'custom') {
+          customInput.style.display = 'block';
+          customInput.focus();
+        } else {
+          customInput.style.display = 'none';
+        }
+      }
+    }
+
+    function closeEditModal() {
+      document.getElementById('editModal').style.display = 'none';
+    }
+
+    function saveEditGuest() {
+      const oldName = document.getElementById('editOldName').value;
+      const name = document.getElementById('editName').value.trim();
+      const unit = document.getElementById('editUnit').value.trim();
+      const title = document.getElementById('editTitle').value.trim();
+      
+      let cat = '現場';
+      const select = document.getElementById('editCategory');
+      if (select) {
+        cat = select.value;
+        if (cat === 'custom') {
+          cat = document.getElementById('editCategoryCustom').value.trim() || '現場';
+        }
+      }
+      
+      if (!name) { alert('請輸入姓名'); return; }
+      
+      const btn = document.getElementById('btnSaveEdit');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loading-spinner"></span>儲存中...';
+      
+      callGAS({
+        action: 'editGuest',
+        oldName: oldName,
+        category: cat,
+        unit: unit,
+        title: title,
+        name: name
+      }, function(res) {
+        btn.disabled = false;
+        btn.innerHTML = '確認修改';
+        if (res.success) {
+          closeEditModal();
+          refreshData();
+        } else {
+          alert('修改失敗：' + res.message);
+        }
+      });
+    }
+
+    function toggleConfirmAction(name, isConfirmed) {
+      const guest = allGuests.find(g => g.name === name);
+      if (guest) {
+        const backupConfirmed = guest.confirmed;
+        guest.confirmed = isConfirmed;
+        renderList();
+        
+        callGAS({ action: 'toggleConfirm', name: name, isConfirmed: isConfirmed }, function(res) {
+          if (!res.success) {
+            guest.confirmed = backupConfirmed;
+            renderList();
+            alert('設定失敗：' + res.message);
+          }
+        });
+      }
+    }
   </script>
 </body>
 
