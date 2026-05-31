@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080">
+<title>Content Text — Orange Light</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  .card {
+    width: 1080px;
+    height: 1350px;
+    background: #F6F7F8;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Inter', 'Noto Sans TC', sans-serif;
+    padding: 100px 90px;
+    display: flex;
+    flex-direction: column;
+  }
+  .title {
+    font-weight: 900;
+    font-size: 72px;
+    color: #E27F2E;
+    line-height: 1.4;
+    margin-bottom: 56px;
+  }
+  .bullet-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+    flex: 1;
+  }
+  .bullet-item {
+    display: flex;
+    gap: 36px;
+    align-items: flex-start;
+    padding-left: 24px;
+  }
+  .bullet-dot {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    background: #E27F2E;
+    border-radius: 50%;
+    margin-top: 30px;
+  }
+  .bullet-text {
+    font-size: 44px;
+    font-weight: 500;
+    color: #40444D;
+    line-height: 1.6;
+  }
+  .handle {
+    position: absolute;
+    bottom: 72px;
+    left: 90px;
+    font-family: 'Inter', sans-serif;
+    font-size: 33px;
+    font-weight: 600;
+    color: rgba(0,0,0,0.25);
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <h2 class="title">標題標題<br>標題標題標題標題？</h2>
+
+  <div class="bullet-list">
+    <div class="bullet-item">
+      <div class="bullet-dot"></div>
+      <p class="bullet-text">內文內文內文內文內文內文內文內文內文內文內文</p>
+    </div>
+    <div class="bullet-item">
+      <div class="bullet-dot"></div>
+      <p class="bullet-text">內文內文內文內文內文內文內文內文內文內文內文內文內文</p>
+    </div>
+    <div class="bullet-item">
+      <div class="bullet-dot"></div>
+      <p class="bullet-text">內文內文內文內文內文內文內文內文內文內文內文</p>
+    </div>
+    <div class="bullet-item">
+      <div class="bullet-dot"></div>
+      <p class="bullet-text">內文內文內文內文內文內文內文內文內文內文內文內文內文</p>
+    </div>
+  </div>
+
+  <span class="handle">@raymond0917</span>
+</div>
+</body>
+</html>

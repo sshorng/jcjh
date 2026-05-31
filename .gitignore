@@ -1,0 +1,25 @@
+# Secrets
+.env
+.env.*
+**/credentials.json
+**/*.key
+**/.credentials.json
+
+# 本機狀態與快取
+.claude/
+.gemini/
+projects/
+shell-snapshots/
+todos/
+statsig/
+
+# 系統檔
+.DS_Store
+Thumbs.db
+
+# 大檔 / 暫存
+*.log
+node_modules/
+.venv*/
+__pycache__/
+playwright-images/

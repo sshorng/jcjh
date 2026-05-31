@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080">
+<title>CTA — Orange Light</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  .card {
+    width: 1080px;
+    height: 1350px;
+    background: #fff;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Inter', 'Noto Sans TC', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .title {
+    font-weight: 900;
+    font-size: 88px;
+    color: #E27F2E;
+    text-align: center;
+    line-height: 1.35;
+    margin-bottom: 44px;
+  }
+  .subtitle {
+    font-weight: 500;
+    font-size: 40px;
+    color: #666;
+    text-align: center;
+    line-height: 1.6;
+    margin-bottom: 52px;
+  }
+  .handle-badge {
+    display: inline-block;
+    background: #E27F2E;
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: 40px;
+    font-weight: 700;
+    padding: 20px 48px;
+    border-radius: 60px;
+  }
+  .bottom-actions {
+    position: absolute;
+    bottom: 64px;
+    left: 90px;
+    right: 90px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    color: #40444D;
+  }
+  .action-icon {
+    width: 44px;
+    height: 44px;
+  }
+  .action-icon svg {
+    width: 44px;
+    height: 44px;
+    fill: none;
+    stroke: #40444D;
+    stroke-width: 2;
+  }
+  .action-text {
+    font-size: 26px;
+    font-weight: 500;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <h2 class="title">有幫助的話<br>記得按讚分享</h2>
+  <p class="subtitle">更多教學與實戰分享<br>追蹤我的帳號，不錯過最新內容</p>
+  <span class="handle-badge">@raymond0917</span>
+
+  <div class="bottom-actions">
+    <div class="action">
+      <span class="action-icon"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>
+      <span class="action-text">喜歡點愛心</span>
+    </div>
+    <div class="action">
+      <span class="action-icon"><svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></span>
+      <span class="action-text">實用請收藏</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

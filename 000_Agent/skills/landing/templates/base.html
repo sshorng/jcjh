@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{title}}</title>
+  <meta name="description" content="{{hero.subtitle}}">
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts — 由產生時依 design system 決定 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="{{fonts.googleFontsUrl}}" rel="stylesheet">
+
+  <style>
+    :root {
+      --color-primary: {{colors.primary}};
+      --color-cta: {{colors.cta}};
+      --color-text: {{colors.text}};
+      --color-bg: {{colors.bg}};
+      --color-muted: {{colors.muted}};
+      --color-border: {{colors.border}};
+      --font-headline: {{fonts.headline}};
+      --font-body: {{fonts.body}};
+      --transition: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+      --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.06);
+      --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.10);
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-body);
+      color: var(--color-text);
+      background: var(--color-bg);
+      line-height: 1.7;
+    }
+
+    h1, h2, h3 { font-family: var(--font-headline); font-weight: 700; line-height: 1.25; }
+    h1 { font-size: clamp(2rem, 5vw, 3.5rem); }
+    h2 { font-size: clamp(1.5rem, 3.5vw, 2.25rem); margin-bottom: 1rem; }
+    h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
+
+    .container-tight { max-width: 672px; margin: 0 auto; padding: 0 1.5rem; }
+    .container-wide { max-width: 896px; margin: 0 auto; padding: 0 1.5rem; }
+    section { padding: 4rem 0; }
+    @media (min-width: 768px) { section { padding: 6rem 0; } }
+    #hero { padding: 5rem 0 4rem; }
+    @media (min-width: 768px) { #hero { padding: 8rem 0 6rem; } }
+
+    .cta-primary {
+      display: inline-block;
+      background: var(--color-cta);
+      color: #fff;
+      padding: 1rem 2rem;
+      border-radius: 8px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all var(--transition);
+      box-shadow: var(--shadow-soft);
+    }
+    .cta-primary:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+    .cta-primary:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 3px; }
+
+    /* Hero 大型倒數 */
+    #countdown-big {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin: 2rem 0;
+      font-variant-numeric: tabular-nums;
+    }
+    #countdown-big .unit {
+      background: rgba(0, 0, 0, 0.04);
+      border: 1px solid var(--color-border);
+      padding: 12px 16px;
+      border-radius: 8px;
+      min-width: 72px;
+      text-align: center;
+    }
+    #countdown-big .num { font-size: 2rem; font-weight: 700; color: var(--color-primary); }
+    #countdown-big .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; color: var(--color-muted); }
+
+    /* 底部 sticky */
+    #countdown-sticky {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--color-text);
+      color: #fff;
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      z-index: 50;
+      transform: translateY(100%);
+      transition: transform var(--transition);
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+    }
+    #countdown-sticky.visible { transform: translateY(0); }
+    #countdown-sticky .cta-compact {
+      background: var(--color-cta);
+      color: #fff;
+      padding: 0.5rem 1.25rem;
+      border-radius: 6px;
+      font-weight: 600;
+      text-decoration: none;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: opacity var(--transition);
+    }
+    #countdown-sticky .cta-compact:hover { opacity: 0.9; }
+    @media (max-width: 640px) {
+      #countdown-sticky { padding: 0.5rem 1rem; font-size: 0.85rem; }
+      #countdown-sticky .cta-compact { padding: 0.4rem 0.9rem; font-size: 0.85rem; }
+    }
+
+    /* 其他 section */
+    #hook p, #about p { font-size: 1.1rem; margin-bottom: 1rem; }
+    .info-item { display: flex; gap: 0.75rem; padding: 0.75rem 0; border-bottom: 1px solid var(--color-border); }
+    .info-item:last-child { border-bottom: none; }
+    .info-label { font-weight: 600; min-width: 140px; }
+
+    .pricing-card {
+      background: #fff;
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: var(--shadow-soft);
+      transition: all var(--transition);
+    }
+    .pricing-card.highlighted {
+      border: 2px solid var(--color-cta);
+      transform: scale(1.02);
+    }
+    .pricing-price { font-size: 2rem; font-weight: 700; color: var(--color-primary); }
+
+    .testimonial {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: var(--shadow-soft);
+    }
+    .testimonial .quote { font-style: italic; margin-bottom: 1rem; }
+    .testimonial .author { font-size: 0.9rem; color: var(--color-muted); }
+
+    .faq-item {
+      border-bottom: 1px solid var(--color-border);
+      padding: 1rem 0;
+    }
+    .faq-item summary {
+      cursor: pointer;
+      font-weight: 600;
+      padding: 0.5rem 0;
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .faq-item summary::after {
+      content: "+";
+      font-size: 1.5rem;
+      transition: transform var(--transition);
+    }
+    .faq-item[open] summary::after { transform: rotate(45deg); }
+    .faq-item p { padding: 0.75rem 0; color: var(--color-muted); }
+
+    .speaker-card { display: flex; gap: 1.5rem; align-items: flex-start; }
+    .speaker-photo {
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    @media (max-width: 640px) {
+      .speaker-card { flex-direction: column; align-items: center; text-align: center; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== Nav（必要、sticky top） -->
+  <nav class="site-nav" id="siteNav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="#top">{{nav.brandText}}</a>
+      <ul class="nav-links">
+        <li><a href="#about">{{nav.linkAbout}}</a></li>
+        <li><a href="#learn">{{nav.linkLearn}}</a></li>
+        <li><a href="#audience">{{nav.linkAudience}}</a></li>
+        <li><a href="#pricing">{{nav.linkPricing}}</a></li>
+        <li><a href="#speaker">{{nav.linkSpeaker}}</a></li>
+        <li><a href="#faq">{{nav.linkFaq}}</a></li>
+      </ul>
+      <a class="nav-cta" href="{{cta.href}}">{{nav.ctaShort}}</a>
+    </div>
+  </nav>
+
+  <a id="top"></a>
+
+  <!-- 1. Hero（必要） -->
+  <section id="hero">
+    <div class="container-tight text-center">
+      <h1>{{hero.title}}</h1>
+      <p class="text-xl text-gray-600" style="color: var(--color-muted);">{{hero.subtitle}}</p>
+
+      <!-- {{COUNTDOWN_BIG_START}} 只在 countdown.enabled 時保留 -->
+      <div id="countdown-big" data-deadline="{{countdown.deadline}}" data-onzero="{{countdown.onZero}}">
+        <div class="unit"><div class="num" data-unit="days">00</div><div class="label">天</div></div>
+        <div class="unit"><div class="num" data-unit="hours">00</div><div class="label">時</div></div>
+        <div class="unit"><div class="num" data-unit="mins">00</div><div class="label">分</div></div>
+        <div class="unit"><div class="num" data-unit="secs">00</div><div class="label">秒</div></div>
+      </div>
+      <!-- {{COUNTDOWN_BIG_END}} -->
+
+      <a class="cta-primary" href="{{cta.href}}">{{cta.text}}</a>
+    </div>
+  </section>
+
+  <!-- 2. Hook（必要） -->
+  <section id="hook">
+    <div class="container-tight">
+      <h2>{{hook.heading}}</h2>
+      {{hook.paragraphs}}
+    </div>
+  </section>
+
+  <!-- 3. About（必要） -->
+  <section id="about">
+    <div class="container-tight">
+      <h2>{{about.heading}}</h2>
+      {{about.paragraphs}}
+    </div>
+  </section>
+
+  <!-- 4. What you'll learn（必要） -->
+  <section id="learn">
+    <div class="container-tight">
+      <h2>{{learn.heading}}</h2>
+      <ul class="space-y-3 text-lg">
+        {{learn.items}}
+      </ul>
+    </div>
+  </section>
+
+  <!-- {{TESTIMONIALS_START}} 只在 testimonials 有內容時保留 -->
+  <!-- 5. Testimonials（可選） -->
+  <section id="testimonials">
+    <div class="container-wide">
+      <h2 class="text-center">{{testimonials.heading}}</h2>
+      <div class="grid md:grid-cols-2 gap-6 mt-8">
+        {{testimonials.items}}
+      </div>
+    </div>
+  </section>
+  <!-- {{TESTIMONIALS_END}} -->
+
+  <!-- 6. Audience（必要） -->
+  <section id="audience">
+    <div class="container-tight">
+      <h2>{{audience.heading}}</h2>
+      <div class="grid md:grid-cols-2 gap-6 mt-6">
+        <div>
+          <h3>✓ 適合你，如果…</h3>
+          <ul class="space-y-2">{{audience.fit}}</ul>
+        </div>
+        <div>
+          <h3>✗ 不適合你，如果…</h3>
+          <ul class="space-y-2" style="color: var(--color-muted);">{{audience.unfit}}</ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. Info（必要） -->
+  <section id="info">
+    <div class="container-tight">
+      <h2>{{info.heading}}</h2>
+      <div class="mt-6">
+        {{info.items}}
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. Pricing（必要） -->
+  <section id="pricing">
+    <div class="container-wide">
+      <h2 class="text-center">{{pricing.heading}}</h2>
+      <div class="grid md:grid-cols-{{pricing.columnCount}} gap-6 mt-8">
+        {{pricing.cards}}
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. Final CTA（必要） -->
+  <section id="cta-final">
+    <div class="container-tight text-center">
+      <h2>{{finalCta.heading}}</h2>
+      <p class="text-lg mb-6" style="color: var(--color-muted);">{{finalCta.body}}</p>
+      <a class="cta-primary" href="{{cta.href}}">{{cta.text}}</a>
+    </div>
+  </section>
+
+  <!-- 10. Speaker（必要） -->
+  <section id="speaker">
+    <div class="container-tight">
+      <h2>{{speaker.heading}}</h2>
+      <div class="speaker-card mt-6">
+        {{#if speaker.photo}}
+          <img src="{{speaker.photo}}" alt="{{speaker.name}}" class="speaker-photo">
+        {{/if}}
+        <div>
+          <h3>{{speaker.name}}</h3>
+          <ul class="space-y-1">{{speaker.bioItems}}</ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11. FAQ（必要） -->
+  <section id="faq">
+    <div class="container-tight">
+      <h2>{{faq.heading}}</h2>
+      <div class="mt-6">
+        {{faq.items}}
+      </div>
+    </div>
+  </section>
+
+  <!-- {{COUNTDOWN_STICKY_START}} 只在 countdown.enabled 時保留 -->
+  <div id="countdown-sticky" data-deadline="{{countdown.deadline}}" data-onzero="{{countdown.onZero}}">
+    <span>倒數 <strong class="time"></strong></span>
+    <a class="cta-compact" href="{{cta.href}}">{{cta.text}} →</a>
+  </div>
+  <!-- {{COUNTDOWN_STICKY_END}} -->
+
+  <!-- {{COUNTDOWN_JS_START}} 只在 countdown.enabled 時保留 -->
+  <script>/* countdown.js 內容注入這裡 */</script>
+  <!-- {{COUNTDOWN_JS_END}} -->
+
+</body>
+</html>

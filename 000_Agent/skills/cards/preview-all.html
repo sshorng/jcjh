@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Social Cards — 全版型預覽</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #f0f0f0; font-family: 'Inter', -apple-system, sans-serif; padding: 40px; }
+  .row { margin-bottom: 60px; }
+  .row-label {
+    font-size: 14px; font-weight: 600; color: #999;
+    letter-spacing: 2px; margin-bottom: 16px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+  }
+  .cell { display: flex; flex-direction: column; gap: 8px; }
+  .cell-label {
+    font-size: 12px; font-weight: 600; color: #aaa;
+    letter-spacing: 1px;
+  }
+  .frame-wrap {
+    width: 100%;
+    aspect-ratio: 1080 / 1350;
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+  }
+  .frame-wrap iframe {
+    position: absolute;
+    top: 0; left: 0;
+    width: 1080px;
+    height: 1350px;
+    transform-origin: top left;
+    border: none;
+  }
+</style>
+<script>
+  function scaleFrames() {
+    document.querySelectorAll('.frame-wrap').forEach(wrap => {
+      const scale = wrap.offsetWidth / 1080;
+      wrap.querySelector('iframe').style.transform = `scale(${scale})`;
+    });
+  }
+  window.addEventListener('load', scaleFrames);
+  window.addEventListener('resize', scaleFrames);
+</script>
+</head>
+<body>
+
+<div class="row">
+  <div class="row-label">ORANGE LIGHT</div>
+  <div class="grid">
+    <div class="cell">
+      <div class="cell-label">orange-cover</div>
+      <div class="frame-wrap"><iframe src="assets/orange-light/cover.html"></iframe></div>
+    </div>
+    <div class="cell">
+      <div class="cell-label">orange-img</div>
+      <div class="frame-wrap"><iframe src="assets/orange-light/content-image.html"></iframe></div>
+    </div>
+    <div class="cell">
+      <div class="cell-label">orange-text</div>
+      <div class="frame-wrap"><iframe src="assets/orange-light/content-text.html"></iframe></div>
+    </div>
+    <div class="cell">
+      <div class="cell-label">orange-cta</div>
+      <div class="frame-wrap"><iframe src="assets/orange-light/cta.html"></iframe></div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="row-label">BLUE DARK</div>
+  <div class="grid">
+    <div class="cell">
+      <div class="cell-label">dark-cover</div>
+      <div class="frame-wrap"><iframe src="assets/blue-dark/cover.html"></iframe></div>
+    </div>
+    <div class="cell">
+      <div class="cell-label">dark-img</div>
+      <div class="frame-wrap"><iframe src="assets/blue-dark/content-image.html"></iframe></div>
+    </div>
+    <div class="cell">
+      <div class="cell-label">dark-text</div>
+      <div class="frame-wrap"><iframe src="assets/blue-dark/content-text.html"></iframe></div>
+    </div>
+    <div class="cell">
+      <div class="cell-label">dark-cta</div>
+      <div class="frame-wrap"><iframe src="assets/blue-dark/cta.html"></iframe></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
