@@ -69,9 +69,12 @@
 
 ## 我的 NEVER / ALWAYS 清單
 
-> 這一區會隨我糾正你的次數慢慢長出來。一開始是空的。
-
-（尚無規則）
+- **NEVER** 在專案根目錄直接建立任何非預設的臨時資料夾或檔案（例如 `scratch/`、`temp/`、`test.html` 等）。
+- **ALWAYS** 將所有生成檔案嚴格歸類到「資料層路由表」對應的子資料夾中：
+  - 臨時測試代碼/暫存檔：寫入系統本機快取目錄（如本機 AppData 內 `<appDataDir>\brain\<conversation-id>/scratch/`），避免污染雲端同步目錄。
+  - 撰寫草稿（如電子郵件、公文）：寫入 `100_Todo/drafts/` 下對應分類。
+  - 備課計畫與教案大綱：寫入 `100_Todo/plans/` 或 `100_Todo/projects/`。
+- **ALWAYS** 保持雲端硬碟根目錄的整潔，僅允許存在 `000_Agent/`、`100_Todo/`、`200_Reference/`、`300_Journal/` 四大核心架構資料夾。
 
 ---
 
