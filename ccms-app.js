@@ -1433,10 +1433,10 @@ createApp({
       for (let i = 0; i < len; i++) {
         bytes[i] = binaryString.charCodeAt(i);
       }
-      const buffer = bytes.buffer;
+      const templateBuffer = bytes.buffer;
 
       const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(buffer);
+      await workbook.xlsx.load(templateBuffer);
 
       // 3. 定位範本工作表
       const sheetA1 = workbook.getWorksheet('表A-1-輔導教師-個案');
