@@ -1419,21 +1419,16 @@ createApp({
         throw new Error('ExcelJS 套件載入失敗，無法匯出');
       }
 
-      // 1. 取得空白月報表官方範本 (Base64)
-      this.loadingMsg = '正在從雲端硬碟讀取官方空白月報表範本...';
-      const templateRes = await this.api('getMonthlyReportTemplate');
-      if (!templateRes || !templateRes.success || !templateRes.base64) {
-        throw new Error(templateRes?.error || '無法載入月報表官方空白範本，請確認範本是否放置於 Google Drive 指定路徑中。');
+      // 1. 取得空白月報表官方範本 (直接從同目錄 fetch 載入，100% 穩定且極速)
+      this.loadingMsg = '正在讀取官方空白月報表範本...';
+      let templateBuffer;
+      try {
+        const response = await fetch('ccms_sample.xlsx');
+        if (!response.ok) throw new Error(`HTTP 錯誤: ${response.status}`);
+        templateBuffer = await response.arrayBuffer();
+      } catch (fetchErr) {
+        throw new Error('載入官方空白月報表範本失敗，請確認網站根目錄下存在 ccms_sample.xlsx 檔案！詳細錯誤：' + fetchErr.message);
       }
-
-      // 2. 轉換 Base64 為 ArrayBuffer 並載入 ExcelJS
-      const binaryString = window.atob(templateRes.base64);
-      const len = binaryString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-      const templateBuffer = bytes.buffer;
 
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(templateBuffer);
