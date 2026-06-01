@@ -1419,13 +1419,53 @@ createApp({
         throw new Error('ExcelJS 套件載入失敗，無法匯出');
       }
 
+      // 1. 取得空白月報表官方範本 (Base64)
+      this.loadingMsg = '正在從雲端硬碟讀取官方空白月報表範本...';
+      const templateRes = await this.api('getMonthlyReportTemplate');
+      if (!templateRes || !templateRes.success || !templateRes.base64) {
+        throw new Error(templateRes?.error || '無法載入月報表官方空白範本，請確認範本是否放置於 Google Drive 指定路徑中。');
+      }
+
+      // 2. 轉換 Base64 為 ArrayBuffer 並載入 ExcelJS
+      const binaryString = window.atob(templateRes.base64);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const buffer = bytes.buffer;
+
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(buffer);
+
+      // 3. 定位範本工作表
+      const sheetA1 = workbook.getWorksheet('表A-1-輔導教師-個案');
+      const sheetA2 = workbook.getWorksheet('表A-2-輔導教師-服務');
+
+      if (!sheetA1 || !sheetA2) {
+        throw new Error('讀取範本工作表失敗，請確認空白範本內包含「表A-1-輔導教師-個案」與「表A-2-輔導教師-服務」分頁！');
+      }
+
+      // 4. 防禦性清理：清空工作表第 4 列之後的所有舊數據，保留其樣式（字型、框線等）
+      const maxRowsA1 = Math.max(sheetA1.rowCount, 1000);
+      for (let r = 4; r <= maxRowsA1; r++) {
+        const row = sheetA1.getRow(r);
+        for (let c = 1; c <= 15; c++) {
+          row.getCell(c).value = null;
+        }
+      }
+
+      const maxRowsA2 = Math.max(sheetA2.rowCount, 1000);
+      for (let r = 4; r <= maxRowsA2; r++) {
+        const row = sheetA2.getRow(r);
+        for (let c = 1; c <= 8; c++) {
+          row.getCell(c).value = null;
+        }
+      }
+
       const tCode = parseInt(teacherCode) || 1;
       // 過濾掉註記為不計入月報表的紀錄 (包含舊有的長標籤與新的短標籤)
       records = records.filter(r => !(r.service || '').includes('純紀錄'));
-
-      const workbook = new ExcelJS.Workbook();
-      workbook.creator = '個案管理系統';
-      workbook.created = new Date();
 
       const caseMap = {};
       cases.forEach(c => { caseMap[String(c.id)] = c; });
@@ -1438,58 +1478,11 @@ createApp({
       const getNum = (s) => s ? parseInt((String(s).match(/^(\d+)/) || ['0'])[0]) : 0;
 
       // ─── 共用樣式 ───
-      const headerFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9E1F2' } };
-      const headerFont = { name: '標楷體', size: 11, bold: true };
       const dataFont = { name: '標楷體', size: 11 };
       const thinBorder = {
         top: { style: 'thin' }, bottom: { style: 'thin' },
         left: { style: 'thin' }, right: { style: 'thin' }
       };
-
-      // ══════════════════════════════════════════
-      //  表 A-1：輔導教師 — 當月個案
-      // ══════════════════════════════════════════
-      const sheetA1 = workbook.addWorksheet('表A-1-輔導教師-當月個案');
-
-      // 標題列
-      sheetA1.mergeCells('A1:O1');
-      const titleCellA1 = sheetA1.getCell('A1');
-      titleCellA1.value = `${sysYear}年${month}月 輔導教師工作成果 — 表A-1 當月個案`;
-      titleCellA1.font = { name: '標楷體', size: 14, bold: true };
-      titleCellA1.alignment = { horizontal: 'center', vertical: 'middle' };
-      sheetA1.getRow(1).height = 30;
-
-      // 說明列
-      sheetA1.mergeCells('A2:O2');
-      const noteCellA1 = sheetA1.getCell('A2');
-      noteCellA1.value = '填表說明：每一列代表一位當月有服務紀錄的個案';
-      noteCellA1.font = { name: '標楷體', size: 9, color: { argb: 'FF888888' } };
-
-      // 欄位標題 (第3列)
-      const headersA1 = [
-        '教師\n編碼', '身分', '學生\n代號', '年級', '性別',
-        '性別\n說明', '特教\n身分', '輔導\n概況', '個案\n來源',
-        '轉介\n概況', '個案類別\n(主)', '主類別\n補充', '個案類別\n(副)',
-        '副類別\n補充', '當月\n累積次數'
-      ];
-      const headerRowA1 = sheetA1.getRow(3);
-      headersA1.forEach((h, i) => {
-        const cell = headerRowA1.getCell(i + 1);
-        cell.value = h;
-        cell.font = headerFont;
-        cell.fill = headerFill;
-        cell.border = thinBorder;
-        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-      });
-      headerRowA1.height = 36;
-
-      // 設定欄寬
-      sheetA1.columns = [
-        { width: 8 }, { width: 6 }, { width: 12 }, { width: 6 }, { width: 8 },
-        { width: 8 }, { width: 8 }, { width: 8 }, { width: 8 },
-        { width: 8 }, { width: 10 }, { width: 8 }, { width: 10 },
-        { width: 8 }, { width: 10 }
-      ];
 
       // 寫入資料 (從第4列開始)
       let rowA1Idx = 4;
@@ -1564,46 +1557,6 @@ createApp({
       });
 
       console.log(`[表A-1] 共寫入 ${writtenA1} 列個案資料`);
-
-      // ══════════════════════════════════════════
-      //  表 A-2：輔導教師 — 相關服務
-      // ══════════════════════════════════════════
-      const sheetA2 = workbook.addWorksheet('表A-2-輔導教師-相關服務');
-
-      // 標題列
-      sheetA2.mergeCells('A1:H1');
-      const titleCellA2 = sheetA2.getCell('A1');
-      titleCellA2.value = `${sysYear}年${month}月 輔導教師工作成果 — 表A-2 相關服務`;
-      titleCellA2.font = { name: '標楷體', size: 14, bold: true };
-      titleCellA2.alignment = { horizontal: 'center', vertical: 'middle' };
-      sheetA2.getRow(1).height = 30;
-
-      // 說明列
-      sheetA2.mergeCells('A2:H2');
-      const noteCellA2 = sheetA2.getCell('A2');
-      noteCellA2.value = '填表說明：依服務項目與對象統計人次';
-      noteCellA2.font = { name: '標楷體', size: 9, color: { argb: 'FF888888' } };
-
-      // 欄位標題 (第3列)
-      const headersA2 = [
-        '教師\n編碼', '身分', '服務\n項目', '其他\n說明',
-        '對象\n代號', '人次\n(生理男)', '人次\n(生理女)', '人次\n(其他)'
-      ];
-      const headerRowA2 = sheetA2.getRow(3);
-      headersA2.forEach((h, i) => {
-        const cell = headerRowA2.getCell(i + 1);
-        cell.value = h;
-        cell.font = headerFont;
-        cell.fill = headerFill;
-        cell.border = thinBorder;
-        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-      });
-      headerRowA2.height = 36;
-
-      sheetA2.columns = [
-        { width: 8 }, { width: 6 }, { width: 8 }, { width: 8 },
-        { width: 8 }, { width: 12 }, { width: 12 }, { width: 12 }
-      ];
 
       // 統計相關服務
       const getTargetCode = (targetStr, gradeStr) => {
