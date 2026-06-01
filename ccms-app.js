@@ -1442,17 +1442,19 @@ createApp({
         throw new Error('讀取範本工作表失敗，請確認空白範本內包含 A-1 與 A-2 關鍵字的工作表分頁！');
       }
 
-      // 4. 防禦性清理：清空工作表第 4 列之後的所有舊數據，保留其樣式（字型、框線等）
+      // 4. 防禦性清理：清理舊數據，保留其樣式（字型、框線等）
+      // 表 A-1 標頭為合併的第 4, 5 列，因此從第 6 列開始清理
       const maxRowsA1 = Math.max(sheetA1.rowCount, 1000);
-      for (let r = 4; r <= maxRowsA1; r++) {
+      for (let r = 6; r <= maxRowsA1; r++) {
         const row = sheetA1.getRow(r);
         for (let c = 1; c <= 15; c++) {
           row.getCell(c).value = null;
         }
       }
 
+      // 表 A-2 標頭為第 3, 4 列（含右側說明），因此從第 5 列開始清理
       const maxRowsA2 = Math.max(sheetA2.rowCount, 1000);
-      for (let r = 4; r <= maxRowsA2; r++) {
+      for (let r = 5; r <= maxRowsA2; r++) {
         const row = sheetA2.getRow(r);
         for (let c = 1; c <= 8; c++) {
           row.getCell(c).value = null;
@@ -1480,8 +1482,8 @@ createApp({
         left: { style: 'thin' }, right: { style: 'thin' }
       };
 
-      // 寫入資料 (從第4列開始)
-      let rowA1Idx = 4;
+      // 寫入資料 (表 A-1 從第 6 列開始寫入)
+      let rowA1Idx = 6;
       let writtenA1 = 0;
 
       // 🎯 效能優化：預先對紀錄進行分類 (Map)，避免在迴圈中重複 filter (O(n*m) -> O(n+m))
@@ -1616,7 +1618,8 @@ createApp({
         }
       });
 
-      let rowA2Idx = 4;
+      // 表 A-2 從第 5 列開始寫入
+      let rowA2Idx = 5;
       Object.values(serviceStats).forEach(stat => {
         const row = sheetA2.getRow(rowA2Idx++);
         const vals = [parseInt(stat.tCode) || 1, 1, stat.s, 0, stat.t, stat.male, stat.female, stat.other];
@@ -1634,7 +1637,8 @@ createApp({
       // 產生檔案並下載
       const buffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      saveAs(blob, `11502輔導教師工作成果_${sysYear}年${month}月_${this.user?.name || ''}.xlsx`);
+      const padMonth = String(month).padStart(2, '0');
+      saveAs(blob, `${sysYear}${padMonth}輔導教師工作成果表格.xlsx`);
       this.showToast('月報表匯出成功', 'success');
     },
 
