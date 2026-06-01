@@ -1513,12 +1513,13 @@ createApp({
         // 若該老師對該案主當月無晤談紀錄，則不列入表 A-1
         if (count === 0) return;
 
-        const isNew = c.isNew || 1;
+        const isNew = parseInt(c.isNew) || 1;
         let genderText = '其他';
         if (c.gender === '男') genderText = '生理男';
         if (c.gender === '女') genderText = '生理女';
 
-        const sourceCode = (isNew === 1) ? (getNum(c.caseSource) || 0) : 0;
+        // 🎯 核心修正：新開案的個案來源為必填欄位 (1-7)。若未填，預設為 7 (其他)，避免輸出為 0 導致月報表系統防呆校驗失敗
+        const sourceCode = (isNew === 1) ? (getNum(c.caseSource) || 7) : 0;
         
         const typeStrings = (c.caseType || '').split(',').map(s => s.trim());
         const mainTypeStr = typeStrings[0] || '';
