@@ -1433,12 +1433,13 @@ createApp({
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(templateBuffer);
 
-      // 3. 定位範本工作表
-      const sheetA1 = workbook.getWorksheet('表A-1-輔導教師-個案');
-      const sheetA2 = workbook.getWorksheet('表A-2-輔導教師-服務');
+      // 3. 定位範本工作表 (智慧模糊搜尋，相容 Big5/UTF-8 與全半形減號編碼差異)
+      const sheetA1 = workbook.worksheets.find(w => w.name.includes('A-1') || w.name.includes('A1'));
+      const sheetA2 = workbook.worksheets.find(w => w.name.includes('A-2') || w.name.includes('A2'));
 
       if (!sheetA1 || !sheetA2) {
-        throw new Error('讀取範本工作表失敗，請確認空白範本內包含「表A-1-輔導教師-個案」與「表A-2-輔導教師-服務」分頁！');
+        console.error('所有工作表名稱列表:', workbook.worksheets.map(w => w.name));
+        throw new Error('讀取範本工作表失敗，請確認空白範本內包含 A-1 與 A-2 關鍵字的工作表分頁！');
       }
 
       // 4. 防禦性清理：清空工作表第 4 列之後的所有舊數據，保留其樣式（字型、框線等）
