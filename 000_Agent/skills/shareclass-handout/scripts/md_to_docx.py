@@ -29,7 +29,7 @@ def apply_font(run, font_name="芫荽", font_size_pt=None, bold=False, color_rgb
     rFonts.set(qn('w:ascii'), font_name)
     rFonts.set(qn('w:hAnsi'), font_name)
 
-def add_formatted_text(p, text, default_bold=False, font_name="芫荽", font_size_pt=12, color_rgb=None):
+def add_formatted_text(p, text, default_bold=False, font_name="芫荽", font_size_pt=None, color_rgb=None):
     """
     解析 Markdown 粗體 ** 語法，並依序將 Runs 加入段落中，強制套用指定字型。
     """
@@ -60,7 +60,10 @@ def format_paragraph(p, space_before_pt=0, space_after_pt=0, line_spacing=1.0, k
     spacing.set(qn('w:before'), str(int(space_before_pt * 20)))
     spacing.set(qn('w:after'), str(int(space_after_pt * 20)))
     
-    if line_spacing == 1.0:
+    if line_spacing == "exact_15":
+        spacing.set(qn('w:line'), "300")
+        spacing.set(qn('w:lineRule'), "exact")
+    elif line_spacing == 1.0:
         spacing.set(qn('w:line'), "240")
         spacing.set(qn('w:lineRule'), "auto")
     elif line_spacing == 1.5:
@@ -389,12 +392,12 @@ def clone_merge_table(stamps, doc, cached_data, cached_guide, cached_quiz):
                 match = re.match(r'^(【.*?】)(.*)', cleaned_line)
                 if match:
                     r_bold = p.add_run(match.group(1))
-                    apply_font(r_bold, font_name="芫荽", font_size_pt=12, bold=True)
-                    add_formatted_text(p, match.group(2), default_bold=False, font_size_pt=12)
+                    apply_font(r_bold, font_name="芫荽", font_size_pt=None, bold=True)
+                    add_formatted_text(p, match.group(2), default_bold=False, font_size_pt=None)
                 else:
-                    add_formatted_text(p, cleaned_line, default_bold=False, font_size_pt=12)
+                    add_formatted_text(p, cleaned_line, default_bold=False, font_size_pt=None)
             else:
-                add_formatted_text(p, cleaned_line, default_bold=False, font_size_pt=12)
+                add_formatted_text(p, cleaned_line, default_bold=False, font_size_pt=None)
                 
     set_cant_split(table)
     clone_paragraph(stamps, doc, 'blank')
@@ -472,7 +475,7 @@ def clone_markdown_table(stamps, doc, table_rows):
                 format_paragraph(p, space_before_pt=0, space_after_pt=0, line_spacing=line_spacing)
                 
                 cleaned_val = val.strip()
-                add_formatted_text(p, cleaned_val, default_bold=is_header, font_size_pt=12)
+                add_formatted_text(p, cleaned_val, default_bold=is_header, font_size_pt=None)
                 
     set_cant_split(table)
     clone_paragraph(stamps, doc, 'blank')
@@ -528,14 +531,14 @@ def clone_quiz_table(stamps, doc, quizzes):
         else:
             prefix = f"{idx+1}、"
             
-        add_formatted_text(p_q, prefix + cleaned_q, default_bold=False, font_size_pt=12)
+        add_formatted_text(p_q, prefix + cleaned_q, default_bold=False, font_size_pt=None)
         
         # 2. 處理右欄：檢核清單
         cell_a = row.cells[1]
         for p in cell_a.paragraphs:
-            format_paragraph(p, space_before_pt=1, space_after_pt=1, line_spacing=1.0)
+            format_paragraph(p, space_before_pt=1, space_after_pt=1, line_spacing="exact_15")
             for r in p.runs:
-                apply_font(r, font_name="芫荽", font_size_pt=9.5)
+                apply_font(r, font_name="芫荽", font_size_pt=None)
                 
     set_cant_split(table)
     clone_paragraph(stamps, doc, 'blank')
@@ -715,6 +718,9 @@ def parse_md_to_docx(md_path, template_path, output_path):
             elif "後測" in title_text:
                 title_text = "後測"
                 current_section = 'aftertest'
+                p = clone_paragraph(stamps, doc_new, 'h1', text=title_text)
+                p.paragraph_format.page_break_before = True
+                continue
             else:
                 current_section = 'normal'
                 
