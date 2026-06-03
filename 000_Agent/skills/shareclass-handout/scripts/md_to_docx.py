@@ -130,6 +130,12 @@ def extract_stamps(doc):
             
     return stamps
 
+def set_cant_split(table):
+    for r in table.rows:
+        trPr = r._tr.get_or_add_trPr()
+        if trPr.find(qn('w:cantSplit')) is None:
+            trPr.append(OxmlElement('w:cantSplit'))
+
 def clone_paragraph(stamps, doc, stamp_key, text=""):
     """
     利用 XML 深層複製技術克隆指定的段落屬性，保留段落格式並重寫 Runs，且解析 Markdown 語法
@@ -137,9 +143,9 @@ def clone_paragraph(stamps, doc, stamp_key, text=""):
     # 清理開頭的 Markdown 多餘符號（星號、減號、大於符號等），限定後面必須有空白，避免誤傷粗體雙星號 **
     cleaned_text = re.sub(r'^(?:[>\-\*—–]\s+)+', '', text)
     
-    # 如果是提問段落，自動剃除手寫的數字題號（如 "1. " 或 "25. 3. "），交由 Word 清單自動編號，避免雙重題號
-    if stamp_key == 'q':
-        cleaned_text = re.sub(r'^\d+\s*[\.\-–—>]*\s*', '', cleaned_text)
+    # 如果是提問段落，自動剃除手寫的數字題號（如 "1. " 或 "25. 3. "）-- V5.0 保留手寫題號，不交由 Word 清單自動編號以防黑點
+    # if stamp_key == 'q':
+    #     cleaned_text = re.sub(r'^\d+\s*[\.\-–—>]*\s*', '', cleaned_text)
         
     stamp_p = stamps.get(stamp_key)
     if stamp_p is None:
@@ -150,6 +156,13 @@ def clone_paragraph(stamps, doc, stamp_key, text=""):
         return p
         
     p_element = copy.deepcopy(stamp_p._p)
+    # 移除 List Paragraph / q 樣式的自動編號/黑點屬性 (w:numPr)，以配合手寫編號並消除黑點
+    if stamp_key == 'q':
+        pPr = p_element.find(qn('w:pPr'))
+        if pPr is not None:
+            numPr = pPr.find(qn('w:numPr'))
+            if numPr is not None:
+                pPr.remove(numPr)
     
     # 處理 runs 文字重寫，清空舊的 runs
     runs = p_element.findall(qn('w:r'))
@@ -208,6 +221,7 @@ def clone_merge_table(stamps, doc, cached_data, cached_guide, cached_quiz):
             format_paragraph(p, space_after_pt=0, line_spacing=1.0)
             run = p.add_run("\n".join(lines))
             apply_font(run, font_name="芫荽")
+        set_cant_split(table)
         return
         
     tbl_element = copy.deepcopy(stamp_t._tbl)
@@ -280,6 +294,7 @@ def clone_merge_table(stamps, doc, cached_data, cached_guide, cached_quiz):
             else:
                 add_formatted_text(p, cleaned_line, default_bold=False, font_size_pt=10.5)
                 
+    set_cant_split(table)
     clone_paragraph(stamps, doc, 'blank')
 
 def clone_markdown_table(stamps, doc, table_rows):
@@ -313,6 +328,7 @@ def clone_markdown_table(stamps, doc, table_rows):
                     line_spacing = 1.0 if r_idx == 0 else 1.5
                     format_paragraph(p, space_after_pt=0, line_spacing=line_spacing)
                     add_formatted_text(p, val, font_name="芫荽")
+        set_cant_split(table)
         return
         
     tbl_element = copy.deepcopy(stamp_t._tbl)
@@ -356,6 +372,7 @@ def clone_markdown_table(stamps, doc, table_rows):
                 cleaned_val = val.strip()
                 add_formatted_text(p, cleaned_val, default_bold=is_header, font_size_pt=10.5)
                 
+    set_cant_split(table)
     clone_paragraph(stamps, doc, 'blank')
 
 def clone_quiz_table(stamps, doc, quizzes):
@@ -417,6 +434,7 @@ def clone_quiz_table(stamps, doc, quizzes):
             for r in p.runs:
                 apply_font(r, font_name="芫荽", font_size_pt=9.5)
                 
+    set_cant_split(table)
     clone_paragraph(stamps, doc, 'blank')
 
 def update_paragraph_header_text(p, new_title):
@@ -572,10 +590,10 @@ def parse_md_to_docx(md_path, template_path, output_path):
                 title_text = "暖身題"
                 current_section = 'normal'
             elif "課文理解" in title_text:
-                title_text = "課文理解與探究 (基礎題)"
+                title_text = "課文理解"
                 current_section = 'normal'
             elif "統整探究" in title_text:
-                title_text = "統整探究 (挑戰題)"
+                title_text = "統整探究"
                 current_section = 'normal'
             elif "課後延伸" in title_text:
                 title_text = "課後延伸"
