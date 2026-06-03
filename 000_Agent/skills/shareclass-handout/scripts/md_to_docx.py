@@ -9,7 +9,7 @@ from docx.oxml.ns import qn
 from docx.text.paragraph import Paragraph
 from docx.table import Table
 
-def apply_font(run, font_name="芫荽", font_size_pt=11, bold=False, color_rgb=None):
+def apply_font(run, font_name="芫荽", font_size_pt=12, bold=False, color_rgb=None):
     """
     強制在 Word XML 底層設定 Runs 的字型為指定字型
     """
@@ -28,7 +28,7 @@ def apply_font(run, font_name="芫荽", font_size_pt=11, bold=False, color_rgb=N
     rFonts.set(qn('w:ascii'), font_name)
     rFonts.set(qn('w:hAnsi'), font_name)
 
-def add_formatted_text(p, text, default_bold=False, font_name="芫荽", font_size_pt=11, color_rgb=None):
+def add_formatted_text(p, text, default_bold=False, font_name="芫荽", font_size_pt=12, color_rgb=None):
     """
     解析 Markdown 粗體 ** 語法，並依序將 Runs 加入段落中，強制套用指定字型。
     """
@@ -147,7 +147,12 @@ def clone_paragraph(stamps, doc, stamp_key, text=""):
     # if stamp_key == 'q':
     #     cleaned_text = re.sub(r'^\d+\s*[\.\-–—>]*\s*', '', cleaned_text)
         
-    stamp_p = stamps.get(stamp_key)
+    if stamp_key == 'q':
+        # 用 normal style 代替 q style 以免自動編號與黑點，同時保留手寫數字編號
+        stamp_p = stamps.get('normal')
+    else:
+        stamp_p = stamps.get(stamp_key)
+        
     if stamp_p is None:
         p = doc.add_paragraph()
         format_paragraph(p, space_after_pt=0, line_spacing=1.0)
@@ -175,13 +180,15 @@ def clone_paragraph(stamps, doc, stamp_key, text=""):
     
     # 取得範本段落的字型與顏色屬性
     font_name = "芫荽"
-    font_size_pt = 11
+    font_size_pt = 12
     color_rgb = None
     
     if stamp_p.runs:
         r0 = stamp_p.runs[0]
-        if r0.font.size:
+        if stamp_key not in ['normal', 'q', 'blank'] and r0.font.size:
             font_size_pt = r0.font.size.pt
+        else:
+            font_size_pt = 12
         if r0.font.color and r0.font.color.rgb:
             color_rgb = r0.font.color.rgb
             
@@ -287,12 +294,12 @@ def clone_merge_table(stamps, doc, cached_data, cached_guide, cached_quiz):
                 match = re.match(r'^(【.*?】)(.*)', cleaned_line)
                 if match:
                     r_bold = p.add_run(match.group(1))
-                    apply_font(r_bold, font_name="芫荽", font_size_pt=10.5, bold=True)
-                    add_formatted_text(p, match.group(2), default_bold=False, font_size_pt=10.5)
+                    apply_font(r_bold, font_name="芫荽", font_size_pt=12, bold=True)
+                    add_formatted_text(p, match.group(2), default_bold=False, font_size_pt=12)
                 else:
-                    add_formatted_text(p, cleaned_line, default_bold=False, font_size_pt=10.5)
+                    add_formatted_text(p, cleaned_line, default_bold=False, font_size_pt=12)
             else:
-                add_formatted_text(p, cleaned_line, default_bold=False, font_size_pt=10.5)
+                add_formatted_text(p, cleaned_line, default_bold=False, font_size_pt=12)
                 
     set_cant_split(table)
     clone_paragraph(stamps, doc, 'blank')
@@ -370,7 +377,7 @@ def clone_markdown_table(stamps, doc, table_rows):
                 format_paragraph(p, space_before_pt=3, space_after_pt=0, line_spacing=line_spacing)
                 
                 cleaned_val = val.strip()
-                add_formatted_text(p, cleaned_val, default_bold=is_header, font_size_pt=10.5)
+                add_formatted_text(p, cleaned_val, default_bold=is_header, font_size_pt=12)
                 
     set_cant_split(table)
     clone_paragraph(stamps, doc, 'blank')
@@ -425,14 +432,14 @@ def clone_quiz_table(stamps, doc, quizzes):
         else:
             prefix = f"{idx+1}、"
             
-        add_formatted_text(p_q, prefix + cleaned_q, default_bold=False, font_size_pt=10.5)
+        add_formatted_text(p_q, prefix + cleaned_q, default_bold=False, font_size_pt=12)
         
         # 2. 處理右欄：檢核清單
         cell_a = row.cells[1]
         for p in cell_a.paragraphs:
             format_paragraph(p, space_before_pt=2, space_after_pt=2, line_spacing=1.0)
             for r in p.runs:
-                apply_font(r, font_name="芫荽", font_size_pt=9.5)
+                apply_font(r, font_name="芫荽", font_size_pt=12)
                 
     set_cant_split(table)
     clone_paragraph(stamps, doc, 'blank')
