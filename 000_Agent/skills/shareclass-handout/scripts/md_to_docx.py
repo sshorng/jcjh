@@ -223,6 +223,10 @@ def clone_paragraph(stamps, doc, stamp_key, text=""):
     # 設定行距：普通段落皆為 1.0 單行，且段落後間距為 0
     format_paragraph(p, space_after_pt=0, line_spacing=1.0)
     
+    if stamp_key == 'q':
+        p.paragraph_format.left_indent = Pt(18)
+        p.paragraph_format.first_line_indent = Pt(-18)
+    
     add_formatted_text(p, cleaned_text, default_bold=default_bold, font_name=font_name, font_size_pt=font_size_pt, color_rgb=color_rgb)
     return p
 
