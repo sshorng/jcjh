@@ -1,0 +1,3 @@
+timestamp	commit	skill	old_score	new_score	status	dimension	note	eval_mode
+2026-06-03T23:01	baseline	shareclass-handout	-	71.1	baseline	-	初始基線評估	dry_run
+2026-06-03T23:03	HEAD	shareclass-handout	71.1	97.9	keep	失敗模式、檢查點、反例黑名單	大幅提升容錯度與排版精細度，對齊自製講義格式	dry_run

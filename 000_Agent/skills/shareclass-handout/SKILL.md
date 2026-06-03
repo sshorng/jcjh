@@ -76,13 +76,52 @@ description: 協助國中國文教師設計高品質的學思達教學講義，�
 
 ### 步驟 1：確認與生成
 1. 讀取使用者的課文內容或相關備課資料。
-2. 扮演「學思達講義設計專家」，首先在對話中生成**符合上述「Word 排版解析格式規範」的完整 Markdown 講義**。
+2. 扮演「學思達講義設計專家」，首先在對話中生成符合上述「Word 排版解析格式規範」的完整 Markdown 講義。
 
 ### 步驟 2：Word 一鍵導出 (當使用者要求「生成 Word 檔」時)
-1. 將生成的 Markdown 內容寫入臨時檔案 `C:\Users\sshor\.gemini\antigravity\brain\<conversation-id>\scratch\handout.md`。
-2. 自動在背景執行 python 轉換腳本 `md_to_docx.py`：
+1. 🔴 **CHECKPOINT**：在執行背景轉換腳本前，必須先將生成的完整 Markdown 內容呈現給使用者確認，並確保輸出路徑與對應的課本資料夾（如 `八下\第5課 我所知道的康橋`）正確無誤。
+2. 將確認後的 Markdown 內容寫入臨時檔案 `C:\Users\sshor\.gemini\antigravity\brain\<conversation-id>\scratch\handout.md`。
+3. 自動在背景執行 python 轉換腳本 `md_to_docx.py`：
    ```powershell
    python "C:\Users\sshor\.gemini\config\skills\shareclass-handout\scripts\md_to_docx.py" --md "C:\Users\sshor\.gemini\antigravity\brain\<conversation-id>\scratch\handout.md" --out "G:\我的雲端硬碟\工作\國文教學\0教科書\康軒\八下\第O課 xxx\第O課 xxx學思達講義.docx"
    ```
    *註：腳本會自動以 `八下\第5課 我所知道的康橋學思達講義new.docx` 作為基礎範本，完美繼承其芫荽字型、邊界、頁首頁尾、段落與表格樣式！*
-3. 生成完畢後，向使用者呈報結果並提供生成的 Word 檔案點擊連結。
+4. 生成完畢後，向使用者呈報結果並提供生成的 Word 檔案點擊連結。
+
+---
+
+## ⚠️ 失敗防禦與恢復 (Failure Modes)
+
+若在執行過程中遇到以下異常，請依循對應的 Fallback 路徑處理，嚴禁靜默失敗：
+
+1. **Python 轉換腳本執行報錯**：
+   - **觸發條件**：背景執行 `md_to_docx.py` 時回傳非零退出碼，或拋出 `ModuleNotFoundError`。
+   - **一線修復**：提示使用者確認是否已在本機安裝 `python-docx` 依賴庫（執行 `pip install python-docx`），並檢查 Python 是否已加入系統環境變數。
+   - **仍失敗兜底**：直接提供引導，將暫存的 `handout.md` 路徑及執行指令完整顯示給使用者，引導其在電腦的 PowerShell 中手動執行。
+2. **範本檔案不存在**：
+   - **觸發條件**：指定路徑下的範本 `.docx`（如 `template.docx`）缺失。
+   - **一線修復**：搜尋同目錄 `assets/` 下是否有其他 `.docx` 檔案。
+   - **仍失敗兜底**：使用系統預設的 docx 空白樣式輸出，並向使用者說明「無法繼承精美字型與頁首頁尾樣式，已改為普通 Word 格式導出」。
+3. **Markdown 格式解析與轉換錯亂**：
+   - **觸發條件**：轉換後的 Word 表格缺漏、文字欄位錯置。
+   - **一線修復**：檢查 Markdown 原始檔是否漏寫了 `#### 補充資料`、`#### 教師引導`、`#### 學習評量` 標籤，或是標題符號後未加空格。
+   - **仍失敗兜底**：自動修復標記後，重新執行腳本生成；若仍異常，則通知使用者，並保留 `handout.md` 供人工排查。
+
+---
+
+## ❌ 反例與格式黑名單 (Anti-patterns & Blacklist)
+
+為確保 Python 解析腳本 100% 成功執行且樣式還原度達 100%，生成 Markdown 時**絕對禁止**以下行為：
+
+1. **禁止簡寫 What/How/Why 標題**：
+   - *錯誤*：`(What)`、`(How)`、`【Why】`
+   - *正確*：必須完整書寫為 `【What：文意理解】`、`【How：寫作手法】`、`【Why：作者意圖】`，否則解析正則無法正確捕捉，導致其退化為普通段落而失去特定樣式。
+2. **禁止合併或遺漏表格區塊標題**：
+   - *錯誤*：將資料與引導寫在同一個標題下，如 `#### 補充資料與教師引導`。
+   - *正確*：每一種合併表格內容必須各自擁有獨立的四級標題，且必須完全吻合 `#### 補充資料`、`#### 教師引導`、`#### 學習評量` 格式。
+3. **禁止在題目編號中使用重複題號**：
+   - *錯誤*：在 Markdown 提問清單中重複寫入數字標號，如 `1. 1. 根據第一段...`。
+   - *正確*：直接使用 `1. 根據第一段...`。腳本會自動過濾最前方的 Markdown 數字編號，交由 Word 特殊 List Paragraph 快取機制自動編排，若重複書寫會導致雙重題號。
+4. **禁止使用 HTML 表格代碼**：
+   - *錯誤*：使用 `<table>` 標籤刻畫結構圖表。
+   - *正確*：一般分析表格請一律採用 `| 欄位 |` 的標準 Markdown 表格語法，否則 python-docx 無法正確解析轉換。
