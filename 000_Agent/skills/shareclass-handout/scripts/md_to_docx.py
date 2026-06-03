@@ -50,9 +50,31 @@ def format_paragraph(p, space_before_pt=0, space_after_pt=0, line_spacing=1.0, k
     """
     設定段落格式，預設段落後間距改為 0，且行距預設為 1.0 (單行行距)
     """
-    p.paragraph_format.space_before = Pt(space_before_pt)
-    p.paragraph_format.space_after = Pt(space_after_pt)
-    p.paragraph_format.line_spacing = line_spacing
+    pPr = p._p.get_or_add_pPr()
+    spacing = pPr.find(qn('w:spacing'))
+    if spacing is not None:
+        pPr.remove(spacing)
+    
+    spacing = OxmlElement('w:spacing')
+    spacing.set(qn('w:before'), str(int(space_before_pt * 20)))
+    spacing.set(qn('w:after'), str(int(space_after_pt * 20)))
+    
+    if line_spacing == 1.0:
+        spacing.set(qn('w:line'), "240")
+        spacing.set(qn('w:lineRule'), "auto")
+    elif line_spacing == 1.5:
+        spacing.set(qn('w:line'), "360")
+        spacing.set(qn('w:lineRule'), "auto")
+    else:
+        try:
+            val = float(line_spacing)
+            spacing.set(qn('w:line'), str(int(val * 240)))
+            spacing.set(qn('w:lineRule'), "auto")
+        except:
+            spacing.set(qn('w:line'), "240")
+            spacing.set(qn('w:lineRule'), "auto")
+        
+    pPr.append(spacing)
     p.paragraph_format.keep_with_next = keep_with_next
 
 def clean_document_content(doc):
@@ -372,9 +394,9 @@ def clone_markdown_table(stamps, doc, table_rows):
                         
                 p = cell.paragraphs[0]
                 p.text = ""
-                # 設定行距：表頭（Header）為單行 1.0 行距；手寫填寫列為 1.5 倍行高，且段落後間距皆為 0
-                line_spacing = 1.0 if is_header else 1.5
-                format_paragraph(p, space_before_pt=3, space_after_pt=0, line_spacing=line_spacing)
+                # 設定行距：僅在非表頭且單元格文字為空時，才給予 1.5 倍行高供學生書寫；其餘預填內容為 1.0 單行行距，且前後間距 0
+                line_spacing = 1.5 if (not is_header and val.strip() == "") else 1.0
+                format_paragraph(p, space_before_pt=0, space_after_pt=0, line_spacing=line_spacing)
                 
                 cleaned_val = val.strip()
                 add_formatted_text(p, cleaned_val, default_bold=is_header, font_size_pt=12)
