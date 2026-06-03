@@ -102,14 +102,73 @@ def clean_document_content(doc):
     
 def append_element_safely(doc, element):
     """
-    精確將段落或表格元素插入到 w:sectPr 之前，防止破壞 Word 頁面配置結構
+    精確將段落或表格元素插入到 w:sectPr 之前，防止破壞 Word 頁面配置結構，並自動消除開頭的空行
     """
     body = doc.element.body
     sectPr = body.find(qn('w:sectPr'))
+    
+    # 檢查是否有且僅有一個初始空白段落，若是則刪除它以防止開頭有空行
+    children_before_sect = []
+    for child in body:
+        if child.tag == qn('w:sectPr'):
+            break
+        children_before_sect.append(child)
+        
+    if len(children_before_sect) == 1:
+        first_child = children_before_sect[0]
+        if first_child.tag == qn('w:p'):
+            runs = first_child.findall(qn('w:r'))
+            if not runs:
+                body.remove(first_child)
+                
     if sectPr is not None:
         sectPr.addprevious(element)
     else:
         body.append(element)
+
+def get_or_create_restart_num_id(doc, base_num_id):
+    """
+    在文件的 numbering.xml 中為 base_num_id 對應的 abstractNumId 創建一個全新的 numId，
+    以強制使不同意義段的提問編號能重頭從 1 開始。
+    """
+    try:
+        numbering_part = doc.part.numbering_part
+        if numbering_part is None:
+            return base_num_id
+        numbering_el = numbering_part.element
+        
+        # 尋找 base_num_id 對應的 abstractNumId
+        abstract_id = None
+        for num in numbering_el.findall(qn('w:num')):
+            if num.get(qn('w:numId')) == str(base_num_id):
+                abstract_id_el = num.find(qn('w:abstractNumId'))
+                if abstract_id_el is not None:
+                    abstract_id = abstract_id_el.get(qn('w:val'))
+                break
+                
+        if abstract_id is None:
+            return base_num_id
+            
+        # 取得下一個尚未被使用的 numId
+        existing_num_ids = []
+        for num in numbering_el.findall(qn('w:num')):
+            nid = num.get(qn('w:numId'))
+            if nid:
+                existing_num_ids.append(int(nid))
+        next_num_id = max(existing_num_ids) + 1 if existing_num_ids else 100
+        
+        # 創建並插入新 num 元素
+        new_num = OxmlElement('w:num')
+        new_num.set(qn('w:numId'), str(next_num_id))
+        abs_num_ref = OxmlElement('w:abstractNumId')
+        abs_num_ref.set(qn('w:val'), str(abstract_id))
+        new_num.append(abs_num_ref)
+        
+        numbering_el.append(new_num)
+        return str(next_num_id)
+    except Exception as e:
+        print("Error creating restart numId:", e)
+        return base_num_id
 
 def extract_stamps(doc):
     """
@@ -159,7 +218,7 @@ def set_cant_split(table):
         if trPr.find(qn('w:cantSplit')) is None:
             trPr.append(OxmlElement('w:cantSplit'))
 
-def clone_paragraph(stamps, doc, stamp_key, text=""):
+def clone_paragraph(stamps, doc, stamp_key, text="", num_id=None):
     """
     利用 XML 深層複製技術克隆指定的段落屬性，保留段落格式並重寫 Runs，且解析 Markdown 語法
     """
@@ -184,6 +243,26 @@ def clone_paragraph(stamps, doc, stamp_key, text=""):
         return p
         
     p_element = copy.deepcopy(stamp_p._p)
+    
+    # 如果是提問段落且指定了新的 num_id（重設編號），則覆寫 XML 中的 numId
+    if stamp_key == 'q' and num_id is not None:
+        pPr = p_element.get_or_add_pPr()
+        numPr = pPr.find(qn('w:numPr'))
+        if numPr is None:
+            numPr = OxmlElement('w:numPr')
+            pPr.append(numPr)
+        
+        ilvl = numPr.find(qn('w:ilvl'))
+        if ilvl is None:
+            ilvl = OxmlElement('w:ilvl')
+            ilvl.set(qn('w:val'), '0')
+            numPr.append(ilvl)
+            
+        numId_el = numPr.find(qn('w:numId'))
+        if numId_el is None:
+            numId_el = OxmlElement('w:numId')
+            numPr.append(numId_el)
+        numId_el.set(qn('w:val'), str(num_id))
     
     # 處理 runs 文字重寫，清空舊的 runs
     runs = p_element.findall(qn('w:r'))
@@ -438,11 +517,12 @@ def clone_quiz_table(stamps, doc, quizzes):
                 
         p_q = Paragraph(OxmlElement('w:p'), doc)
         tc_q.append(p_q._p)
-        format_paragraph(p_q, space_before_pt=4, space_after_pt=4, line_spacing=1.0)
+        format_paragraph(p_q, space_before_pt=2, space_after_pt=2, line_spacing=1.0)
         
-        # 標準化為中文題號 (一、二、三...)
+        # 標準化為中文題號 (一、二、三...)，並刪除題尾的 (文意理解)、(寫作手法) 等標記
         chinese_nums = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"]
         cleaned_q = re.sub(r'^\d+\s*[\.\-–—>]*\s*', '', q_text).strip()
+        cleaned_q = re.sub(r'[\(（](?:文意理解|寫作手法|作者意圖)[\)）]\s*$', '', cleaned_q).strip()
         if idx < len(chinese_nums):
             prefix = f"{chinese_nums[idx]}、"
         else:
@@ -453,7 +533,7 @@ def clone_quiz_table(stamps, doc, quizzes):
         # 2. 處理右欄：檢核清單
         cell_a = row.cells[1]
         for p in cell_a.paragraphs:
-            format_paragraph(p, space_before_pt=2, space_after_pt=2, line_spacing=1.0)
+            format_paragraph(p, space_before_pt=1, space_after_pt=1, line_spacing=1.0)
             for r in p.runs:
                 apply_font(r, font_name="芫荽", font_size_pt=9.5)
                 
@@ -530,6 +610,18 @@ def parse_md_to_docx(md_path, template_path, output_path):
     # 先寫入大標題 (Heading 1) 且不加手寫「壹、」前綴，防 Word 自動編號重疊
     # clone_paragraph(stamps, doc_new, 'h1', text=f"{lesson_title} 學思達教學講義")
     
+    # 提取提問基礎 numId 並初始化 active_num_id
+    base_num_id = "11"
+    if stamps['q'] is not None:
+        pPr = stamps['q']._p.find(qn('w:pPr'))
+        if pPr is not None:
+            numPr = pPr.find(qn('w:numPr'))
+            if numPr is not None:
+                numId_el = numPr.find(qn('w:numId'))
+                if numId_el is not None:
+                    base_num_id = numId_el.get(qn('w:val'))
+    active_num_id = base_num_id
+    
     cached_data = []
     cached_guide = []
     cached_quiz = []
@@ -603,6 +695,7 @@ def parse_md_to_docx(md_path, template_path, output_path):
         h2_match = re.match(r'^##\s+(.*)', line_str)
         if h2_match:
             flush_all_caches()
+            active_num_id = get_or_create_restart_num_id(doc_new, base_num_id)
             title_raw = h2_match.group(1).strip('* ')
             title_text = re.sub(r'^[壹貳參肆伍陸柒捌玖拾]+、\s*', '', title_raw)
             
@@ -632,6 +725,7 @@ def parse_md_to_docx(md_path, template_path, output_path):
         h3_match = re.match(r'^###\s+(.*)', line_str)
         if h3_match:
             flush_all_caches()
+            active_num_id = get_or_create_restart_num_id(doc_new, base_num_id)
             current_section = 'normal'
             title_text = h3_match.group(1).strip('* ')
             clone_paragraph(stamps, doc_new, 'h2', text=title_text)
@@ -744,7 +838,7 @@ def parse_md_to_docx(md_path, template_path, output_path):
                     # 這是一般標題，直接作為 normal 寫入，且不留白
                     clone_paragraph(stamps, doc_new, 'normal', text=line_str)
                 else:
-                    p = clone_paragraph(stamps, doc_new, 'q', text=line_str)
+                    p = clone_paragraph(stamps, doc_new, 'q', text=line_str, num_id=active_num_id)
                     
                     # 插入 3 個空白段落，不設定 keep_with_next 屬性以配合 Word 以免黑點
                     for step in range(3):
