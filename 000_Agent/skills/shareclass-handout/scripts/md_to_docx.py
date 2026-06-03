@@ -461,7 +461,7 @@ def clone_quiz_table(stamps, doc, quizzes):
         for p in cell_a.paragraphs:
             format_paragraph(p, space_before_pt=2, space_after_pt=2, line_spacing=1.0)
             for r in p.runs:
-                apply_font(r, font_name="芫荽", font_size_pt=12)
+                apply_font(r, font_name="芫荽", font_size_pt=9.5)
                 
     set_cant_split(table)
     clone_paragraph(stamps, doc, 'blank')
