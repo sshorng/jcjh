@@ -9,12 +9,13 @@ from docx.oxml.ns import qn
 from docx.text.paragraph import Paragraph
 from docx.table import Table
 
-def apply_font(run, font_name="芫荽", font_size_pt=12, bold=False, color_rgb=None):
+def apply_font(run, font_name="芫荽", font_size_pt=None, bold=False, color_rgb=None):
     """
     強制在 Word XML 底層設定 Runs 的字型為指定字型
     """
     run.font.name = font_name
-    run.font.size = Pt(font_size_pt)
+    if font_size_pt is not None:
+        run.font.size = Pt(font_size_pt)
     run.bold = bold
     if color_rgb:
         run.font.color.rgb = color_rgb
@@ -165,13 +166,13 @@ def clone_paragraph(stamps, doc, stamp_key, text=""):
     # 清理開頭的 Markdown 多餘符號（星號、減號、大於符號等），限定後面必須有空白，避免誤傷粗體雙星號 **
     cleaned_text = re.sub(r'^(?:[>\-\*—–]\s+)+', '', text)
     
-    # 如果是提問段落，自動剃除手寫的數字題號（如 "1. " 或 "25. 3. "）-- V5.0 保留手寫題號，不交由 Word 清單自動編號以防黑點
-    # if stamp_key == 'q':
-    #     cleaned_text = re.sub(r'^\d+\s*[\.\-–—>]*\s*', '', cleaned_text)
+    # 如果是提問段落，自動剃除手寫的數字題號（如 "1. " 或 "25. 3. "），交由 Word 清單自動編號以配合 Word 樣式且無黑點
+    if stamp_key == 'q':
+        cleaned_text = re.sub(r'^\d+\s*[\.\-–—>]*\s*', '', cleaned_text)
         
     if stamp_key == 'q':
-        # 用 normal style 代替 q style 以免自動編號與黑點，同時保留手寫數字編號
-        stamp_p = stamps.get('normal')
+        # 使用範本中的 List Paragraph 樣式以實現 Word 的編號項目
+        stamp_p = stamps.get('q')
     else:
         stamp_p = stamps.get(stamp_key)
         
@@ -183,13 +184,6 @@ def clone_paragraph(stamps, doc, stamp_key, text=""):
         return p
         
     p_element = copy.deepcopy(stamp_p._p)
-    # 移除 List Paragraph / q 樣式的自動編號/黑點屬性 (w:numPr)，以配合手寫編號並消除黑點
-    if stamp_key == 'q':
-        pPr = p_element.find(qn('w:pPr'))
-        if pPr is not None:
-            numPr = pPr.find(qn('w:numPr'))
-            if numPr is not None:
-                pPr.remove(numPr)
     
     # 處理 runs 文字重寫，清空舊的 runs
     runs = p_element.findall(qn('w:r'))
@@ -222,10 +216,6 @@ def clone_paragraph(stamps, doc, stamp_key, text=""):
         
     # 設定行距：普通段落皆為 1.0 單行，且段落後間距為 0
     format_paragraph(p, space_after_pt=0, line_spacing=1.0)
-    
-    if stamp_key == 'q':
-        p.paragraph_format.left_indent = Pt(18)
-        p.paragraph_format.first_line_indent = Pt(-18)
     
     add_formatted_text(p, cleaned_text, default_bold=default_bold, font_name=font_name, font_size_pt=font_size_pt, color_rgb=color_rgb)
     return p
@@ -538,7 +528,7 @@ def parse_md_to_docx(md_path, template_path, output_path):
             break
             
     # 先寫入大標題 (Heading 1) 且不加手寫「壹、」前綴，防 Word 自動編號重疊
-    clone_paragraph(stamps, doc_new, 'h1', text=f"{lesson_title} 學思達教學講義")
+    # clone_paragraph(stamps, doc_new, 'h1', text=f"{lesson_title} 學思達教學講義")
     
     cached_data = []
     cached_guide = []
@@ -606,9 +596,7 @@ def parse_md_to_docx(md_path, template_path, output_path):
         # 一級標題
         h1_match = re.match(r'^#\s+(.*)', line_str)
         if h1_match:
-            flush_all_caches()
-            current_section = 'normal'
-            clone_paragraph(stamps, doc_new, 'h1', text=h1_match.group(1))
+            # 課名大標題已存在於頁首中，且正文第一行應直接進入「壹、暖身題」，故在此直接跳過
             continue
             
         # 二級標題
@@ -716,7 +704,7 @@ def parse_md_to_docx(md_path, template_path, output_path):
             
         # 普通表格行
         if line_str.startswith('|'):
-            # 修復分割線正則表達式中的減號 Bug，對減號和豎線進行正確跳脫
+            # 修復分割線正則表達式中的減號 Bug，對減號 and 豎線進行正確跳脫
             if re.match(r'^\|[\s:\-\|]+$', line_str):
                 continue
             cached_table_rows.append(line_str)
@@ -757,13 +745,10 @@ def parse_md_to_docx(md_path, template_path, output_path):
                     clone_paragraph(stamps, doc_new, 'normal', text=line_str)
                 else:
                     p = clone_paragraph(stamps, doc_new, 'q', text=line_str)
-                    p.paragraph_format.keep_with_next = True
                     
-                    # 插入 3 個空白段落，前 2 個空白段落也設定 keep_with_next = True
+                    # 插入 3 個空白段落，不設定 keep_with_next 屬性以配合 Word 以免黑點
                     for step in range(3):
                         p_empty = clone_paragraph(stamps, doc_new, 'blank')
-                        keep = (step < 2)
-                        p_empty.paragraph_format.keep_with_next = keep
         else:
             # 一般內文
             clone_paragraph(stamps, doc_new, 'normal', text=line_str)
