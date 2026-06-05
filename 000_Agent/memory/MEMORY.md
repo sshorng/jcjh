@@ -50,6 +50,7 @@
 
 - **Google Drive 架構下的 Symbolic Links 限制**：在 FAT32/ExFAT-like 的 Google 雲端虛擬硬碟（G 槽）上直接建立 Junction 或 Symlink 會因「NTFS 磁碟區需求」而報錯。應在 NTFS 格式的 C 槽（`C:\Users\sshor\.gemini\config`）上建立 Junction 連回 G 槽（`G:\我的雲端硬碟\AI_Agent`），以實現跨電腦同步。
 - **PowerShell 編碼亂碼**：Windows 上的 PowerShell 腳本在寫入中文時，務必強制使用 UTF-8 with BOM 格式，以防在 ANSI/cp950 環境下解析出錯。
+- **平板標題渲染裁切與 Noto Serif TC 相容性**：在 iPad Safari 等平板環境下，預設的 `<h3>` / `<h4>` 等標題標籤常因 User Agent 的 margin/padding 渲染差異，加上 `Noto Serif TC` 中文字型的特殊 metrics，導致字體頂部被卡片邊框裁切。應優先使用無預設 margin 的 `<div>` 標籤並加上明確的 `line-height: 1.2`，並將卡片頂部 `padding` 設為大於 `3vh` 的安全間距，以防破版與裁切。
 - **NotebookLM 憑證過期重登**：NotebookLM CLI 的 Token 損毀或過期時會導致 `Authentication expired`，此時需在實體 CMD 中執行 `nlm login --clear --force` 來清空快取並重登。
 
 ---
