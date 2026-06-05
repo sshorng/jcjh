@@ -1977,20 +1977,6 @@
                             在這裡管理留言掛載的標籤。您可以設定標籤庫，並勾選目前要在投稿或電視牆顯示的項目。
                         </p>
 
-                        <!-- 新增標籤 -->
-                        <div
-                            style="background: #fff5f2; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px dashed #b07d62;">
-                            <div style="display: flex; gap: 10px;">
-                                <input type="text" id="new-topic-tag-input" placeholder="新標籤 (例如：#學校日)"
-                                    class="admin-input" style="min-height: 40px; flex: 1;">
-                                <button class="btn-approve" onclick="addTopicToLibrary()"
-                                    style="padding: 0 20px;">新增標籤</button>
-                            </div>
-                        </div>
-
-                        <!-- 標籤列表 -->
-                        <div id="topic-list-container" class="ann-editor-container"
-                            style="max-height: 400px; overflow-y: auto;">
                             <!-- JS 動態產生標籤列 -->
                         </div>
 
@@ -2045,7 +2031,7 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
         // --- 設定與變數 ---
-        const _G = "https://script.google.com/macros/s/AKfycbzZOrUP3veKI5oexCOwUHqLXeduo4bRlpRoglpCF-zl1NxeLuKDTBcJg7o0Acx9qC0R/exec";
+        const _G = "https://script.google.com/macros/s/AKfycbz700ipUL3Yjg9-Gl49z9F7lkSr4XkknP9dCELpyjZHLj_Mr00-pzb9AhUu7esrfN0/exec";
         let currentUserEmail = null;
         let currentUserName = null;
         let allMessages = [];
