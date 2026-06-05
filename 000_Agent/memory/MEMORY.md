@@ -52,6 +52,7 @@
 - **PowerShell 編碼亂碼**：Windows 上的 PowerShell 腳本在寫入中文時，務必強制使用 UTF-8 with BOM 格式，以防在 ANSI/cp950 環境下解析出錯。
 - **平板標題渲染裁切與 Noto Serif TC 相容性**：在 iPad Safari 等平板環境下，預設的 `<h3>` / `<h4>` 等標題標籤常因 User Agent 的 margin/padding 渲染差異，加上 `Noto Serif TC` 中文字型的特殊 metrics，導致字體頂部被卡片邊框裁切。應優先使用無預設 margin 的 `<div>` 標籤並加上明確的 `line-height: 1.2`，並將卡片頂部 `padding` 設為大於 `3vh` 的安全間距，以防破版與裁切。
 - **NotebookLM 憑證過期重登**：NotebookLM CLI 的 Token 損毀或過期時會導致 `Authentication expired`，此時需在實體 CMD 中執行 `nlm login --clear --force` 來清空快取並重登。
+- **Windows 下 HyperFrames 音訊混音中文路徑 Bug**：當專案位於包含中文或非 ASCII 字元的路徑（如「我的雲端硬碟」）下，HyperFrames 的音訊混音處理（FFmpeg 部分）在 Windows 上容易因字元編碼問題而直接崩潰或退出（Exit Code 1）。**解決方法**：將 `index.html`、`bgm_fixed.mp3`、字型及相關影格暫存複製到本機純 ASCII 路徑下（例如 `C:\Users\User\.gemini\antigravity\temp_render`），在該處執行渲染，完成後再將 `.mp4` 影片複製回雲端硬碟即可。
 
 ---
 
