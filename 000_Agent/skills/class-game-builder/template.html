@@ -1,0 +1,2828 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>空城計：沉浸式決策沙盤</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;800;900&family=Outfit:wght@500;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* ==========================================================================
+           16:9 水墨古風投影與平板優化大字版面系統
+           ========================================================================== */
+        :root {
+            --bg-color: #fafafa; /* 宣紙白/極淡雅灰 */
+            --card-bg: rgba(255, 255, 255, 0.98);
+            --primary-gold: #5a5a5a; /* 典雅深灰/炭灰 */
+            --accent-red: #bd2a2e; /* 典雅朱砂紅 */
+            --accent-bright-red: #d9383a; /* 明亮朱紅 */
+            --accent-green: #4a7c59; /* 雅綠 */
+            --text-light: #242424; /* 墨黑 */
+            --text-muted: #686868; /* 中灰 */
+            --border-color: #dcdcdc; /* 淺灰邊框 */
+            --font-ancient: 'Noto Serif TC', serif;
+            --font-modern: 'Outfit', 'Noto Serif TC', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #e5e5e5; /* 典雅中灰背景色，襯托亮色簡報主體 */
+            color: var(--text-light);
+            font-family: var(--font-modern);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .slide-container {
+            width: 96vw;
+            height: 54vw; /* 鎖定 16:9 比例 */
+            max-width: 177.78vh;
+            max-height: 90vh; /* 貼合螢幕邊緣 */
+            background-color: var(--bg-color);
+            border: 4px double var(--primary-gold); /* 雙線木刻版畫風邊框 */
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 2.2vh 4vw;
+            border-radius: 10px;
+            overflow: hidden; /* 保持外層 16:9 完美穩定 */
+            background-image: 
+                radial-gradient(circle at 10% 10%, rgba(189, 42, 46, 0.03) 0%, transparent 60%),
+                radial-gradient(circle at 90% 90%, rgba(92, 92, 92, 0.05) 0%, transparent 60%);
+        }
+
+        .ink-mist {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 50%, transparent, rgba(255, 255, 255, 0.6));
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .sound-badge {
+            position: absolute;
+            top: 3.5vh;
+            right: 4vw;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1.2vh 1.8vw;
+            border-radius: 25px;
+            border: 2px solid var(--accent-red);
+            font-size: 3.2vh;
+            color: var(--accent-red);
+            cursor: pointer;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--font-ancient);
+            font-weight: 900;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        /* ==========================================================================
+           大字標題與排版
+           ========================================================================== */
+        .slide-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid var(--accent-red);
+            padding-bottom: 1.5vh;
+            height: 9vh;
+            z-index: 2;
+        }
+
+        .slide-title {
+            font-family: var(--font-ancient);
+            font-size: 4.4vh;
+            font-weight: 900;
+            color: var(--accent-red); /* 水墨朱砂紅標題 */
+            text-shadow: 0 1px 3px rgba(189, 42, 46, 0.1);
+        }
+
+        .slide-subtitle {
+            font-size: 2.6vh;
+            color: var(--text-muted);
+            font-family: var(--font-ancient);
+            font-weight: 900;
+        }
+
+        .slide-body {
+            flex: 1; /* 自動填滿 header 與 footer 之間的所有空間，徹底消除上下浪費的留白 */
+            height: 0; /* 配合 flex-direction: column 讓內容在超出時乖乖待在裡面，避免撐大外框 */
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            overflow-y: auto; /* 內容超出時，在中間內容區內產生滾動，實現順暢下拉 */
+            z-index: 2;
+            padding-right: 0.8vw;
+            margin-bottom: 1.5vh;
+        }
+        /* 美化滾動條 */
+        .slide-body::-webkit-scrollbar {
+            width: 6px;
+        }
+        .slide-body::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        .slide-body::-webkit-scrollbar-thumb {
+            background: var(--accent-red);
+            border-radius: 3px;
+        }
+
+        .slide-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 2.5px solid var(--border-color);
+            padding-top: 1.5vh;
+            height: 9vh;
+            z-index: 50; /* 提升層級，確保導覽按鈕永遠在最上層 */
+            background: var(--bg-color); /* 遮擋背後的溢出內容 */
+            position: relative;
+        }
+
+        .page-indicator {
+            font-size: 2.6vh;
+            color: var(--text-light);
+            font-weight: 900;
+        }
+
+        .nav-btn {
+            background: #ffffff;
+            border: 2px solid var(--border-color);
+            color: var(--text-light);
+            padding: 1.2vh 2.5vw;
+            font-size: 2.7vh;
+            font-family: var(--font-ancient);
+            font-weight: 900;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            border-color: var(--accent-red);
+            color: var(--accent-red);
+            background: #fafafa;
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.15;
+            cursor: not-allowed;
+        }
+
+        .nav-btn.primary {
+            background: var(--accent-red);
+            color: #ffffff;
+            border-color: var(--accent-red);
+        }
+
+        .nav-btn.primary:hover:not(:disabled) {
+            box-shadow: 0 0 10px rgba(189, 42, 46, 0.4);
+            background: #a02024;
+        }
+
+        /* ==========================================================================
+           小說敘事與高對比排版
+           ========================================================================== */
+        .story-text {
+            font-family: var(--font-ancient);
+            font-size: 3.4vh;
+            font-weight: 900;
+            line-height: 1.7;
+            color: var(--text-light);
+            margin-bottom: 1vh;
+            text-shadow: none;
+        }
+
+        .story-text em {
+            color: var(--accent-red);
+            font-style: normal;
+            font-weight: 900;
+        }
+
+        .task-box {
+            background: rgba(189, 42, 46, 0.05);
+            border: 2px solid var(--accent-bright-red);
+            padding: 1.2vh 1.8vw;
+            border-radius: 6px;
+            font-size: 2.8vh;
+            font-weight: 900;
+            font-family: var(--font-ancient);
+            display: flex;
+            align-items: center;
+            gap: 1vw;
+            margin-bottom: 1vh;
+            color: var(--text-light);
+        }
+
+        .task-tag {
+            background: var(--accent-red);
+            color: white;
+            padding: 0.4vh 1vw;
+            border-radius: 3px;
+            font-weight: 900;
+            font-size: 2.1vh;
+        }
+
+        /* 點選按鈕 */
+        .click-picker-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.2vw;
+            margin-top: 0.8vh;
+            justify-content: center;
+        }
+
+        .picker-btn {
+            background: #ffffff;
+            border: 2px solid #ccc;
+            color: var(--text-light);
+            padding: 1vh 1.6vw;
+            font-size: 2.8vh;
+            font-family: var(--font-ancient);
+            font-weight: 900;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .picker-btn:hover {
+            border-color: var(--accent-red);
+            background: #f5f5f5;
+        }
+
+        .picker-btn.selected {
+            background: rgba(189, 42, 46, 0.1) !important;
+            border-color: var(--accent-red) !important;
+            color: var(--accent-red) !important;
+            box-shadow: 0 0 10px rgba(189, 42, 46, 0.2);
+        }
+
+        .picker-btn.correct {
+            background: rgba(74, 124, 89, 0.15) !important;
+            border-color: var(--accent-green) !important;
+            color: var(--accent-green) !important;
+        }
+
+        .picker-btn.wrong {
+            background: rgba(189, 42, 46, 0.15) !important;
+            border-color: var(--accent-bright-red) !important;
+            color: var(--accent-bright-red) !important;
+        }
+
+        /* 大字解析與作者怎麼寫面板 */
+        .reveal-panel {
+            background: rgba(255, 255, 255, 0.98);
+            border: 2.5px solid var(--accent-red);
+            border-radius: 8px;
+            padding: 1.5vh 2vw;
+            margin-top: 1vh;
+            display: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .analysis-text {
+            font-size: 3.2vh;
+            font-weight: 900;
+            line-height: 1.6;
+            color: var(--text-light);
+            margin-bottom: 1.2vh;
+            border-left: 6px solid var(--accent-red);
+            padding-left: 1.2vw;
+        }
+
+        .author-write-tag {
+            color: var(--accent-red);
+            font-weight: 900;
+            margin-bottom: 0.5vh;
+            display: block;
+        }
+
+        .ask-text {
+            font-size: 3.4vh;
+            font-weight: 900;
+            color: var(--accent-red);
+            font-family: var(--font-ancient);
+            background: rgba(189, 42, 46, 0.05);
+            padding: 2.2vh;
+            border-radius: 5px;
+            border: 1.5px dashed rgba(189, 42, 46, 0.4);
+            line-height: 1.6;
+        }
+
+        /* 簡報分頁 */
+        .slide {
+            display: none;
+            height: 100%;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        .split-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3vw;
+            align-items: center;
+        }
+
+        /* 抉擇按鈕 */
+        .choice-btn {
+            background: linear-gradient(to right, #ffffff, #f7f7f7);
+            border: 2px solid #ccc;
+            color: var(--text-light);
+            padding: 1.5vh 2vw;
+            font-size: 2.9vh;
+            font-family: var(--font-ancient);
+            font-weight: 900;
+            cursor: pointer;
+            border-radius: 8px;
+            text-align: left;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .choice-btn:hover {
+            border-color: var(--accent-red);
+            background: rgba(189, 42, 46, 0.05);
+            transform: translateX(10px);
+        }
+
+        .choice-btn::after {
+            content: '➔';
+            color: var(--accent-red);
+        }
+
+        .ending-card {
+            border: 2.5px solid var(--accent-bright-red);
+            background: linear-gradient(135deg, #ffffff 0%, #f7f7f7 100%);
+            padding: 4vh;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .ending-title {
+            font-family: var(--font-ancient);
+            font-size: 4.8vh;
+            font-weight: 900;
+            color: var(--accent-bright-red);
+            margin-bottom: 1vh;
+        }
+
+        .quote-highlight {
+            font-family: var(--font-ancient);
+            color: var(--accent-red);
+            font-size: 3.4vh;
+            font-weight: 900;
+            background: rgba(189, 42, 46, 0.07);
+            padding: 1.5vh 2.5vw;
+            border-radius: 5px;
+            display: inline-block;
+            margin: 2vh 0;
+            border-left: 6px solid var(--accent-red);
+            line-height: 1.5;
+        }
+
+        /* ==========================================================================
+           方案一：虛實防線值量表專屬樣式
+           ========================================================================== */
+        .gauge-container {
+            background: rgba(0,0,0,0.02);
+            border: 2px solid var(--border-color);
+            padding: 2.5vh;
+            border-radius: 8px;
+            margin-bottom: 1vh;
+        }
+
+        .gauge-bar-wrapper {
+            margin: 2vh 0;
+        }
+
+        .gauge-label {
+            font-family: var(--font-ancient);
+            font-size: 2.4vh;
+            font-weight: 900;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.8vh;
+            color: var(--text-light);
+        }
+
+        .gauge-track {
+            width: 100%;
+            height: 3vh;
+            background: #e8e8e8;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #ddd;
+        }
+
+        .gauge-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(to right, var(--accent-bright-red), var(--accent-red));
+            transition: width 0.6s cubic-bezier(0.1, 0.8, 0.3, 1);
+            box-shadow: 0 0 10px rgba(189, 42, 46, 0.3);
+        }
+
+        .gauge-fill.shula {
+            background: linear-gradient(to right, #ccc, var(--accent-green));
+        }
+
+        .army-action-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1vw;
+            margin-top: 2vh;
+        }
+
+        .action-card {
+            background: #ffffff;
+            border: 2px solid #ccc;
+            padding: 1.8vh;
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            font-family: var(--font-ancient);
+            font-size: 3.2vh;
+            font-weight: 900;
+            transition: all 0.2s;
+            color: var(--text-light);
+        }
+
+        .action-card:hover {
+            border-color: var(--accent-red);
+            background: #f9f9f9;
+        }
+
+        .action-card.active {
+            border-color: var(--accent-red);
+            background: rgba(189, 42, 46, 0.1);
+            box-shadow: 0 0 10px rgba(189, 42, 46, 0.2);
+            color: var(--accent-red);
+        }
+
+        /* ==========================================================================
+           方案二：大導演雙分鏡鏡頭專屬樣式
+           ========================================================================== */
+        .director-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2vw;
+            height: 100%;
+        }
+
+        .viewfinder {
+            background: #ffffff;
+            border: 3px solid #ccc;
+            border-radius: 8px;
+            padding: 2.5vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 38vh;
+        }
+
+        .viewfinder.active-lens {
+            border-color: var(--accent-red);
+            box-shadow: 0 0 15px rgba(189, 42, 46, 0.25);
+        }
+
+        .lens-tag {
+            position: absolute;
+            top: 2vh;
+            left: 2vw;
+            background: var(--accent-red);
+            color: #fff;
+            padding: 0.5vh 1vw;
+            border-radius: 3px;
+            font-family: var(--font-ancient);
+            font-weight: 900;
+            font-size: 1.8vh;
+            letter-spacing: 1px;
+        }
+
+        .lens-tag.close-up {
+            background: var(--primary-gold);
+            color: #fff;
+        }
+
+        .viewfinder-content {
+            margin-top: 5vh;
+            font-family: var(--font-ancient);
+            font-size: 3vh;
+            line-height: 1.6;
+            font-weight: 900;
+            color: var(--text-light);
+        }
+
+        .viewfinder-explain {
+            font-size: 3.2vh;
+            color: var(--text-muted);
+            border-top: 1.5px dashed #ccc;
+            padding-top: 1vh;
+            margin-top: 0.8vh;
+        }
+
+        /* 城堡繪製 */
+        .castle-canvas {
+            position: relative;
+            height: 28vh;
+            background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .castle-wall {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 10vh;
+            background: #a8a8a8;
+        }
+
+        .castle-gate {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 7vh;
+            height: 9vh;
+            background: #8e1d20; /* 紅白灰中的紅木大門 */
+            border-radius: 3.5vh 3.5vh 0 0;
+            transition: all 0.8s;
+        }
+
+        .castle-gate.open {
+            background: #fafafa;
+        }
+
+        .castle-tower {
+            position: absolute;
+            bottom: 10vh;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 13vh;
+            height: 7vh;
+            background: #c8c8c8;
+        }
+
+        .tower-lute {
+            position: absolute;
+            top: 0.5vh;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 3.2vh;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        /* 配對拖卡 */
+        .match-area {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 2vw;
+        }
+
+        .match-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2vh;
+        }
+
+        .match-item {
+            background: #ffffff;
+            border: 2px solid #ccc;
+            padding: 1.8vh;
+            border-radius: 6px;
+            font-size: 3.2vh;
+            font-weight: 900;
+            font-family: var(--font-ancient);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-light);
+        }
+
+        .match-item.selected {
+            background: rgba(189, 42, 46, 0.1) !important;
+            border-color: var(--accent-red) !important;
+            color: var(--accent-red) !important;
+        }
+
+        .match-slot {
+            background: rgba(0,0,0,0.02);
+            border: 2px dashed #ccc;
+            padding: 1.6vh 2vw;
+            border-radius: 6px;
+            min-height: 6.2vh;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 3.2vh;
+            cursor: pointer;
+            font-weight: 900;
+            color: var(--text-light);
+        }
+
+        .match-slot.correct {
+            border-color: var(--accent-green);
+            background: rgba(74, 124, 89, 0.15);
+            color: var(--accent-green);
+        }
+
+        .slot-title {
+            font-family: var(--font-ancient);
+            color: var(--accent-red);
+            font-weight: 900;
+        }
+
+        /* 課文單詞高亮 */
+        .word-select-area span {
+            font-family: var(--font-ancient);
+            font-size: 3.4vh;
+            font-weight: 900;
+            padding: 4px 10px;
+            margin: 0 4px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+            display: inline-block;
+        }
+        .word-select-area span:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        .word-select-area span.selected-word {
+            background: rgba(189, 42, 46, 0.15) !important;
+            border-bottom: 3.5px solid var(--accent-red);
+            color: var(--accent-red);
+        }
+
+        /* 改版新增樣式 */
+        #mist-canvas {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.15; /* 亮色底稍微調淡水墨特效 */
+        }
+        .viewfinder.active-lens {
+            border-color: var(--accent-red) !important;
+            box-shadow: 0 0 25px rgba(189, 42, 46, 0.35) !important;
+            animation: cameraFlash 0.35s ease-out;
+        }
+        .viewfinder-content {
+            transition: transform 0.4s cubic-bezier(0.1, 0.8, 0.3, 1);
+        }
+        .viewfinder.active-lens .viewfinder-content {
+            transform: scale(1.08);
+        }
+        @keyframes cameraFlash {
+            0% { border-color: #fff; box-shadow: 0 0 50px #fff; background: rgba(255,255,255,0.4); }
+            100% { border-color: var(--accent-red); box-shadow: 0 0 25px rgba(189, 42, 46, 0.35); }
+        }
+
+        /* 時間軸樣式 */
+        .timeline-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            margin: 3.5vh 0 1.5vh 0;
+            padding: 0 4vw;
+        }
+        .timeline-line {
+            position: absolute;
+            top: 50%;
+            left: 5vw;
+            right: 5vw;
+            height: 4px;
+            background: #ccc;
+            z-index: 1;
+            transform: translateY(-50%);
+        }
+        .timeline-progress {
+            position: absolute;
+            top: 50%;
+            left: 5vw;
+            width: 0%;
+            height: 4px;
+            background: var(--accent-red);
+            z-index: 2;
+            transform: translateY(-50%);
+            transition: width 0.5s ease;
+        }
+        .timeline-node {
+            position: relative;
+            z-index: 3;
+            background: #ffffff;
+            border: 3px solid #ccc;
+            width: 6.5vh;
+            height: 6.5vh;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.4vh;
+            font-weight: 900;
+            color: #888;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: var(--font-ancient);
+        }
+        .timeline-node.active {
+            border-color: var(--accent-red);
+            box-shadow: 0 0 18px rgba(189, 42, 46, 0.3);
+            color: var(--accent-red);
+            background: #ffffff;
+        }
+        .timeline-label {
+            position: absolute;
+            top: 7.5vh;
+            white-space: nowrap;
+            font-size: 1.9vh;
+            color: #888;
+            font-family: var(--font-ancient);
+            transition: color 0.3s;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .timeline-node.active .timeline-label {
+            color: var(--text-light);
+            font-weight: 900;
+        }
+
+        /* 文字找不同對照鏡 */
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2vw;
+            margin: 1.5vh 0;
+        }
+        .comparison-box {
+            background: rgba(255, 255, 255, 0.98);
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            padding: 1.2vh 1.8vw;
+            font-family: var(--font-ancient);
+            font-size: 2.6vh;
+            line-height: 1.7;
+            position: relative;
+            color: var(--text-light);
+        }
+        .comparison-box.active {
+            border-color: var(--accent-red);
+            box-shadow: 0 0 15px rgba(189, 42, 46, 0.15);
+        }
+        .comparison-header {
+            font-size: 2.1vh;
+            color: var(--accent-red);
+            margin-bottom: 1.2vh;
+            border-bottom: 1.5px solid #eaeaea;
+            padding-bottom: 0.6vh;
+            font-weight: 900;
+        }
+        .highlight-pulse {
+            color: var(--accent-red) !important;
+            font-weight: 900;
+            animation: redPulse 1s infinite alternate;
+            border-bottom: 2px solid var(--accent-red);
+            padding: 0 3px;
+            display: inline-block;
+        }
+        @keyframes redPulse {
+            0% { text-shadow: 0 0 4px rgba(189, 42, 46, 0.2); }
+            100% { text-shadow: 0 0 12px rgba(189, 42, 46, 0.6); }
+        }
+
+        /* ==========================================================================
+           平板全域劃記工具列（懸浮摺疊 FAB 版）
+           ========================================================================== */
+        #drawing-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 45; /* 介於內容與 footer 之間 (footer z-index 50) */
+            pointer-events: none;
+            cursor: crosshair;
+            touch-action: none; /* 解決平板無法劃記的關鍵：防止觸控被瀏覽器攔截 */
+        }
+
+        .drawing-footer-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 1vh;
+            background: #ffffff;
+            border: 2px solid var(--border-color);
+            border-radius: 30px;
+            padding: 0.5vh 1vh;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-right: 1.5vw;
+        }
+
+        .drawing-menu-btn {
+            width: 4.8vh;
+            height: 4.8vh;
+            background: #ffffff;
+            border: 1.5px solid var(--border-color);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-muted);
+            padding: 0;
+        }
+
+        .drawing-menu-btn svg {
+            width: 2.3vh;
+            height: 2.3vh;
+            stroke: currentColor;
+            stroke-width: 2.5;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            display: block;
+        }
+
+        .drawing-menu-btn:hover, .drawing-menu-btn.active {
+            border-color: var(--accent-red);
+            background: var(--accent-red);
+            color: #ffffff;
+            transform: scale(1.05);
+        }
+
+        .drawing-menu-btn.danger:hover {
+            background: var(--accent-bright-red);
+            border-color: var(--accent-bright-red);
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+
+    
+
+    <canvas id="mist-canvas"></canvas>
+    <div class="ink-mist"></div>
+
+    
+
+    <!-- 簡報投影主容器 -->
+    <div class="slide-container">
+        
+        <!-- 簡報頭 -->
+        <div class="slide-header">
+            <div class="slide-title" id="header-title">空城計</div>
+            <div class="slide-subtitle" id="header-subtitle">沉浸式智謀決策沙盤</div>
+        </div>
+
+        <!-- 簡報身 -->
+        <div class="slide-body">
+
+            <!-- ============================== SLIDE 1: 說書封面 ============================== -->
+            <div id="slide-1" class="slide active" data-title="三國演義第九十五回" data-sub="第一幕：起局">
+                <div style="text-align: center;">
+                    <h2 style="font-family:var(--font-ancient); font-size: 5.2vh; color: var(--accent-red); margin-bottom: 3vh; letter-spacing: 2px; font-weight: 900; line-height: 1.4;">第九十五回：馬謖拒諫失街亭<br>武侯彈琴退仲達</h2>
+                    <p style="font-size: 3.5vh; color: var(--text-light); font-family: var(--font-ancient); line-height: 1.8; max-width: 850px; margin: 0 auto; font-weight: 900;">
+                         「滾滾長江東逝水，浪花淘盡英雄...」<br>
+                        街亭已失，蜀漢危在旦夕。司馬懿十五萬鐵騎即將兵臨城下，夫子請帶領弟子親臨西城敵樓。
+                    </p>
+                    <p style="font-size: 2.6vh; color: var(--accent-red); margin-top: 5vh; animation: pulse 2s infinite; font-weight: 900;">
+                        【請點擊下方「下一頁」開啟西城戰局】
+                    </p>
+                </div>
+            </div>
+
+            
+            <!-- ============================== SLIDE BACKGROUND 1: 人物簡介 (p.14) ============================== -->
+            <div id="slide-background-1" class="slide" data-title="臥龍之相：諸葛亮" data-sub="背景知識一">
+                <div class="split-layout" style="align-items: flex-start; gap: 2vw;">
+                    <!-- 左側：個人資料 -->
+                    <div style="font-family: var(--font-ancient); font-size: 2.6vh; line-height: 1.5; font-weight: 900; background: rgba(255, 255, 255, 0.98); border: 2px solid #ccc; border-radius: 8px; padding: 3vh 2vw 2.2vh 2vw; box-shadow: 0 4px 12px rgba(0,0,0,0.03); margin: 0;">
+                        <div style="color: var(--accent-red); font-size: 3.2vh; font-family: var(--font-ancient); font-weight: 900; margin: 0 0 1.5vh 0; padding: 0 0 0.8vh 0; border-bottom: 2px dashed var(--accent-red); letter-spacing: 1px; line-height: 1.2;">諸葛亮（181年－234年）</div>
+                        <p style="margin-bottom: 1.2vh;">📍 <b>字號</b>：字孔明，號臥龍。</p>
+                        <p style="margin-bottom: 1.2vh;">📍 <b>籍貫</b>：東漢末年徐州琅琊陽都（今山東省臨沂市沂南縣）人。</p>
+                        <p style="margin-bottom: 1.2vh;">📍 <b>職位</b>：三國蜀漢（季漢）丞相，傑出的政治家、軍事家。</p>
+                        <p style="margin: 0;">📍 <b>生平</b>：躬耕隴畝，受劉備三顧茅廬而出山，聯吳抗曹、三分天下，輔佐昭烈帝劉備及後主劉禪，為蜀漢社稷鞠躬盡瘁，死而後已。</p>
+                    </div>
+                    <!-- 右側：三國志評價 -->
+                    <div class="comparison-box" style="font-size: 2.3vh; line-height: 1.6; height: 36vh; overflow-y: auto; background: #fdfdfd; border-color: var(--accent-red); margin: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                        <div class="comparison-header" style="font-size: 2.5vh; color: var(--accent-red); display: flex; align-items: center; justify-content: space-between;">
+                            <span>陳壽《三國志．諸葛亮傳》評語</span>
+                            <span style="font-size: 1.8vh; color: var(--text-muted); font-weight: normal;">（向下滑動閱讀）</span>
+                        </div>
+                        <p style="color: var(--text-light); text-align: justify; margin: 0;">
+                            「諸葛亮之為相國也，<em>撫百姓，示儀軌，約官職，從權制，開誠心，布公道</em>；盡忠益時者雖仇必賞，犯法怠慢者雖親必罰，服罪輸情者雖重必釋，遊辭巧飾者雖輕必戮；善無微而不賞，惡無纖而不貶；庶事精煉，物理其本，循名責實，虛偽不齒；終於邦域之內， <em>咸畏而愛之</em>，刑政雖峻而無怨者，以其用心平而勸戒明也。可謂<em>識治之良才，管、蕭之亞匹矣</em>。然連年動眾，未能成功，蓋應變將略，非其所長歟！」
+                        </p>
+                    </div>
+                </div>
+                <div class="task-box" style="margin-top: 2vh; margin-bottom: 0;">
+                    <span class="task-tag">思辨</span>
+                    ❓ 思考問題：陳壽給予諸葛亮極高的政治評價（「管、蕭之亞匹」），但同時指出「非其所長」的是什麼？這與他隨後在「街亭之戰」的用人與軍事決策是否有關？
+                </div>
+            </div>
+
+            <!-- ============================== SLIDE BACKGROUND 2: 天下形勢與關中涼州 (p.15 & p.16) ============================== -->
+            <div id="slide-background-2" class="slide" data-title="天下形勢與關中涼州" data-sub="背景知識二">
+                <div class="split-layout" style="gap: 2vw; align-items: stretch;">
+                    <!-- 左側：出師表起筆 -->
+                    <div style="display: flex; flex-direction: column; justify-content: space-between; background: rgba(255, 255, 255, 0.98); border: 2px solid #ccc; border-radius: 8px; padding: 2.2vh 1.5vw 1.8vh 1.5vw; box-shadow: 0 4px 12px rgba(0,0,0,0.03); margin: 0;">
+                        <div style="text-align: center; border-bottom: 1px dashed #ccc; padding: 0 0 0.8vh 0; margin: 0 0 1vh 0;">
+                            <div style="font-family: var(--font-ancient); font-size: 2.6vh; color: var(--accent-red); margin: 0; font-weight: 900; line-height: 1.2;">建興五年：撰《出師表》北伐</div>
+                        </div>
+                        <div style="display: flex; justify-content: center; margin-bottom: 1vh;">
+                            <img src="media/image5.png" style="max-height: 20vh; max-width: 100%; object-fit: contain; border: 1.5px solid #dcdcdc; border-radius: 4px;" alt="諸葛亮起筆出師表">
+                        </div>
+                        <p style="font-family: var(--font-ancient); font-size: 2.2vh; line-height: 1.5; color: var(--text-light); text-align: justify; margin: 0; font-weight: 900;">
+                            「今南方已定，兵甲已足，當獎率三軍，北定中原，庶竭駑鈍，攘除奸凶，興復漢室，還於舊都...」諸葛亮平定南方後，隨即上書後主，立誓北伐魏國，以完成先帝遺願。
+                        </p>
+                    </div>
+                    <!-- 右側：關中涼州戰略地圖 -->
+                    <div style="display: flex; flex-direction: column; justify-content: space-between; background: rgba(255, 255, 255, 0.98); border: 2px solid #ccc; border-radius: 8px; padding: 2.2vh 1.5vw 1.8vh 1.5vw; box-shadow: 0 4px 12px rgba(0,0,0,0.03); margin: 0;">
+                        <div style="text-align: center; border-bottom: 1px dashed #ccc; padding: 0 0 0.8vh 0; margin: 0 0 1vh 0;">
+                            <div style="font-family: var(--font-ancient); font-size: 2.6vh; color: var(--accent-red); margin: 0; font-weight: 900; line-height: 1.2;">戰略要衝：涼州與關中</div>
+                        </div>
+                        <div style="display: flex; justify-content: center; margin-bottom: 1vh;">
+                            <img src="media/image6.png" style="max-height: 20vh; max-width: 100%; object-fit: contain; border: 1.5px solid #dcdcdc; border-radius: 4px;" alt="關中與涼州戰略要衝">
+                        </div>
+                        <p style="font-family: var(--font-ancient); font-size: 2.2vh; line-height: 1.5; color: var(--text-light); text-align: justify; margin: 0; font-weight: 900;">
+                            蜀漢軍隊從漢中出發，北面是巍峨的<b>秦嶺</b>。秦嶺道路險阻，難以運糧。為了取得優勢，諸葛亮選擇了避開正面雄關，而以「聲東擊西」之計，突襲魏國防守薄弱的隴右地區。
+                        </p>
+                    </div>
+                </div>
+                <div class="task-box" style="margin-top: 1.5vh; margin-bottom: 0;">
+                    <span class="task-tag">形勢</span>
+                    💡 戰略分析：秦嶺五道險阻，蜀軍運糧極為艱難。諸葛亮首度北伐避開魏軍重兵把守的關中正面，轉攻隴右，是一步以小博大的精妙奇棋！
+                </div>
+            </div>
+
+            <!-- ============================== SLIDE BACKGROUND 3: 祁山北伐與街亭重地 (p.17) ============================== -->
+            <div id="slide-background-3" class="slide" data-title="祁山北伐與街亭重地" data-sub="背景知識三">
+                <div class="split-layout" style="gap: 2vw; align-items: center;">
+                    <!-- 左側：北伐路線地圖 -->
+                    <div style="background: rgba(255, 255, 255, 0.95); border: 2px solid #ccc; border-radius: 8px; padding: 2vh 2vw; box-shadow: 0 4px 12px rgba(0,0,0,0.03); text-align: center;">
+                        <img src="media/image8.png" style="max-height: 33vh; max-width: 100%; object-fit: contain; border: 1.5px solid #dcdcdc; border-radius: 4px;" alt="第一次北伐與街亭形勢">
+                        <div style="font-size: 2.1vh; color: var(--text-muted); margin-top: 1vh; font-family: var(--font-ancient); font-weight: 900;">第一次北伐與街亭對峙示意圖</div>
+                    </div>
+                    <!-- 右側：戰局解析 -->
+                    <div style="font-family: var(--font-ancient); font-size: 2.4vh; line-height: 1.5; font-weight: 900; background: rgba(255, 255, 255, 0.98); border: 2px solid #ccc; border-radius: 8px; padding: 2.5vh 2vw; box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; flex-direction: column; justify-content: center; height: 37vh; margin: 0;">
+                        <div style="color: var(--accent-red); font-size: 2.6vh; margin: 0 0 1.2vh 0; padding: 0 0 0.8vh 0; border-bottom: 2px dashed var(--accent-red); letter-spacing: 1px; font-weight: 900; line-height: 1.2;">街亭：決定北伐成敗的咽喉</div>
+                        <p style="margin-bottom: 1.2vh;">⚔️ <b>隴右響震</b>：蜀軍兵出祁山，天水、南安、安定三郡紛紛開城投降，魏明帝曹叡親自坐鎮長安，朝野震恐。</p>
+                        <p style="margin-bottom: 1.2vh;">⚔️ <b>命運的樞紐</b>：魏國派出大將張郃率領精銳鐵騎前來奪回隴右。蜀軍必須守住<b>街亭</b>這個交通樞紐，阻擋張郃前進，才能確保北伐主力穩固隴右三郡。</p>
+                        <p style="margin: 0;">⚔️ <b>用人決策</b>：諸葛亮力排眾議，委派參軍<b>馬謖</b>為主帥、王平為副將前往鎮守街亭。</p>
+                    </div>
+                </div>
+                <div class="task-box" style="margin-top: 1.5vh; margin-bottom: 0;">
+                    <span class="task-tag">關鍵</span>
+                    💡 街亭若守住，則隴右可安，蜀漢便擁有了豐富的戰馬與糧草基地；若街亭失守，魏國援軍主力將直撲祁山，北伐大軍將面臨腹背受敵、被包抄切斷的滅頂之災！
+                </div>
+            </div>
+
+            <!-- ============================== SLIDE BACKGROUND 4: 三國志中的街亭之戰 (p.18) ============================== -->
+            <div id="slide-background-4" class="slide" data-title="三國志中的街亭之戰" data-sub="背景知識四">
+                <div class="split-layout" style="align-items: flex-start; gap: 2.5vw;">
+                    <!-- 左側：三國志原文 -->
+                    <div class="comparison-box" style="border-color: var(--accent-red); font-size: 2.4vh; line-height: 1.7; padding: 2.5vh 2vw; box-shadow: 0 4px 12px rgba(0,0,0,0.03); margin: 0; background: #fff;">
+                        <div class="comparison-header" style="font-size: 2.6vh; color: var(--accent-red);">《三國志．諸葛亮傳》記載</div>
+                        <p style="text-align: justify; letter-spacing: 0.5px; margin-bottom: 1.5vh;">
+                            「亮身率諸軍攻祁山，戎陳整齊，賞罰肅而號令明，南安、天水、安定三郡叛魏應亮，關中響震。魏明帝西鎮長安，命張郃拒亮，亮使<em>馬謖督諸軍在前，與郃戰於街亭</em>。」
+                        </p>
+                        <p style="text-align: justify; letter-spacing: 0.5px; color: var(--accent-red); margin: 0;">
+                            「謖<em>違亮節度，舉動失宜，大為郃所破</em>。亮拔西縣千餘家，還於漢中，<em>戮謖以謝眾</em>。」
+                        </p>
+                    </div>
+                    <!-- 右側：歷史與文學對照 -->
+                    <div style="font-family: var(--font-ancient); font-size: 2.3vh; line-height: 1.5; font-weight: 900; background: rgba(255, 255, 255, 0.98); border: 2px solid #ccc; border-radius: 8px; padding: 2.5vh 2vw; box-shadow: 0 4px 12px rgba(0,0,0,0.03); margin: 0;">
+                        <div style="color: var(--accent-red); font-size: 2.5vh; margin: 0 0 1.2vh 0; padding: 0 0 0.8vh 0; border-bottom: 2px dashed var(--accent-red); font-weight: 900; line-height: 1.2;">歷史實相 vs 文學張力</div>
+                        <p style="margin-bottom: 1vh;">🔹 <b>違亮節度</b>：馬謖沒有按照諸葛亮的部署當道安營，而是執意上山紮營。</p>
+                        <p style="margin-bottom: 1vh;">🔹 <b>大為所破</b>：張郃斷水圍山，馬謖慘敗，導致北伐滿盤皆輸，諸葛亮只得被迫撤軍。</p>
+                        <p style="margin-bottom: 1vh;">🔹 <b>空城計的由來</b>：歷史上，諸葛亮因街亭失守而拔西縣千餘家，退回漢中。而《三國演義》為了塑造孔明神機妙算的形象，在街亭失守後，巧妙安插了西城「大擺空城計」的精采情節！</p>
+                    </div>
+                </div>
+                <div class="task-box" style="margin-top: 2vh; margin-bottom: 0;">
+                    <span class="task-tag">對照</span>
+                    ❓ 思考：課文《空城計》是《三國演義》中的「文學創作」，而非正史《三國志》所載。當我們理解了這層歷史背景，是否更能體會作者透過「空城計」來反襯孔明「處變不驚、臨危不亂」的文學美學？
+                </div>
+            </div>
+
+            <!-- ============================== SLIDE 2: 馬謖失街亭前情提要 ============================== -->
+            <div id="slide-2" class="slide" data-title="前情提要：馬謖失街亭" data-sub="第一幕：起局">
+                <div class="story-text" style="font-size: 2.8vh; line-height: 1.6; font-weight:900;">
+                    說書人合扇嘆曰：<em>「空城計之危，實起於馬謖大意。」</em><br>
+                    孔明派馬謖駐守蜀軍咽喉重地<b>街亭</b>。孔明臨行前再三叮嚀：『必須當道下寨，扎緊營防。』不料馬謖剛愎自用，自恃讀過兵書，不聽副將王平極力勸阻，執意捨棄大路，將大軍安營於<b>水源斷絕的孤山上</b>。魏國名將張郃見狀，火速派兵包圍孤山、斷絕水道。蜀軍不戰自亂，街亭失守！
+                </div>
+                <div class="task-box" style="margin-bottom:0;">
+                    <span class="task-tag">思辨</span>
+                    ❓ 課堂追問：歷史上，這是蜀漢「第一次北伐」，也是距離「興復漢室」最近、最可能成功的一次，卻因馬謖這一失誤導致全局崩盤。如果你是諸葛亮，此刻看著魏軍逼近，你內心除了緊張，還有什麼樣的痛苦與無奈？
+                </div>
+            </div>
+
+            <!-- ============================== SLIDE 3: 回目尋寶 ============================== -->
+            <div id="slide-3" class="slide" data-title="回目因果鏈" data-sub="第一幕：起局">
+                <div class="story-text">
+                    說書人拍案：<em>「街亭既失，大門洞開，因果循環，下回目隨即揭曉...」</em>
+                </div>
+                <div class="task-box">
+                    <span class="task-tag">文本尋寶</span>
+                    請翻開課本《空城計》第一頁，找到原回目。請點選孔明以琴退兵的<b>「原回目下半句之詞語」</b>。
+                </div>
+                <div class="click-picker-grid" id="picker-slide3">
+                    <button class="picker-btn" onclick="pickSlide3(this, 'wrong')">孔明大擺空城計</button>
+                    <button class="picker-btn" onclick="pickSlide3(this, 'correct')">武侯彈琴退仲達</button>
+                    <button class="picker-btn" onclick="pickSlide3(this, 'wrong')">司馬懿中計退走</button>
+                </div>
+                <div class="reveal-panel" id="reveal-slide3">
+                    <div class="analysis-text">
+                        <span class="author-write-tag">🎬 【作者怎麼寫】「製造懸念與因果伏筆」</span>
+                        上半句「馬謖拒諫失街亭」寫「失」，下半句「武侯彈琴退仲達」寫「退」。作者將「失」與「退」並列，暗示了街亭之失直接逼出了西城空城計。這就是評書小說中最經典的因果勾連，牢牢抓住了讀者。
+                    </div>
+                    <div class="ask-text">
+                        ❓ 課堂追問：如果馬謖當初聽了副將王平的規勸「當道下寨」，這場西城的驚險大戲還會發生嗎？
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================== SLIDE 4: 兵力對比 ============================== -->
+            <div id="slide-4" class="slide" data-title="實力對比天平" data-sub="第一幕：起局">
+                <div class="story-text" style="font-size:2.8vh; margin-bottom:1vh;">
+                    說書人拍撫醒木：<em>「城外十五萬魏軍旌旗蔽日，鐵騎激起漫天沙塵！而西城之中，守軍寥寥無幾。」</em>
+                </div>
+                
+                <!-- 兵力動態對比沙盤 -->
+                <div style="position:relative;">
+                    <canvas id="force-canvas" style="width:100%; height:11vh; background:#ffffff; border:2px solid var(--border-color); border-radius:6px;"></canvas>
+                    <div id="force-text-overlay" style="position:absolute; top:1.5vh; left:2vw; right:2vw; display:flex; justify-content:space-between; font-size:3.2vh; font-family:var(--font-ancient); font-weight:900; pointer-events:none;">
+                        <span style="color:var(--accent-red); text-shadow:0 0 8px #fff;">魏軍主力：150,000</span>
+                        <span style="color:var(--text-light); text-shadow:0 0 8px #fff;">西城殘兵：2,500</span>
+                    </div>
+                </div>
+
+                <div class="task-box" style="margin-top:1.5vh; margin-bottom:1.5vh; padding:1.5vh;">
+                    <span class="task-tag">文本尋寶</span>
+                    請翻開第一段。點選原文中蜀軍此時在城中<b>「只剩下多少兵力」的真實數字。
+                </div>
+                <div class="click-picker-grid" id="picker-slide4" style="margin-top:0;">
+                    <button class="picker-btn" onclick="pickSlide4(this, 'wrong')" style="font-size: 2.8vh; padding: 1.2vh 1.8vw;">五百哨馬</button>
+                    <button class="picker-btn" onclick="pickSlide4(this, 'correct')" style="font-size: 2.8vh; padding: 1.2vh 1.8vw;">二千五百軍</button>
+                    <button class="picker-btn" onclick="pickSlide4(this, 'wrong')" style="font-size: 2.8vh; padding: 1.2vh 1.8vw;">一萬精兵</button>
+                </div>
+                <div class="reveal-panel" id="reveal-slide4">
+                    <div class="analysis-text" style="font-size: 3.2vh; line-height: 1.6;">
+                        <span class="author-write-tag" style="font-size: 3.4vh;">🎬 【作者怎麼寫】「極端數字對比以渲染氛圍」</span>
+                        作者一開篇就以「十五萬大軍」對比「二千五百軍」。這種 60:1 的實力懸殊，瞬間在讀者心中營造出極致壓抑、窒息的危機感。將主角逼上退無可退的絕境，以反襯後文的高超智慧。
+                    </div>
+                    <div class="ask-text" style="font-size: 3.4vh; padding: 2vh;">
+                        ❓ 課堂追問：在這種極端兵力對比下，如果你是西城守軍，此時聽到魏軍來了，你最想做的事是什麼？
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================== SLIDE 5: 諸葛亮生死抉擇 ============================== -->
+            <div id="slide-5" class="slide" data-title="諸葛亮生死抉擇" data-sub="第二幕：布陣">
+                <div class="story-text" style="font-size: 3.4vh; line-height: 1.6; margin-bottom: 1.5vh;">
+                    你按在琴弦上的手指微微發抖，城外十五萬鐵騎激起的沙塵已經撲面而來。<b>此生死一瞬，你該如何？</b>
+                </div>
+                <div class="choice-list" style="display: flex; flex-direction: column; gap: 1.2vh; margin-bottom: 1.5vh;">
+                    <button class="choice-btn" onclick="selectChoice5('run')" style="font-size: 2.8vh; padding: 1.2vh 1.8vw;">決策 A：【棄城逃跑】帶領殘兵向後突圍</button>
+                    <button class="choice-btn" onclick="selectChoice5('fight')" style="font-size: 2.8vh; padding: 1.2vh 1.8vw;">決策 B：【閉門死守】鎖死城門誓與城存亡</button>
+                    <button class="choice-btn" onclick="selectChoice5('show-task')" style="font-size: 2.8vh; padding: 1.2vh 1.8vw;">決策 C：【尋求活路】翻看文本，找出孔明唯一的理性退敵原話</button>
+                </div>
+                
+                <div id="slide4-task-area" style="display:none; margin-top:2vh;">
+                    <div class="task-box" style="font-size: 3.2vh; padding: 2vh; margin-bottom: 1.5vh;">
+                        <span class="task-tag" style="font-size: 2.6vh;">文本尋寶</span>
+                        翻閱課文第五段。孔明解釋不跑的理由，原話為：「若棄城而走，必不能____，得不為司馬懿所擒乎？」請點選正確的缺漏詞。
+                    </div>
+                    <div class="click-picker-grid" id="picker-slide5" style="margin-top:0;">
+                        <button class="picker-btn" onclick="pickSlide5(this, 'wrong')" style="font-size: 2.8vh; padding: 1.2vh 1.8vw;">安全撤退</button>
+                        <button class="picker-btn" onclick="pickSlide5(this, 'correct')" style="font-size: 2.8vh; padding: 1.2vh 1.8vw;">遠遁</button>
+                        <button class="picker-btn" onclick="pickSlide5(this, 'wrong')" style="font-size: 2.8vh; padding: 1.2vh 1.8vw;">成功突圍</button>
+                    </div>
+                </div>
+
+                <div class="reveal-panel" id="reveal-slide5">
+                    <div class="analysis-text" style="font-size: 3.2vh; line-height: 1.6;">
+                        <span class="author-write-tag" style="font-size: 3.4vh;">🎬 【作者怎麼寫】「鋪陳唯一的理性抉擇」</span>
+                        作者在後文讓孔明親自剖析「棄城逃跑」的下場。這段話證明了諸葛亮的空城計不是盲目的冒險，而是經過嚴密邏輯計算後的「唯一活路」。作者用精準的推理把「冒險」寫成了「必然」。
+                    </div>
+                    <div class="ask-text" style="font-size: 3.4vh; padding: 2vh;">
+                        ❓ 課堂追問：如果你被眼前的恐懼遮蔽，會做出什麼錯誤決定？
+                    </div>
+                </div>
+            </div>
+
+            
+            <div id="slide-ending-run" class="slide" data-title="決策結局" data-sub="結局分支">
+                <div class="ending-card">
+                    <div class="ending-title" style="font-size: 4.8vh;">❌ 【結局：半路被俘】</div>
+                    <p style="font-size: 3.4vh; margin-bottom: 2vh; line-height:1.7; font-weight:900;">
+                        你帶著老弱殘兵慌忙向後撤退。然而平原之上毫無掩體，司馬懿的精銳鐵騎半個時辰內便追上大軍，你與眾官伺候皆被俘。
+                    </p>
+                    <blockquote class="quote-highlight" style="font-size: 3.8vh;">「若棄城而走，必不能遠遁，得不為司馬懿所擒乎？」</blockquote>
+                    <p style="font-size: 2.8vh; color:var(--text-muted); margin-top:2vh;">
+                        諸葛亮的判斷完全正確。逃跑，是自投羅網。
+                    </p>
+                    <button class="nav-btn primary" onclick="goToSlide(5)" style="margin-top: 2vh; font-size: 3vh; padding: 1.5vh 3vw;">重新決策 ↩️</button>
+                </div>
+            </div>
+
+            <!-- ============================== SLIDE 7: 結局 - 死守 ============================== -->
+            <div id="slide-ending-fight" class="slide" data-title="決策結局" data-sub="結局分支">
+                <div class="ending-card">
+                    <div class="ending-title" style="font-size: 4.8vh;">❌ 【結局：城破兵敗】</div>
+                    <p style="font-size: 3.4vh; margin-bottom: 2vh; line-height:1.7; font-weight:900;">
+                        你選擇了關門死守。魏軍見西城城門緊閉、如臨大敵，司馬懿料定你兵力空虛且無防備，直接下令全力猛攻。不到半個時辰，城門被破，守軍盡皆身死。
+                    </p>
+                    <p style="font-size: 2.8vh; color:var(--text-muted); margin-top:2vh;">
+                        在實力懸殊時，閉門死守無異於自我暴露虛弱。
+                    </p>
+                    <button class="nav-btn primary" onclick="goToSlide(5)" style="margin-top: 2vh; font-size: 3vh; padding: 1.5vh 3vw;">重新決策 ↩️</button>
+                </div>
+            </div>
+
+            <!-- ============================== SLIDE 8: 映襯對手 ============================== -->
+            <div id="slide-8" class="slide" data-title="大將之風與眾官反應" data-sub="第二幕：布陣">
+                <div class="story-text" style="font-size: 3.4vh; line-height: 1.6; margin-bottom: 1.5vh;">
+                    說書人曰：<em>「大難臨頭，西城裡的氣氛凝結到了冰點...」</em>
+                </div>
+
+                <div class="task-box" style="margin-bottom: 2vh; padding: 2vh; font-size: 3.2vh;">
+                    <span class="task-tag" style="font-size: 2.6vh;">心境對照</span>
+                    請點選下方卡片，對照「眾官的慌亂」與「孔明的冷靜」，體會正反襯托與對比的寫作手法！
+                </div>
+                
+                <div class="split-layout" style="gap: 2.5vw;">
+                    <!-- 左側：眾官之慌 -->
+                    <div class="viewfinder" id="s8-card-officer" onclick="pickSlide8('officer')" style="cursor: pointer; min-height: 28vh; padding: 2.5vh;">
+                        <span class="lens-tag" style="background: var(--accent-red); position: static; display: inline-block; margin-bottom: 1.5vh; font-size: 2.4vh;">眾官之恐：盡皆失色</span>
+                        <div class="viewfinder-content" id="s8-officer-content" style="margin-top: 1vh; font-size: 3vh; line-height: 1.6;">
+                            點擊觀察眾官反應
+                        </div>
+                    </div>
+                    <!-- 右側：孔明之定 -->
+                    <div class="viewfinder" id="s8-card-kong" onclick="pickSlide8('kong')" style="cursor: pointer; min-height: 28vh; padding: 2.5vh;">
+                        <span class="lens-tag close-up" style="background: var(--primary-gold); position: static; display: inline-block; margin-bottom: 1.5vh; color: #000; font-size: 2.4vh;">孔明之定：冷靜下令</span>
+                        <div class="viewfinder-content" id="s8-kong-content" style="margin-top: 1vh; font-size: 3vh; line-height: 1.6;">
+                            點擊觀察孔明決策
+                        </div>
+                    </div>
+                </div>
+
+                <div class="reveal-panel" id="reveal-slide8" style="margin-top: 2vh; padding: 2.5vh;">
+                    <div class="analysis-text" style="font-size: 3.2vh; margin-bottom: 1.5vh; line-height: 1.6;">
+                        <span class="author-write-tag" style="font-size: 3.4vh;">🎬 【作者怎麼寫】「反襯對比的大將之風」</span>
+                        羅貫中在此處寫眾官「無不失色」，是典型的<b>反襯與對比</b>手法。透過眾官的慌亂無措、六神無主，強烈反襯諸葛亮臨危不亂的沉著。更精妙的是，這種「定」不是憑空而來，而是諸葛亮在瞬間對敵我心理進行了冷靜分析，主動做出大開城門、百姓灑掃的極致部署。
+                    </div>
+                    <div class="ask-text" style="font-size: 3.4vh; padding: 2vh; line-height: 1.5;">
+                        ❓ 課堂追問：眾官之慌與孔明之定，這種強烈的「反襯對比」，在塑造孔明的大將之風上起到了什麼藝術效果？
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================== SLIDE 9: 新方案一 虛實心防指數量表 ============================== -->
+            <div id="slide-9" class="slide" data-title="虛實心防指數量表" data-sub="第二幕：布陣">
+                <div class="task-box" style="margin-bottom: 1.5vh; padding: 2vh; font-size: 3.2vh;">
+                    <span class="task-tag" style="font-size: 2.6vh;">心戰沙盤</span>
+                    點擊諸葛亮的部署，切換至司馬懿視角，感受他看到反常舉措時的心理防線變化！
+                </div>
+                
+                <div class="gauge-container" style="padding: 2vh; margin-bottom: 1.5vh;">
+                    <div class="gauge-bar-wrapper" style="margin: 0.8vh 0;">
+                        <div class="gauge-label" style="font-size: 2.6vh; margin-bottom: 0.6vh;">
+                            <span>諸葛亮城內的「實兵戰力」</span>
+                            <span style="color:var(--accent-green);">極度空虛 (1.6%)</span>
+                        </div>
+                        <div class="gauge-track" style="height: 2.5vh;">
+                            <div class="gauge-fill shula" style="width: 1.6%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="gauge-bar-wrapper" style="margin: 0.8vh 0;">
+                        <div class="gauge-label" style="font-size: 2.6vh; margin-bottom: 0.6vh;">
+                            <span>司馬懿腦中的「伏兵疑慮值」</span>
+                            <span id="gauge-val" style="color:var(--primary-gold);">0%</span>
+                        </div>
+                        <div class="gauge-track" style="height: 2.5vh;">
+                            <div class="gauge-fill" id="mian-gauge" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="split-layout" style="grid-template-columns: 1fr 1.1fr; gap: 2.5vw; align-items: start;">
+                    <!-- 左側：諸葛亮的部署 (分為他人、自己作為) -->
+                    <div style="display: flex; flex-direction: column; gap: 0.8vh;">
+                        <div style="text-align: center; font-size: 2.6vh; color: var(--primary-gold); font-weight: 900; margin-bottom: 0.5vh;">孔明禦敵部署：</div>
+                        
+                        <!-- 他人作為 -->
+                        <div style="border: 1.5px dashed rgba(212, 175, 55, 0.45); border-radius: 6px; padding: 1vh; margin-bottom: 1vh; background: rgba(255,255,255,0.01);">
+                            <div style="font-size: 2.3vh; color: var(--primary-gold); font-weight: 900; margin-bottom: 0.6vh; text-align: center; font-family: var(--font-ancient);">⚔️ 他人作為（部下軍士）</div>
+                            <button class="picker-btn" id="act-1" onclick="triggerGauge(1, 20)" style="font-size: 2.5vh; text-align: left; padding: 0.6vh 1.2vw; width: 100%; margin-bottom: 0.5vh;">① 隱匿旌旗 (+20%)</button>
+                            <button class="picker-btn" id="act-2" onclick="triggerGauge(2, 25)" style="font-size: 2.5vh; text-align: left; padding: 0.6vh 1.2vw; width: 100%; margin-bottom: 0.5vh;">② 大開四門 (+25%)</button>
+                            <button class="picker-btn" id="act-5" onclick="triggerGauge(5, 20)" style="font-size: 2.5vh; text-align: left; padding: 0.6vh 1.2vw; width: 100%;">⑤ 百姓灑掃 (+20%)</button>
+                        </div>
+                        
+                        <!-- 自己作為 -->
+                        <div style="border: 1.5px dashed rgba(212, 175, 55, 0.45); border-radius: 6px; padding: 1vh; background: rgba(255,255,255,0.01);">
+                            <div style="font-size: 2.3vh; color: var(--primary-gold); font-weight: 900; margin-bottom: 0.6vh; text-align: center; font-family: var(--font-ancient);">🧙‍♂️ 自己作為（孔明親自）</div>
+                            <button class="picker-btn" id="act-3" onclick="triggerGauge(3, 15)" style="font-size: 2.5vh; text-align: left; padding: 0.6vh 1.2vw; width: 100%; margin-bottom: 0.5vh;">③ 披氅戴巾 (+15%)</button>
+                            <button class="picker-btn" id="act-4" onclick="triggerGauge(4, 20)" style="font-size: 2.5vh; text-align: left; padding: 0.6vh 1.2vw; width: 100%;">④ 焚香操琴 (+20%)</button>
+                        </div>
+                    </div>
+
+                    <!-- 右側：司馬懿觀測鏡 -->
+                    <div class="viewfinder" id="s9-viewfinder" style="min-height: 32vh; padding: 2.5vh; display: flex; flex-direction: column; justify-content: start;">
+                        <span class="lens-tag" style="background: var(--accent-red); position: static; display: inline-block; margin-bottom: 2vh; font-size: 3.2vh; width: fit-content;">司馬懿觀測視角</span>
+                        <div class="viewfinder-content" id="s9-obs-title" style="font-size: 3vh; color: var(--primary-gold); margin-top: 0; line-height: 1.5; font-weight: 900;">
+                            請點擊左側部署進行觀測
+                        </div>
+                        <div class="viewfinder-explain" id="s9-obs-os" style="font-size: 2.8vh; color: var(--text-light); border-top: 1.5px dashed #444; padding-top: 2vh; margin-top: 2vh; line-height: 1.6; font-family: var(--font-ancient);">
+                            魏兵十五萬已壓境，正等待司馬懿下達進攻命令...
+                        </div>
+                    </div>
+                </div>
+
+                <div class="reveal-panel" id="reveal-slide9" style="margin-top: 2vh; padding: 2.5vh;">
+                    <div class="analysis-text" style="font-size: 3.2vh; margin-bottom: 1.5vh; line-height: 1.6;">
+                        <span class="author-write-tag" style="font-size: 3.4vh;">🎬 【作者怎麼寫】「虛實相生 ➡️ 讓對手在腦中自己建構敵軍」</span>
+                        這就是《孫子兵法》「實則虛之，虛則實之」的極致寫法！諸葛亮手裡沒有實兵（只有1.6%），但他知道司馬懿為人謹慎。因此他用這五個「極度反常」的安排，主動露出破綻。當反常累積到100%時，司馬懿的理性防線便會徹底崩潰，在腦中幻想出「城內必有驚天埋伏」。作者寫這場戰役，精妙在於**諸葛亮打的不是物理戰，而是司馬懿大腦裡的認知戰**。
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================== SLIDE 10: 視角轉換為司馬懿 ============================== -->
+            <div id="slide-10" class="slide" data-title="切換至魏軍視角" data-sub="第三幕：對陣">
+                <div style="text-align: center;">
+                    <span style="font-size: 3.8vh; color: var(--accent-bright-red); font-family: var(--font-ancient); letter-spacing: 2px;">ROLE SWAP ── 司馬懿</span>
+                    <h2 style="font-family:var(--font-ancient); font-size: 6.8vh; color: var(--accent-bright-red); margin-top: 2vh; margin-bottom: 1vh; font-weight:900;">
+                        你現在是：魏國名將 ── 司馬懿
+                    </h2>
+                    <p style="font-size: 3.2vh; color: var(--text-light); max-width: 700px; margin: 0 auto; line-height:1.7; font-weight:900;">
+                        你引十五萬大軍，本想一舉剿滅蜀漢大本營，卻見城門大開，諸葛亮在上面空手撫琴、笑臉相迎...
+                    </p>
+                </div>
+            </div>
+
+            <!-- ============================== SLIDE 11: 鏡頭語言尋寶 ============================== -->
+            <div id="slide-11" class="slide" data-title="特寫鏡頭下的驚疑" data-sub="第三幕：對陣">
+                <div class="story-text">
+                    你勒住戰馬韁繩，遙望城頭。這畫面太精緻，你拉近了特寫鏡頭...
+                </div>
+                <div class="task-box">
+                    <span class="task-tag">文本尋寶</span>
+                    請在下方課文原文中，用手指點選標記出<b>「司馬懿眼裡看到，最打擊他心防的兩個神態特寫詞語」</b>。
+                </div>
+                <p class="word-select-area" style="font-size: 3.3vh; line-height: 2.2; text-align: center; margin: 2vh 0;" id="slide11-words">
+                    <span>孔明</span><span>坐於</span><span>城樓</span><span>之上</span>，<span id="w1" onclick="toggleWord(this)">笑容可掬</span>，<span>焚香</span><span>操琴</span>。<span>左有</span><span>一童子</span>，<span>手捧</span><span>寶劍</span>；<span>右有</span><span>一童子</span>，<span>手執</span><span>麈尾</span>。<span>城門</span><span>內外</span><span>有二</span><span>十餘</span><span>百姓</span>，<span>低頭</span><span>灑掃</span>，<span id="w2" onclick="toggleWord(this)">旁若無人</span>。
+                </p>
+                <div style="text-align:center;">
+                    <button class="submit-btn" onclick="checkSlide11()">驗證高亮詞語</button>
+                </div>
+                <div class="reveal-panel" id="reveal-slide11">
+                    <div class="analysis-text">
+                        <span class="author-write-tag">🎬 【作者怎麼寫】「視角轉換與精妙的字眼增減」</span>
+                        第二段寫孔明下令時，為全知命令，無神態。第三段當視角切換到「司馬懿眼睛」時，作者精妙地添上了「笑容可掬」與「旁若無人」八個字。作者利用對手警惕多疑的視角放大這些神態，將心理博弈寫出了動態電影般的推拉感。
+                    </div>
+                    <div class="ask-text">
+                        ❓ 課堂追問：為什麼百姓低頭灑掃必須是「旁若無人」？如果是「驚慌失措的灑掃」會有什麼差別？
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================== SLIDE 12: 大導演分鏡視角切換 ============================== -->
+            <div id="slide-12" class="slide" data-title="導演分鏡鏡頭語言" data-sub="第二幕：布陣">
+                <div class="task-box">
+                    <span class="task-tag">鏡頭語言</span>
+                    點選下方角色，切換【鏡頭A：動作命令（全知觀點）】與【鏡頭B：神態特寫（司馬懿主觀觀點）】，觀察作者如何用文字當相機！
+                </div>
+                
+                <div style="display:flex; justify-content:center; gap:1vw; margin-bottom:2vh;">
+                    <button class="picker-btn" id="d-btn-1" onclick="switchDirectorLens('kong')">🔍 諸葛亮城頭撫琴分鏡</button>
+                    <button class="picker-btn" id="d-btn-2" onclick="switchDirectorLens('people')">🔍 城門百姓灑掃分鏡</button>
+                </div>
+
+                <div class="director-grid">
+                    <!-- 鏡頭 A -->
+                    <div class="viewfinder" id="lens-a">
+                        <span class="lens-tag">鏡頭 A：全知遠景（寫「動作」）</span>
+                        <div class="viewfinder-content" id="lens-a-text">請點擊上方按鈕</div>
+                        <div class="viewfinder-explain" id="lens-a-exp">客觀描寫，交代局勢。</div>
+                    </div>
+                    <!-- 鏡頭 B -->
+                    <div class="viewfinder" id="lens-b">
+                        <span class="lens-tag close-up">鏡頭 B：神態特寫（寫「神態」）</span>
+                        <div class="viewfinder-content" id="lens-b-text">請點擊上方按鈕</div>
+                        <div class="viewfinder-explain" id="lens-b-exp">神態拉近，直擊心理。</div>
+                    </div>
+                </div>
+
+                <div class="reveal-panel" id="reveal-slide12" style="margin-top:1.5vh; padding:2.5vh;">
+                    <div class="ask-text" style="font-size:3.4vh; padding:1.8vh; line-height:1.6; margin-bottom:1.5vh; border:2px solid var(--primary-gold); background:rgba(212,175,55,0.05); border-radius:6px;">
+                        ❓ 課堂追問：為什麼作者在此要重複描寫（城頭操琴與百姓灑掃），但又刻意加上這兩個詞（「笑容可掬」與「旁若無人」）？
+                    </div>
+                    <div class="analysis-text" style="font-size:3.2vh; line-height:1.7;">
+                        <span class="author-write-tag" style="font-size:3.4vh; display:block; margin-bottom:1vh;">💡 【教學解析引導】動作與神態的對比襯托</span>
+                        1. <b>從「動作」到「神態」</b>：第二段僅是客觀交代防線部署（寫動作命令）；第三段當司馬懿引兵前來時，重複描寫畫面卻刻意加上這兩個神態詞，是為了<b>將鏡頭拉近，直擊人物內心</b>。
+                        <br>2. <b>製造極致的「對比」</b>：在十五萬大軍大兵壓境的窒息肅殺中，城頭「笑容可掬」與城門「旁若無人」的極度從容，與龐大危機形成鮮明對比，製造出極致的心理懸念。
+                        <br>3. <b>精妙的「正反襯托」</b>：
+                        <br>　• <b>反襯</b>：以部下眾官「無不失色」的慌亂，反襯主帥孔明憑欄操琴的鎮定。
+                        <br>　• <b>正襯</b>：以百姓「旁若無人」的清掃，正襯主帥孔明「勝券在握」的氣定神閒，藉此徹底擊碎司馬懿的理性防線。
+                    </div>
+                </div>
+            </div>
+            <!-- ============================== SLIDE 13: 司馬懿的決策 ============================== -->
+            <div id="slide-13" class="slide" data-title="司馬懿的死生抉擇" data-sub="第三幕：對陣">
+                <div class="story-text">
+                    城門大開，琴音悠遠。你手握十五萬大軍，<b>此時此刻，你該下達什麼命令？</b>
+                </div>
+                <div class="choice-list">
+                    <button class="choice-btn" onclick="selectChoice13('attack')">決策 A：【立刻攻城】料城內無兵，直取孔明首級</button>
+                    <button class="choice-btn" onclick="selectChoice13('delay')">決策 B：【按兵不動】包圍城池，派先鋒入內刺探</button>
+                    <button class="choice-btn" onclick="selectChoice13('show-task')">決策 C：【尋求安全】分析對手平生性格，點選退兵關鍵課文原文</button>
+                </div>
+
+                <div id="slide12-task-area" style="display:none; margin-top:2vh;">
+                    <div class="task-box">
+                        <span class="task-tag">文本尋寶</span>
+                        翻閱第三段。司馬懿喝退司馬昭，認為孔明絕不會弄險的原話：「亮平生____，不曾弄險...」請點選缺漏字。
+                    </div>
+                    <div class="click-picker-grid" id="picker-slide13">
+                        <button class="picker-btn" onclick="pickSlide13(this, '大膽')">大膽</button>
+                        <button class="picker-btn" onclick="pickSlide13(this, '謹慎')">謹慎</button>
+                        <button class="picker-btn" onclick="pickSlide13(this, '多謀')">多謀</button>
+                    </div>
+                </div>
+
+                <div class="reveal-panel" id="reveal-slide13">
+                    <div class="analysis-text">
+                        <span class="author-write-tag">🎬 【作者怎麼寫】「虛實相生，利用敵人的認知來作戰」</span>
+                        作者在第四段寫到司馬懿對司馬昭的反駁。司馬懿說孔明「一生謹慎」。作者在此處展現了最高明的寫作技巧：諸葛亮退兵並非靠刀槍，而是利用了司馬懿大腦裡自己為諸葛亮打上的標籤。以偏見為武器，以虛化實。
+                    </div>
+                    <div class="ask-text">
+                        ❓ 課堂追問：生活中你有沒有類似「因為想太多反而做出錯誤判斷」的經驗？
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================== NEW SLIDE 14: 司馬昭之質疑 ============================== -->
+            <div id="slide-14" class="slide" data-title="司馬昭插曲的寫作妙處" data-sub="第三幕：對陣">
+                <div class="story-text" style="font-size: 3.4vh; line-height: 1.6; margin-bottom: 1.5vh;">
+                    魏軍撤退時，司馬昭質疑：<span style="color: var(--primary-gold);">「莫非無兵，故作此態？父親何故便退兵？」</span><br>
+                    司馬懿嚴厲反駁：<span style="color: var(--text-muted);">「亮平生謹慎，不曾弄險。今大開城門，必有埋伏...宜速退。」</span>
+                </div>
+                <div class="task-box" style="margin-bottom: 2vh; padding: 2vh; font-size: 3.2vh;">
+                    <span class="task-tag" style="font-size: 2.6vh;">寫作思維</span>
+                    💡 思考追問：小說至此，魏軍直接退兵便可。為什麼羅貫中要刻意安插「司馬昭質疑父親」這段父子爭辯的插曲？
+                </div>
+                <div class="choice-list" style="display: flex; flex-direction: column; gap: 1.2vh; margin-bottom: 1.5vh;">
+                    <button class="choice-btn" onclick="selectChoice14('plot')" style="font-size: 2.8vh; padding: 1.2vh 1.8vw; text-align: left; width: 100%;">探索 A：【情節張力】加入此質疑，對小說的情節波瀾有何妙處？</button>
+                    <button class="choice-btn" onclick="selectChoice14('character')" style="font-size: 2.8vh; padding: 1.2vh 1.8vw; text-align: left; width: 100%;">探索 B：【人物反襯】司馬昭「猜中無兵」，對刻畫司馬懿的形象有何效果？</button>
+                    <button class="choice-btn" onclick="selectChoice14('intelligence')" style="font-size: 2.8vh; padding: 1.2vh 1.8vw; text-align: left; width: 100%;">探索 C：【側面烘托】這段父子爭辯，如何進一步烘托諸葛亮的智慧？</button>
+                </div>
+
+                <div class="reveal-panel" id="reveal-slide14" style="margin-top: 2vh; padding: 2.5vh;">
+                    <div class="analysis-text" style="font-size: 3.2vh; margin-bottom: 1.5vh; line-height: 1.7;" id="s14-explain-content">
+                        <!-- 點選後動態顯示對應賞析 -->
+                    </div>
+                </div>
+            </div>
+            <!-- ============================== SLIDE 14: 結局 - 強攻 (養寇自重) ============================== -->
+            <div id="slide-ending-attack" class="slide" data-title="決策結局" data-sub="結局分支">
+                <div class="ending-card">
+                    <div class="ending-title">❌ 【結局：兔死狗烹，滿門抄斬】</div>
+                    <p style="font-size: 3vh; margin-bottom: 1vh; line-height:1.7; font-weight:900;">
+                        你下令攻城，發現城內果然空虛，輕易擒殺了諸葛亮。消息傳回大魏朝廷，朝臣見蜀漢威脅已除，魏帝氣量狹小，在三個月後以功高震主奪你兵權並將你滿門抄斬。
+                    </p>
+                    <blockquote class="quote-highlight">「狡兔死，走狗烹；飛鳥盡，良弓藏。」</blockquote>
+                    <p style="font-size:3.2vh; color:var(--text-muted); margin-top:2vh;">
+                        這便是著名的「養寇自重」政治智慧：留下諸葛亮，司馬懿在魏國才安全。
+                    </p>
+                    <button class="action-btn" onclick="goToSlide(13)">重新決策 ↩️</button>
+                </div>
+            </div>
+
+            <!-- ============================== SLIDE 15: 結局 - 按兵不動 ============================== -->
+            <div id="slide-ending-delay" class="slide" data-title="決策結局" data-sub="結局分支">
+                <div class="ending-card">
+                    <div class="ending-title">❌ 【結局：痛失良機，反遭夾擊】</div>
+                    <p style="font-size: 3vh; margin-bottom: 1vh; line-height:1.7; font-weight:900;">
+                        你選擇在城外按兵不動。你包圍了兩個時辰，此時臨退之前忽然山谷中漫天鼓聲大震，蜀國伏兵關興、張苞的部隊殺出。魏軍以為真的中了伏兵，丟盔棄甲而去。
+                    </p>
+                    <button class="action-btn" onclick="goToSlide(13)">重新決策 ↩️</button>
+                </div>
+            </div>
+
+            <!-- ============================== SLIDE 16: 司馬懿OS轉折 ============================== -->
+            <div id="slide-15" class="slide" data-title="司馬懿心理OS轉折" data-sub="第三幕：對陣">
+                <div class="story-text">
+                    魏國大軍如潮水般退去。我們來回顧司馬懿心防被擊碎的心理轉折...
+                </div>
+                <div class="task-box">
+                    <span class="task-tag">文本尋寶</span>
+                    請翻閱第二、三、四段。點選出司馬懿對此局的三個心理神態轉折原文。
+                </div>
+                <div class="split-layout">
+                    <div class="click-picker-grid" id="picker-slide15-1">
+                        <p style="width:100%; text-align:center; font-size:2vh; color:var(--primary-gold);">第一步（聽哨兵報）：</p>
+                        <button class="picker-btn" onclick="pickSlide15(this, '1-correct')">笑而不信</button>
+                        <button class="picker-btn" onclick="pickSlide15(this, '1-wrong')">大驚失色</button>
+                    </div>
+                    <div class="click-picker-grid" id="picker-slide15-2">
+                        <p style="width:100%; text-align:center; font-size:2vh; color:var(--primary-gold);">第二步（親自目睹）：</p>
+                        <button class="picker-btn" onclick="pickSlide15(this, '2-correct')">看畢大疑</button>
+                        <button class="picker-btn" onclick="pickSlide15(this, '2-wrong')">面露喜色</button>
+                    </div>
+                    <div class="click-picker-grid" id="picker-slide15-3">
+                        <p style="width:100%; text-align:center; font-size:2vh; color:var(--primary-gold);">第三步（做出決策）：</p>
+                        <button class="picker-btn" onclick="pickSlide15(this, '3-correct')">便急退兵</button>
+                        <button class="picker-btn" onclick="pickSlide15(this, '3-wrong')">按兵不動</button>
+                    </div>
+                </div>
+                <div class="reveal-panel" id="reveal-slide16" style="margin-top: 2vh; padding: 2.5vh;">
+                    <div class="analysis-text" style="font-size: 3.2vh; margin-bottom: 1.5vh; line-height: 1.7;">
+                        <span class="author-write-tag" style="font-size: 3.4vh; display:block; margin-bottom: 1vh;">💡 【教學解析引導】由淺入深的心理神態層遞</span>
+                        作者在此處僅用了三個簡短的詞彙，就極其精準地寫出了司馬懿心理防線被攻破的三個層次：
+                        <br>1. <b>聽報時「笑而不信」</b>：極寫司馬懿的自信與對諸葛亮的輕視，為後續的心態轉折埋下伏筆。
+                        <br>2. <b>目睹時「看畢大疑」</b>：親眼看到琴童、百姓的怪異舉措，內心深處的謹慎轉化為猜忌，自己大腦建構出了「驚天伏兵」的幻想。
+                        <br>3. <b>做出決定「便急退兵」</b>：理智防線徹底崩塌後的本能反應。
+                        <br>作者完全沒有寫半句心理獨白，僅僅使用三個神態的<b>層遞法</b>，就把司馬懿從自負、懷疑到驚恐退兵的思維盲區寫得層次分明、引人入勝。
+                    </div>
+                    <div class="ask-text" style="font-size: 3.4vh; padding: 2vh; line-height: 1.5;">
+                        ❓ 課堂追問：在司馬懿大疑退兵前，作者特別安排了次子「司馬昭」說出實情（「莫非諸葛亮無兵，故作此態？」），卻被司馬懿斥退。請討論：作者在此加入司馬昭這個插曲，在寫作與刻畫人物上有何深意？
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================== SLIDE 17: 智者解密 ============================== -->
+            <div id="slide-16" class="slide" data-title="智者戰後解密" data-sub="第四幕：復盤">
+                <div class="story-text" style="font-size: 3.4vh; line-height: 1.6; margin-bottom: 1.5vh;">
+                    魏兵退去，西城上下一片歡呼。眾官無不駭然，圍著孔明詢問這驚天計謀的祕密...
+                </div>
+                
+                <div class="task-box" style="margin-bottom: 2vh; padding: 2vh; font-size: 3.2vh;">
+                    <span class="task-tag" style="font-size: 2.6vh;">心智拼圖</span>
+                    請點選下方卡片，對照並解碼「諸葛亮的心理預判」與「司馬懿的思維盲區」！
+                </div>
+                
+                <div class="split-layout" style="gap: 2.5vw; margin-bottom: 2vh;">
+                    <!-- 左側：諸葛亮心智 -->
+                    <div class="viewfinder" id="s17-card-shu" onclick="pickSlide17('shu')" style="cursor: pointer; min-height: 25vh; padding: 2vh;">
+                        <span class="lens-tag close-up" style="background: var(--primary-gold); position: static; display: inline-block; margin-bottom: 1vh; color:#000; font-size: 2.2vh;">蜀軍預判：知己知彼</span>
+                        <div class="viewfinder-content" id="s17-shu-content" style="margin-top: 1vh; font-size: 2.8vh; line-height: 1.5;">
+                            點擊解鎖孔明的判斷邏輯
+                        </div>
+                    </div>
+                    <!-- 右側：司馬懿心智 -->
+                    <div class="viewfinder" id="s17-card-wei" onclick="pickSlide17('wei')" style="cursor: pointer; min-height: 25vh; padding: 2vh;">
+                        <span class="lens-tag" style="background: var(--accent-red); position: static; display: inline-block; margin-bottom: 1vh; font-size: 2.2vh;">魏軍盲區：偏見牢籠</span>
+                        <div class="viewfinder-content" id="s17-wei-content" style="margin-top: 1vh; font-size: 2.8vh; line-height: 1.5;">
+                            點擊解鎖司馬懿的思考限制
+                        </div>
+                    </div>
+                </div>
+
+                <div class="reveal-panel" id="reveal-slide17" style="margin-top: 1.5vh; padding: 2.5vh;">
+                    <div class="analysis-text" style="font-size: 3.2vh; margin-bottom: 1.5vh; line-height: 1.6;">
+                        <span class="author-write-tag" style="font-size: 3.4vh;">🎬 【作者怎麼寫】「戰後邏輯剖析，收束全書懸念」</span>
+                        作者在此安排孔明與眾官問答，藉由「料吾生平謹慎，必不弄險」點出：<b>諸葛亮打的不是物理戰，而是司馬懿心中的偏見</b>。孔明將司馬懿對他「謹慎」的標籤轉化為退敵武器，展現了「知己知彼」的最高境界。這場心智對決，讓讀者心服口服。
+                    </div>
+                    <div class="ask-text" style="font-size: 3.4vh; padding: 2vh; line-height: 1.5;">
+                        ❓ 課堂追問：如果前來的不是謹慎多疑的司馬懿，而是莽撞有勇無謀的張飛，空城計還能成功嗎？這對你理解「知彼」有何啟發？
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================== SLIDE 18: 伏兵尋寶 ============================== -->
+            <div id="slide-17" class="slide" data-title="料敵如神伏兵路" data-sub="第四幕：復盤">
+                <div class="story-text" style="font-size: 3.4vh; line-height: 1.6; margin-bottom: 1.5vh;">
+                    說書人拍案：<em>「孔明不僅算準了司馬懿退兵，連他退走的路線，也早已瞭如指掌！」</em>
+                </div>
+                
+                <div class="task-box" style="margin-bottom: 2vh; padding: 2vh; font-size: 3.2vh;">
+                    <span class="task-tag" style="font-size: 2.6vh;">軍事沙盤</span>
+                    請翻閱課文第五段。在下方水墨地圖中，點選孔明料定魏兵撤退必定會走的路線以設下伏兵！
+                </div>
+                
+                <div class="split-layout" style="grid-template-columns: 1fr 1fr; gap: 2.5vw; align-items: start;">
+                    <!-- 左側：三條路線按鈕 -->
+                    <div style="display: flex; flex-direction: column; gap: 1.2vh;">
+                        <button class="picker-btn" id="s18-btn-1" onclick="pickSlide18(1)" style="font-size: 2.8vh; text-align: left; padding: 1.2vh 1.8vw; width: 100%;">A. 山北大道（開闊主幹道）</button>
+                        <button class="picker-btn" id="s18-btn-2" onclick="pickSlide18(2)" style="font-size: 2.8vh; text-align: left; padding: 1.2vh 1.8vw; width: 100%;">B. 山北小路（狹窄谷道，易設伏）</button>
+                        <button class="picker-btn" id="s18-btn-3" onclick="pickSlide18(3)" style="font-size: 2.8vh; text-align: left; padding: 1.2vh 1.8vw; width: 100%;">C. 西城谷口（大軍後撤撤退口）</button>
+                    </div>
+
+                    <!-- 右側：地圖與伏兵動態回饋 -->
+                    <div class="viewfinder" id="s18-map" style="min-height: 26vh; padding: 2vh; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 2.5px dashed var(--border-color);">
+                        <div id="s18-map-status" style="font-size: 3vh; color: var(--text-light); text-align: center; font-weight: 900; line-height: 1.5; font-family: var(--font-ancient);">
+                            🗺️ 蜀軍撤退軍事沙盤<br>
+                            <span style="color:var(--text-muted); font-size: 2.4vh;">請在左側點選行軍路線進行伏擊部署</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="reveal-panel" id="reveal-slide18" style="margin-top: 2vh; padding: 2.5vh;">
+                    <div class="analysis-text" style="font-size: 3.2vh; margin-bottom: 1.5vh; line-height: 1.6;">
+                        <span class="author-write-tag" style="font-size: 3.4vh;">🎬 【作者怎麼寫】「情節重巒疊嶂，預判對手的預判」</span>
+                        作者在讀者以為「危機已過」時，突然拋出「山北小路設伏兵」的精彩伏筆。諸葛亮不僅料定司馬懿會退，連他退走的路線（小路安全心理）都算得一清二楚。<b>這種雙重預判，使故事在結尾處再次掀起高潮</b>，讓讀者對主角的智慧佩服得五體投地。
+                    </div>
+                    <div class="ask-text" style="font-size: 3.4vh; padding: 2vh; line-height: 1.5;">
+                        ❓ 課堂追問：多看一步、預判對手的逃跑路線，這展現了什麼深謀遠慮的思維特質？
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================== SLIDE 19: 歇後語 ============================== -->
+            <div id="slide-19" class="slide" data-title="三國歇後語猜謎" data-sub="第四幕：復盤">
+                <div class="story-text" style="font-size: 3.4vh; line-height: 1.6; margin-bottom: 1.5vh;">
+                    空城一役，傳頌千古。民間將諸葛亮的智慧與膽識編成了許多妙趣橫生的歇後語。
+                </div>
+                
+                <div class="task-box" style="margin-bottom: 2vh; padding: 2vh; font-size: 3.2vh;">
+                    <span class="task-tag" style="font-size: 2.6vh;">水墨謎題</span>
+                    請在下方古風謎面上，猜出空城計的歇後語謎底，解鎖最終智謀復盤！
+                </div>
+                
+                <div class="split-layout" style="grid-template-columns: 1.2fr 1fr; gap: 2.5vw; align-items: center;">
+                    <!-- 左側：水墨卷軸謎面 -->
+                    <div style="background: #ffffff; border: 3px double var(--accent-red); border-radius: 12px; padding: 3vh; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                        <p style="font-size: 2.4vh; color: var(--accent-red); font-family: var(--font-ancient); margin-bottom: 1vh; font-weight: 900;">📜 歇後語燈謎卷軸</p>
+                        <div id="riddle-text" style="font-size: 4vh; font-family: var(--font-ancient); color: var(--text-light); line-height: 1.6; font-weight: 900; padding: 2vh 0;">
+                            「孔明大擺空城計 ── <span style="border-bottom: 3px dashed var(--accent-red); color: var(--accent-red); padding: 0 1vw;">？</span>」
+                        </div>
+                    </div>
+                    <!-- 右側：燈謎選項 -->
+                    <div style="display: flex; flex-direction: column; gap: 1.2vh;">
+                        <button class="picker-btn" id="s19-btn-1" onclick="pickSlide19(1)" style="font-size: 2.8vh; padding: 1.2vh 1.8vw; text-align: center;">神機妙算</button>
+                        <button class="picker-btn" id="s19-btn-2" onclick="pickSlide19(2)" style="font-size: 2.8vh; padding: 1.2vh 1.8vw; text-align: center;">化險為夷</button>
+                        <button class="picker-btn" id="s19-btn-3" onclick="pickSlide19(3)" style="font-size: 2.8vh; padding: 1.2vh 1.8vw; text-align: center;">有驚無險</button>
+                    </div>
+                </div>
+
+                <div class="reveal-panel" id="reveal-slide19" style="margin-top: 2vh; padding: 2.5vh;">
+                    <div class="analysis-text" style="font-size: 3.2vh; margin-bottom: 1.5vh; line-height: 1.6;">
+                        <span class="author-write-tag" style="font-size: 3.4vh;">🎬 【作者怎麼寫】「定格經典，提煉文學價值」</span>
+                        作者通過一連串的矛盾衝突、懸念與心理刻畫，將這段虛構的小說情節寫成了歷史的經典。這句歇後語「化險為夷」，正是這套精心設計的情節帶給大眾最深遠的智慧結晶。
+                    </div>
+                    <div class="ask-text" style="font-size: 3.4vh; padding: 2vh; line-height: 1.5;">
+                        ❓ 課堂追問：生活中有開已失的絕地，而你最後是如何靠冷靜與智慧化險為夷的？
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================== SLIDE 20: 兵法與人性的總結 ============================== -->
+            <div id="slide-19" class="slide" data-title="沙盤智謀總結" data-sub="第四幕：復盤">
+                <div style="background: #ffffff; border: 2.5px solid var(--accent-red); border-radius: 12px; padding: 4vh; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                    <h3 style="font-family:var(--font-ancient); font-size:4.8vh; color:var(--accent-red); margin-bottom:3vh; text-align:center; font-weight:900;">
+                        智謀總結 ── 掌握人性
+                    </h3>
+                    <blockquote class="quote-highlight" style="display:block; text-align:center; font-size:3.8vh; font-weight:900; line-height:1.6; margin-bottom: 3vh;">
+                        《孫子兵法》云：「知己知彼，百戰不殆。」
+                    </blockquote>
+                    <p style="font-size:3.2vh; color:var(--text-light); line-height:1.8; max-width:850px; margin:0 auto; text-align:center; font-weight:900; font-family: var(--font-ancient);">
+                        <span class="author-write-tag" style="text-align:center; display:block; font-size: 3.4vh; margin-bottom: 1.5vh;">🎬 【作者怎麼寫】「將戰事昇華為人性的博弈」</span>
+                        羅貫中寫這篇課文，其核心不在於兵力的碰撞，而是在描摹人性的鏡子。諸葛亮的空城計能大獲全勝，非因武力，而是因為他精準地算計了司馬懿「多疑」且「對自己一生謹慎標籤的深信不疑」。這是一場心戰，也是作者筆下對人性的終極解構。
+                    </p>
+                </div>
+            </div>
+
+            <!-- ============================== SLIDE 26: 封底 ============================== -->
+            <div id="slide-20" class="slide" data-title="突圍成功" data-sub="封底">
+                <div style="background: #ffffff; border: 3px double var(--accent-red); border-radius: 12px; padding: 5vh; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
+                    <h2 style="font-family:var(--font-ancient); font-size: 7vh; color: var(--accent-red); margin-bottom: 2vh; font-weight:900; text-shadow: 0 1px 3px rgba(189,42,46,0.15);">⚔️ 西城突圍成功 ⚔️</h2>
+                    <p style="font-size: 3.6vh; color: var(--text-light); font-family: var(--font-ancient); font-weight:900; line-height: 1.6; margin-bottom: 4vh;">
+                        夫子與弟子已成功穿透文本，完成空城計所有智謀與寫作手法的復盤。
+                    </p>
+                    <p style="font-size: 3vh; color: var(--accent-red); font-style:italic; font-weight:900; margin-bottom: 5vh;">
+                        「羽扇綸巾談笑間，檣櫓灰飛煙滅。」
+                    </p>
+                    <button class="nav-btn primary" style="font-size: 3.2vh; padding: 2vh 4vw; border-radius: 8px;" onclick="resetGame()">重新啟局 🔄</button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 畫布劃記層 -->
+        <canvas id="drawing-canvas"></canvas>
+
+        <div class="slide-footer">
+            <button class="nav-btn" id="prev-btn" onclick="navigateSlide(-1)">上一頁</button>
+            <div class="page-indicator" id="slide-indicator">第 1 / 3 頁</div>
+            
+            <div style="display: flex; align-items: center;">
+                <!-- 頁尾嵌入式劃記工具列 (膠囊扁平化設計) -->
+                <div class="drawing-footer-toolbar">
+                    <button class="drawing-menu-btn active" id="tool-pointer" onclick="setDrawingTool('pointer')" title="滑鼠模式 (雙擊此工具列或雙擊畫布可快速切換畫筆/滑鼠)">
+                        <svg viewBox="0 0 24 24"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path><path d="M13 13l6 6"></path></svg>
+                    </button>
+                    <button class="drawing-menu-btn" id="tool-pen" onclick="setDrawingTool('pen')" title="靛青畫筆">
+                        <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                    </button>
+                    <button class="drawing-menu-btn" id="tool-eraser" onclick="setDrawingTool('eraser')" title="橡皮擦">
+                        <svg viewBox="0 0 24 24"><path d="M20 20H7L3 16c-1.5-1.5-1.5-3.5 0-5l8.5-8.5c1.5-1.5 3.5-1.5 5 0l4 4c1.5 1.5 1.5 3.5 0 5L12 20"></path><line x1="6" y1="12" x2="16" y2="2"></line></svg>
+                    </button>
+                    <button class="drawing-menu-btn" onclick="clearCurrentDrawing()" title="清空本頁劃記">
+                        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    </button>
+                    <button class="drawing-menu-btn danger" onclick="clearAllDrawings()" title="清空所有頁面劃記">
+                        <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    </button>
+                </div>
+                <button class="nav-btn primary" id="next-btn" onclick="navigateSlide(1)">下一頁</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        window.onerror = function(message, source, lineno, colno, error) {
+            alert("⚠️ 偵測到 JS 錯誤！\n訊息: " + message + "\n行號: " + lineno);
+            const errDiv = document.createElement('div');
+            errDiv.style.position = 'fixed';
+            errDiv.style.top = '0'; errDiv.style.left = '0';
+            errDiv.style.width = '100vw'; errDiv.style.height = '100vh';
+            errDiv.style.background = 'rgba(139, 0, 0, 0.98)';
+            errDiv.style.color = '#fff'; errDiv.style.zIndex = '99999';
+            errDiv.style.padding = '4vh 4vw'; errDiv.style.fontFamily = 'monospace';
+            errDiv.style.fontSize = '2.5vh'; errDiv.style.overflow = 'auto';
+            errDiv.innerHTML = `<h1 style="color: #ff3333; font-size: 4vh; margin-bottom: 1vh;">🎬 偵測到 JavaScript 執行期錯誤</h1>
+                                <p><b>錯誤訊息:</b> ${message}</p>
+                                <p><b>來源檔案:</b> ${source}</p>
+                                <p><b>出錯行號:</b> ${lineno} 行 ${colno} 列</p>
+                                <pre style="background: #222; padding: 2vh; border-radius: 5px; margin-top: 2vh; font-size: 2vh; white-space: pre-wrap;">${error ? error.stack : ''}</pre>`;
+            document.body.appendChild(errDiv);
+            return false;
+        };
+
+        let audioCtx = null;
+        function playQinSound(frequency) {}
+        function playShutterSound() {}
+        function playHeartbeatSound() {}
+        function playSolderDustSound() {}
+
+        // ============================== 新增：Canvas 背景水墨飄動 ==============================
+        const mCanvas = document.getElementById('mist-canvas');
+        if (mCanvas) {
+            const mCtx = mCanvas.getContext('2d');
+            let mists = [];
+            
+            function resizeMistCanvas() {
+                mCanvas.width = window.innerWidth;
+                mCanvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resizeMistCanvas);
+            resizeMistCanvas();
+            
+            class MistParticle {
+                constructor() {
+                    this.reset();
+                }
+                reset() {
+                    this.x = Math.random() * mCanvas.width;
+                    this.y = Math.random() * mCanvas.height;
+                    this.r = Math.random() * 120 + 80;
+                    this.vx = Math.random() * 0.4 - 0.2;
+                    this.vy = Math.random() * 0.3 - 0.15;
+                    this.alpha = Math.random() * 0.25 + 0.05;
+                }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    if (this.x < -this.r || this.x > mCanvas.width + this.r || this.y < -this.r || this.y > mCanvas.height + this.r) {
+                        this.reset();
+                    }
+                }
+                draw() {
+                    mCtx.save();
+                    let grad = mCtx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r);
+                    grad.addColorStop(0, `rgba(0, 0, 0, ${this.alpha})`);
+                    grad.addColorStop(0.5, `rgba(15, 10, 10, ${this.alpha * 0.5})`);
+                    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                    mCtx.fillStyle = grad;
+                    mCtx.beginPath();
+                    mCtx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+                    mCtx.fill();
+                    mCtx.restore();
+                }
+            }
+            
+            for (let i = 0; i < 15; i++) {
+                mists.push(new MistParticle());
+            }
+            
+            function drawMistFrame() {
+                mCtx.clearRect(0, 0, mCanvas.width, mCanvas.height);
+                mists.forEach(m => {
+                    m.update();
+                    m.draw();
+                });
+                requestAnimationFrame(drawMistFrame);
+            }
+            drawMistFrame();
+        }
+
+        // ============================== 新增：Canvas 兵力對比粒子海 ==============================
+        const fCanvas = document.getElementById('force-canvas');
+        let forceAnimId = null;
+        let forcePressActive = false; // 答對時魏軍海嘯壓迫
+
+        function startForceCanvasAnim() {
+            if (!fCanvas) return;
+            const fCtx = fCanvas.getContext('2d');
+            fCanvas.width = fCanvas.parentElement.clientWidth;
+            fCanvas.height = fCanvas.parentElement.clientHeight || 150;
+            
+            let weis = [];
+            let shus = [];
+            
+            // 魏兵：密集紅點 (15萬大軍的象徵)
+            for (let i = 0; i < 280; i++) {
+                weis.push({
+                    x: Math.random() * (fCanvas.width * 0.55),
+                    y: Math.random() * fCanvas.height,
+                    vx: Math.random() * 0.6 - 0.3,
+                    vy: Math.random() * 0.4 - 0.2,
+                    r: Math.random() * 2.2 + 0.8
+                });
+            }
+            // 蜀兵：稀疏金點 (2500殘兵的象徵)
+            for (let i = 0; i < 15; i++) {
+                shus.push({
+                    x: fCanvas.width * 0.85 + (Math.random() * 30 - 15),
+                    y: fCanvas.height * 0.5 + (Math.random() * 40 - 20),
+                    vx: Math.random() * 0.2 - 0.1,
+                    vy: Math.random() * 0.2 - 0.1,
+                    r: Math.random() * 3.5 + 1.5
+                });
+            }
+            
+            function drawForceFrame() {
+                if (currentSlide !== 4) {
+                    cancelAnimationFrame(forceAnimId);
+                    return;
+                }
+                fCtx.clearRect(0, 0, fCanvas.width, fCanvas.height);
+                
+                // 畫城牆線
+                fCtx.strokeStyle = '#444';
+                fCtx.lineWidth = 3;
+                fCtx.beginPath();
+                fCtx.moveTo(fCanvas.width * 0.8, 0);
+                fCtx.lineTo(fCanvas.width * 0.8, fCanvas.height);
+                fCtx.stroke();
+                
+                // 畫城樓
+                fCtx.fillStyle = '#f0f0f0';
+                fCtx.fillRect(fCanvas.width * 0.8, fCanvas.height * 0.3, fCanvas.width * 0.2, fCanvas.height * 0.4);
+                fCtx.strokeStyle = varColor('--accent-red', '#bd2a2e');
+                fCtx.strokeRect(fCanvas.width * 0.8, fCanvas.height * 0.3, fCanvas.width * 0.2, fCanvas.height * 0.4);
+                
+                // 更新魏軍 (紅點粒子)
+                fCtx.fillStyle = '#ff3333';
+                weis.forEach(w => {
+                    w.x += w.vx;
+                    w.y += w.vy;
+                    
+                    // 海嘯向右壓迫
+                    if (forcePressActive) {
+                        w.x += 1.8; // 往右前進
+                        if (w.x > fCanvas.width * 0.79) {
+                            w.x = fCanvas.width * 0.79; // 堵在城下
+                            w.vx = 0;
+                        }
+                    } else {
+                        if (w.x < 0) w.x = fCanvas.width * 0.55;
+                        if (w.x > fCanvas.width * 0.58) w.x = 0;
+                    }
+                    if (w.y < 0 || w.y > fCanvas.height) w.y = Math.random() * fCanvas.height;
+                    
+                    fCtx.beginPath();
+                    fCtx.arc(w.x, w.y, w.r, 0, Math.PI * 2);
+                    fCtx.fill();
+                });
+                
+                // 更新蜀軍 (金點粒子)
+                fCtx.fillStyle = varColor('--primary-gold', '#5a5a5a');
+                shus.forEach(s => {
+                    s.x += s.vx;
+                    s.y += s.vy;
+                    if (s.x < fCanvas.width * 0.8 || s.x > fCanvas.width) s.vx = -s.vx;
+                    if (s.y < fCanvas.height * 0.3 || s.y > fCanvas.height * 0.7) s.vy = -s.vy;
+                    
+                    fCtx.beginPath();
+                    fCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                    fCtx.fill();
+                });
+                
+                forceAnimId = requestAnimationFrame(drawForceFrame);
+            }
+            drawForceFrame();
+        }
+        
+        function varColor(varName, fallback) {
+            return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || fallback;
+        }
+
+        // ============================== 新增：時間軸互動邏輯 ==============================
+        const timelineTexts = {
+            1: "<b>① 常規搬糧（分撥已定）：</b> 此時諸葛亮派遣大將及主力部隊出城搬運糧草。城中完全防守空虛。此調度發生在司馬懿大軍攻來「之前」。",
+            2: "<b>② 街亭失守：</b> 前方傳來噩耗，馬謖剛愎自用，失守咽喉街亭，魏軍大門洞開，蜀漢主力已退無可退，滿盤皆輸之局已成。",
+            3: "<b>③ 司馬懿十五萬軍逼近：</b> 哨馬飛報司馬懿引十五萬大軍，如排山倒海般往西城殺來。西城危在旦夕！",
+            4: "<b>④ 眾官失色，孔明施計：</b> 聞聽軍情，城中眾官無不「大驚失色」，唯諸葛亮臨危不亂，傳令「隱匿旌旗，大開四門」，空城計大幕拉開！"
+        };
+
+        function clickTimeline(nodeIndex) {
+            playQinSound(200 + (nodeIndex * 60));
+            
+            // 更新進度條寬度
+            const percentMap = { 1: 0, 2: 33, 3: 66, 4: 100 };
+            document.getElementById('s8-timeline-progress').style.width = percentMap[nodeIndex] + "%";
+            
+            // 更新節點 active
+            for (let i = 1; i <= 4; i++) {
+                const node = document.getElementById('t-node-' + i);
+                if (i <= nodeIndex) {
+                    node.classList.add('active');
+                } else {
+                    node.classList.remove('active');
+                }
+            }
+            
+            // 顯示文字
+            const detailBox = document.getElementById('timeline-detail-box');
+            detailBox.style.display = 'block';
+            detailBox.innerHTML = timelineTexts[nodeIndex];
+        }
+
+        let currentSlide = 1;
+        try {
+            const savedSlide = localStorage.getItem('empty-fort-current-slide');
+            if (savedSlide) {
+                const s = Number(savedSlide);
+                if (s >= 1 && s <= 3) {
+                    currentSlide = s;
+                }
+            }
+        } catch(e) {
+            console.error("載入頁數歷史失敗", e);
+        }
+        const totalSlides = 3; // 模板範例共 3 頁
+ 
+        // slideLocks 用於追蹤作答狀態以展示解析
+        const slideLocks = {
+            1: true,   // slide-1
+            2: true,   // slide-2
+            3: true    // slide-3
+        };
+ 
+        const slideIdMap = {
+            1: "slide-1",
+            2: "slide-2",
+            3: "slide-3"
+        };
+
+        function updateSlideUI() {
+            const slides = document.querySelectorAll('.slide');
+            slides.forEach(s => s.style.display = 'none');
+
+            const targetId = slideIdMap[currentSlide];
+            const target = document.getElementById(targetId);
+            if (target) {
+                target.style.display = 'flex';
+                const title = target.getAttribute('data-title');
+                const sub = target.getAttribute('data-sub');
+                document.getElementById('header-title').innerText = title;
+                document.getElementById('header-subtitle').innerText = sub;
+            }
+
+            document.getElementById('slide-indicator').innerText = `第 ${currentSlide} / ${totalSlides} 頁`;
+            document.getElementById('prev-btn').disabled = (currentSlide === 1);
+            document.getElementById('next-btn').disabled = (currentSlide === totalSlides); // 隨時開放
+
+            document.getElementById('next-btn').classList.add('primary');
+
+            // 觸發沙盤動畫或音效 (模板留空，供下次別課客製化音效與動畫)
+            if (currentSlide === 2) {
+                playSolderDustSound(); // 範例音效
+            }
+
+            // 讀取並還原當前頁面的劃記
+            if (typeof loadCurrentSlideDrawing === 'function') {
+                loadCurrentSlideDrawing();
+            }
+
+            // 記憶當前頁面，重整不會消失
+            try {
+                localStorage.setItem('empty-fort-current-slide', currentSlide);
+            } catch(e) {
+                console.error("保存頁數歷史失敗", e);
+            }
+        }
+
+        function navigateSlide(direction) {
+            currentSlide += direction;
+            if (currentSlide < 1) currentSlide = 1;
+            if (currentSlide > totalSlides) currentSlide = totalSlides;
+
+            playQinSound(196);
+            updateSlideUI();
+        }
+
+        function goToSlide(slideIndex) {
+            currentSlide = slideIndex;
+            playQinSound(220);
+            updateSlideUI();
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                if (currentSlide < totalSlides) navigateSlide(1);
+            } else if (e.key === 'ArrowLeft') {
+                if (currentSlide > 1) navigateSlide(-1);
+            }
+        });
+
+        // ============================== 各關卡點選互動驗證邏輯 ==============================
+
+        // 關卡 3 (回目點選)
+        function pickSlide3(btn, choice) {
+            const btns = document.querySelectorAll('#picker-slide3 .picker-btn');
+            btns.forEach(b => b.classList.remove('correct', 'wrong'));
+            
+            if (choice === 'correct') {
+                playQinSound(440);
+                btn.classList.add('correct');
+                document.getElementById('reveal-slide3').style.display = 'block';
+                slideLocks[3] = true;
+            } else {
+                playQinSound(110);
+                btn.classList.add('wrong');
+            }
+        }
+
+        // 關卡 4 (兵力點選)
+        function pickSlide4(btn, choice) {
+            const btns = document.querySelectorAll('#picker-slide4 .picker-btn');
+            btns.forEach(b => b.classList.remove('correct', 'wrong'));
+            
+            if (choice === 'correct') {
+                playQinSound(440);
+                btn.classList.add('correct');
+                forcePressActive = true; // 觸發紅點海嘯壓城
+                document.getElementById('reveal-slide4').style.display = 'block';
+                slideLocks[4] = true;
+            } else {
+                playQinSound(110);
+                btn.classList.add('wrong');
+            }
+        }
+
+        // 關卡 5 (諸葛亮抉擇)
+        function selectChoice5(choice) {
+            if (choice === 'run') {
+                goToSlide(6);
+            } else if (choice === 'fight') {
+                goToSlide(7);
+            } else if (choice === 'show-task') {
+                playQinSound(220);
+                document.getElementById('slide4-task-area').style.display = 'block';
+            }
+        }
+
+        function pickSlide5(btn, choice) {
+            const btns = document.querySelectorAll('#picker-slide5 .picker-btn');
+            btns.forEach(b => b.classList.remove('correct', 'wrong'));
+
+            if (choice === 'correct') {
+                playQinSound(440);
+                btn.classList.add('correct');
+                document.getElementById('reveal-slide5').style.display = 'block';
+                slideLocks[5] = true;
+            } else {
+                playQinSound(110);
+                btn.classList.add('wrong');
+            }
+        }
+
+        // 關卡 8 (心境映襯)
+        let s8Officer = false;
+        let s8Kong = false;
+        function pickSlide8(type) {
+            if (type === 'officer') {
+                playQinSound(220);
+                const card = document.getElementById('s8-card-officer');
+                card.classList.add('active-lens');
+                document.getElementById('s8-officer-content').innerHTML = "<b>【眾官驚慌，大驚失色】</b><br>聽聞魏兵大軍壓境，西城眾官嚇得面無土色、手忙腳亂。作者以動態的慌亂，將緊迫氣氛渲染到極致。";
+                s8Officer = true;
+            } else if (type === 'kong') {
+                playQinSound(330);
+                const card = document.getElementById('s8-card-kong');
+                card.classList.add('active-lens');
+                document.getElementById('s8-kong-content').innerHTML = "<b>【孔明沉著，冷靜下令】</b><br>面對壓倒性軍力，諸葛亮冷靜觀察大局，從容下達「隱匿旌旗、大開四門」等反常調度。作者以絕對的靜態反襯其大將之風。";
+                s8Kong = true;
+            }
+
+            if (s8Officer && s8Kong) {
+                document.getElementById('reveal-slide8').style.display = 'block';
+                slideLocks[8] = true;
+            }
+        }
+
+        // 方案一：心防指數量表邏輯 (結合司馬懿心理獨白 OS)
+        let gaugeScore = 0;
+        const activatedGaugeActions = {};
+        const s9OsData = {
+            1: {
+                title: "① 司馬懿望西城：城上空空如也，不見一旗",
+                os: "「諸葛亮一生謹慎，向不弄險。如今城頭不見旌旗，反而異常安靜，莫非城中深藏精兵伏弩，欲引我軍深入？不可輕敵！」"
+            },
+            2: {
+                title: "② 司馬懿望城門：四門大開，毫無防備",
+                os: "「大敵當前卻反常地敞開城門，這絕不合常理。孔明必然在城門內側設有伏兵，只等我軍長驅直入後合圍剿滅！」"
+            },
+            3: {
+                title: "③ 司馬懿望城樓：孔明羽扇綸巾，衣冠楚楚",
+                os: "「大軍壓境，他卻穿戴整齊，在城頭憑欄而坐。若非胸有成竹、必有依恃，安能如此泰然自若？他背後定有玄機！」"
+            },
+            4: {
+                title: "④ 司馬懿聽琴音：琴聲悠揚，焚香裊裊",
+                os: "「聽此琴音，清亮沉穩，指法毫不紊亂；看此香煙，悠悠升起。這絕非驚慌之人所能彈奏。諸葛亮在暗示我他早有準備！」"
+            },
+            5: {
+                title: "⑤ 司馬懿望城下：二十餘百姓旁若無人地灑掃",
+                os: "「十五萬鐵騎壓境，百姓安能如此專心掃地、毫無懼色？這絕非尋常百姓，定是蜀軍精銳所扮，故意引我軍入城！」"
+            }
+        };
+
+        function triggerGauge(id, addScore) {
+            if (activatedGaugeActions[id]) return; // 不重複計算
+            
+            playQinSound(150 + (id * 50));
+            activatedGaugeActions[id] = true;
+            document.getElementById('act-' + id).classList.add('selected');
+            
+            gaugeScore += addScore;
+            if (gaugeScore > 100) gaugeScore = 100;
+            
+            // 更新進度條
+            document.getElementById('gauge-val').innerText = gaugeScore + "%";
+            document.getElementById('mian-gauge').style.width = gaugeScore + "%";
+            
+            // 切換至司馬懿觀測 OS
+            const data = s9OsData[id];
+            const viewfinder = document.getElementById('s9-viewfinder');
+            viewfinder.classList.remove('active-lens');
+            void viewfinder.offsetWidth; // 強制重繪觸發閃光
+            viewfinder.classList.add('active-lens');
+            
+            document.getElementById('s9-obs-title').innerHTML = data.title;
+            document.getElementById('s9-obs-os').innerHTML = data.os;
+            
+            if (gaugeScore === 100) {
+                playQinSound(523);
+                document.getElementById('reveal-slide9').style.display = 'block';
+            }
+        }
+
+        // 方案二：大導演分鏡切換邏輯
+        const lensData = {
+            'kong': {
+                a: "「孔明乃披鶴氅，戴綸巾，引二小童，攜琴一張，於城上敵樓前，憑欄而坐，焚香操琴。」",
+                b: "「笑容可掬」",
+                aExp: "「以眾官襯孔明」之襯托法──前文以「眾官無不失色」的慌亂，強烈對比並襯托出孔明披氅操琴的極致鎮定與從容，讓孔明的智慧與氣度躍然紙上。",
+                bExp: "「笑容可掬」的對比手法──在十五萬魏軍大兵壓境的肅殺氣氛中，諸葛亮卻在城頭「笑容可掬」。這微小的神態與龐大的危機形成鮮明對比，在讀者與對手心中製造極致懸念。"
+            },
+            'people': {
+                a: "「每一門上用二十軍士，扮作百姓，灑掃街道。」",
+                b: "「低頭灑掃，旁若無人」",
+                aExp: "「大軍壓境」與「大開城門」的純粹對比──一邊是來勢洶洶的十五萬鐵騎，一邊卻是二十餘百姓大開城門清掃街道。這種極端強烈的畫面與局勢對比，造成不可思議的張力。",
+                bExp: "「對比反襯」的最高寫法──百姓「低頭灑掃，旁若無人」。低頭清掃的細微『動』態，非但沒有破壞空城的氣氛，反而襯托出城內極度安詳、毫無破綻的『靜』與『定』，成為擊碎司馬懿防線的致命一擊。"
+            }
+        };
+
+        function switchDirectorLens(type) {
+            playShutterSound();
+            playHeartbeatSound();
+            
+            const lensA = document.getElementById('lens-a');
+            const lensB = document.getElementById('lens-b');
+            
+            lensA.classList.remove('active-lens');
+            lensB.classList.remove('active-lens');
+            
+            // 強制重繪以觸發相機閃光動畫
+            void lensA.offsetWidth;
+            void lensB.offsetWidth;
+            
+            lensA.classList.add('active-lens');
+            lensB.classList.add('active-lens');
+
+            document.getElementById('d-btn-1').classList.remove('selected');
+            document.getElementById('d-btn-2').classList.remove('selected');
+            
+            if (type === 'kong') document.getElementById('d-btn-1').classList.add('selected');
+            else document.getElementById('d-btn-2').classList.add('selected');
+
+            const data = lensData[type];
+            document.getElementById('lens-a-text').innerHTML = data.a;
+            document.getElementById('lens-b-text').innerHTML = data.b;
+            document.getElementById('lens-a-exp').innerText = data.aExp;
+            document.getElementById('lens-b-exp').innerText = data.bExp;
+
+            document.getElementById('reveal-slide12').style.display = 'block';
+        }
+
+        // 關卡 12 (鏡頭語言高亮點詞)
+        function toggleWord(el) {
+            playQinSound(220);
+            el.classList.toggle('selected-word');
+        }
+
+        function checkSlide11() {
+            const w1El = document.getElementById('w1');
+            const w2El = document.getElementById('w2');
+            const w1 = w1El.classList.contains('selected-word');
+            const w2 = w2El.classList.contains('selected-word');
+
+            if (w1 && w2) {
+                playQinSound(440);
+                w1El.classList.remove('selected-word');
+                w2El.classList.remove('selected-word');
+                w1El.classList.add('highlight-pulse');
+                w2El.classList.add('highlight-pulse');
+                document.getElementById('reveal-slide11').style.display = 'block';
+                slideLocks[11] = true;
+            } else {
+                playQinSound(110);
+                alert("點選單詞不完全正確！提示：點選出右側第三段中，描寫孔明笑容和百姓灑掃狀態的兩個四字詞（即「笑容可掬」與「旁若無人」）。");
+            }
+        }
+
+        // 關卡 13 (司馬懿抉擇)
+        function selectChoice13(choice) {
+            if (choice === 'attack') {
+                goToSlide(16);
+            } else if (choice === 'delay') {
+                goToSlide(16);
+            } else if (choice === 'show-task') {
+                playQinSound(220);
+                document.getElementById('slide12-task-area').style.display = 'block';
+            }
+        }
+
+        function pickSlide13(btn, choice) {
+            const btns = document.querySelectorAll('#picker-slide13 .picker-btn');
+            btns.forEach(b => b.classList.remove('correct', 'wrong'));
+
+            if (choice === '謹慎') {
+                playQinSound(440);
+                btn.classList.add('correct');
+                document.getElementById('reveal-slide13').style.display = 'block';
+                slideLocks[13] = true;
+            } else {
+                playQinSound(110);
+                btn.classList.add('wrong');
+            }
+        }
+
+        // 關卡 16 (OS轉折)
+        let s16_1 = false, s16_2 = false, s16_3 = false;
+        function selectChoice14(choice) {
+            const btns = document.querySelectorAll('#slide-14 .choice-btn');
+            btns.forEach(b => {
+                b.classList.remove('selected');
+                b.style.borderColor = 'var(--border-color)';
+                b.style.color = 'var(--text-light)';
+            });
+
+            let clickedBtn = null;
+            let explainHtml = "";
+
+            if (choice === 'plot') {
+                clickedBtn = btns[0];
+                explainHtml = `<b>🎬 【探索 A：情節張力】增添波瀾，扣人心弦</b><br>
+                               若司馬懿直接退兵，情節便平淡無奇；安插了司馬昭的質疑，魏軍在進軍與撤退邊緣產生了摩擦，讓讀者心生懸念──「司馬懿會不會聽兒子的話？空城計會不會敗露？」這種臨退兵前的波折，成功把小說張力拉到最滿。`;
+                playQinSound(220);
+            } else if (choice === 'character') {
+                clickedBtn = btns[1];
+                explainHtml = `<b>🎬 【探索 B：人物反襯】愚者猜中，反襯智者之失</b><br>
+                               司馬昭憑直覺說出了「諸葛亮可能無兵」的真相，而多謀的司馬懿卻拒絕相信。這形成強烈的反襯──司馬昭越是猜中，越反襯出司馬懿的「多疑自負」與「聰明反被聰明誤」，刻畫出多疑性格的悲劇性。`;
+                playQinSound(294);
+            } else if (choice === 'intelligence') {
+                clickedBtn = btns[2];
+                explainHtml = `<b>🎬 【探索 C：側面烘托】神機妙算，算透人性</b><br>
+                               這段父子爭辯側面烘托了孔明的智慧。孔明不僅算透了司馬懿「平生謹慎」的性格，更算透了他「自負且聽不進小輩勸告」的傲慢。這段對話證明孔明打的是完美的「認知心理戰」。`;
+                playQinSound(330);
+            }
+
+            if (clickedBtn) {
+                clickedBtn.classList.add('selected');
+                clickedBtn.style.borderColor = 'var(--primary-gold)';
+                clickedBtn.style.color = 'var(--primary-gold)';
+            }
+
+            document.getElementById('s14-explain-content').innerHTML = `
+                <span class="author-write-tag" style="font-size: 3.4vh; display:block; margin-bottom: 1.5vh;">💡 【文學賞析引導】司馬昭插曲的寫作妙處</span>
+                <div style="font-size: 3.2vh; line-height: 1.7; color: var(--text-light);">${explainHtml}</div>
+            `;
+            document.getElementById('reveal-slide14').style.display = 'block';
+            slideLocks[14] = true;
+        }
+
+        function pickSlide15(btn, choice) {
+            if (choice === '1-correct') {
+                playQinSound(220);
+                const btns = document.querySelectorAll('#picker-slide15-1 .picker-btn');
+                btns.forEach(b => b.classList.remove('correct', 'wrong'));
+                btn.classList.add('correct');
+                s16_1 = true;
+            } else if (choice === '2-correct') {
+                playQinSound(294);
+                const btns = document.querySelectorAll('#picker-slide15-2 .picker-btn');
+                btns.forEach(b => b.classList.remove('correct', 'wrong'));
+                btn.classList.add('correct');
+                s16_2 = true;
+            } else if (choice === '3-correct') {
+                playQinSound(330);
+                const btns = document.querySelectorAll('#picker-slide15-3 .picker-btn');
+                btns.forEach(b => b.classList.remove('correct', 'wrong'));
+                btn.classList.add('correct');
+                s16_3 = true;
+            } else {
+                playQinSound(110);
+                btn.classList.add('wrong');
+            }
+
+            if (s16_1 && s16_2 && s16_3) {
+                document.getElementById('reveal-slide16').style.display = 'block';
+                slideLocks[20] = true;
+            }
+        }
+
+        // 關卡 17 (智者解密 - 心智拼圖)
+        let s17Shu = false;
+        let s17Wei = false;
+        function pickSlide17(type) {
+            if (type === 'shu') {
+                playQinSound(220);
+                const card = document.getElementById('s17-card-shu');
+                card.classList.add('active-lens');
+                document.getElementById('s17-shu-content').innerHTML = "<b>【孔明：大膽預判，知己知彼】</b><br>「吾知此人平生謹慎，必不弄險。」孔明算透了對手絕不敢賭，便以極致的『空』偽裝成伏兵，這是最高明的心理攻勢。";
+                s17Shu = true;
+            } else if (type === 'wei') {
+                playQinSound(330);
+                const card = document.getElementById('s17-card-wei');
+                card.classList.add('active-lens');
+                document.getElementById('s17-wei-content').innerHTML = "<b>【司馬懿：偏見所困，聰明反誤】</b><br>「亮平生謹慎，今大開四門，必有伏兵。」司馬懿受困於諸葛亮『謹慎』的標籤，理性分析反而蒙蔽了直覺，落入自己心造的牢籠。";
+                s17Wei = true;
+            }
+
+            if (s17Shu && s17Wei) {
+                document.getElementById('reveal-slide17').style.display = 'block';
+                slideLocks[20] = true;
+            }
+        }
+
+        // 關卡 18 (撤退路線 - 軍事沙盤)
+        function pickSlide18(routeId) {
+            const btns = [
+                document.getElementById('s18-btn-1'),
+                document.getElementById('s18-btn-2'),
+                document.getElementById('s18-btn-3')
+            ];
+            btns.forEach(b => { if (b) b.classList.remove('correct', 'wrong'); });
+            
+            const mapEl = document.getElementById('s18-map');
+            mapEl.classList.remove('active-lens');
+            void mapEl.offsetWidth; // 強制重繪
+
+            if (routeId === 2) { // 山北小路 - 正確
+                playQinSound(523);
+                btns[1].classList.add('correct');
+                mapEl.classList.add('active-lens');
+                document.getElementById('s18-map-status').innerHTML = "⚔️ <b>山北小路伏擊成功！</b><br><span style='color:var(--primary-gold); font-size: 2.8vh; display:block; margin: 1vh 0;'>🔥 擂鼓震天！蜀軍伏兵關興、張苞左右夾擊！</span>魏軍驚魂未定之下，丟盔棄甲，狼狽奔逃！諸葛亮預判成功！";
+                document.getElementById('reveal-slide18').style.display = 'block';
+                slideLocks[20] = true;
+            } else { // 錯誤路線
+                playQinSound(110);
+                btns[routeId - 1].classList.add('wrong');
+                const routeName = routeId === 1 ? "山北大道" : "西城谷口";
+                document.getElementById('s18-map-status').innerHTML = "❌ <b>伏擊失敗！</b><br>此為寬闊的" + routeName + "，魏軍井然有序快速後撤。此處未部署伏兵，魏軍毫無受阻安然撤離！";
+            }
+        }
+
+        // 關卡 19 (歇後語 - 燈謎卷軸)
+        function pickSlide19(answerId) {
+            const btns = [
+                document.getElementById('s19-btn-1'),
+                document.getElementById('s19-btn-2'),
+                document.getElementById('s19-btn-3')
+            ];
+            btns.forEach(b => { if (b) b.classList.remove('correct', 'wrong'); });
+
+            if (answerId === 2) { // 化險為夷 - 正確
+                playQinSound(440);
+                btns[1].classList.add('correct');
+                document.getElementById('riddle-text').innerHTML = "「孔明大擺空城計 ── <span style='color:var(--primary-gold); font-size: 5.5vh; text-shadow: 0 0 15px var(--primary-gold); font-weight:900;'>化險為夷</span>」";
+                document.getElementById('reveal-slide19').style.display = 'block';
+                slideLocks[20] = true;
+            } else {
+                playQinSound(110);
+                btns[answerId - 1].classList.add('wrong');
+            }
+        }
+
+        // 重設遊戲
+        function resetGame() {
+            currentSlide = 1;
+            try { localStorage.setItem('empty-fort-current-slide', 1); } catch(e) {}
+            matchedCount = 0;
+            selectedSource = null;
+            s8Officer = false; s8Kong = false;
+            s16_1 = false; s16_2 = false; s16_3 = false;
+            gaugeScore = 0;
+            forcePressActive = false;
+            for(let key in activatedGaugeActions) delete activatedGaugeActions[key];
+
+            // 恢復所有按鈕狀態
+            const btns = document.querySelectorAll('.picker-btn');
+            btns.forEach(b => b.classList.remove('correct', 'wrong', 'selected'));
+
+            // 恢復 Slide 8 卡片樣式與文字
+            const cardOfficer = document.getElementById('s8-card-officer');
+            const cardKong = document.getElementById('s8-card-kong');
+            if (cardOfficer) {
+                cardOfficer.classList.remove('active-lens');
+                document.getElementById('s8-officer-content').innerHTML = "點擊觀察眾官反應";
+            }
+            if (cardKong) {
+                cardKong.classList.remove('active-lens');
+                document.getElementById('s8-kong-content').innerHTML = "點擊觀察孔明決策";
+            }
+
+            // 恢復 Slide 9 樣式與文字
+            const s9Viewfinder = document.getElementById('s9-viewfinder');
+            if (s9Viewfinder) {
+                s9Viewfinder.classList.remove('active-lens');
+                document.getElementById('s9-obs-title').innerHTML = "請點擊左側部署進行觀測";
+                document.getElementById('s9-obs-os').innerHTML = "魏兵十五萬已壓境，正等待司馬懿下達進攻命令...";
+            }
+            document.getElementById('mian-gauge').style.width = "0%";
+            document.getElementById('gauge-val').innerText = "0%";
+
+            // 恢復導演分鏡視角
+            document.getElementById('lens-a-text').innerText = "請點擊上方按鈕";
+            document.getElementById('lens-b-text').innerText = "請點擊上方按鈕";
+            document.getElementById('lens-a-exp').innerText = "客觀描寫，交代局勢。";
+            document.getElementById('lens-b-exp').innerText = "神態拉近，直擊心理。";
+            
+            const lensA = document.getElementById('lens-a');
+            const lensB = document.getElementById('lens-b');
+            if (lensA) lensA.classList.remove('active-lens');
+            if (lensB) lensB.classList.remove('active-lens');
+
+            // 隱藏 reveal panels
+            const panels = document.querySelectorAll('.reveal-panel');
+            panels.forEach(p => p.style.display = 'none');
+
+            // 恢復點選高亮
+            const w1El = document.getElementById('w1');
+            const w2El = document.getElementById('w2');
+            if (w1El) w1El.classList.remove('highlight-pulse', 'selected-word');
+            if (w2El) w2El.classList.remove('highlight-pulse', 'selected-word');
+
+            // 恢復時間軸
+            const s8Progress = document.getElementById('s8-timeline-progress');
+            if (s8Progress) s8Progress.style.width = "0%";
+            for (let i = 1; i <= 4; i++) {
+                const node = document.getElementById('t-node-' + i);
+                if (node) node.classList.remove('active');
+            }
+            const timelineDetail = document.getElementById('timeline-detail-box');
+            if (timelineDetail) timelineDetail.style.display = 'none';
+
+            // 恢復 Slide 17 心智狀態
+            s17Shu = false;
+            s17Wei = false;
+            const cardShu = document.getElementById('s17-card-shu');
+            const cardWei = document.getElementById('s17-card-wei');
+            if (cardShu) {
+                cardShu.classList.remove('active-lens');
+                document.getElementById('s17-shu-content').innerHTML = "點擊解鎖孔明的判斷邏輯";
+            }
+            if (cardWei) {
+                cardWei.classList.remove('active-lens');
+                document.getElementById('s17-wei-content').innerHTML = "點擊解鎖司馬懿的思考限制";
+            }
+
+            // 恢復 Slide 18 沙盤狀態
+            const s18Map = document.getElementById('s18-map');
+            if (s18Map) {
+                s18Map.classList.remove('active-lens');
+                document.getElementById('s18-map-status').innerHTML = "🗺️ 蜀軍撤退軍事沙盤<br><span style='color:var(--text-muted); font-size: 2.4vh;'>請在左側點選行軍路線進行伏擊部署</span>";
+            }
+
+            // 恢復 Slide 19 謎面
+            const riddleText = document.getElementById('riddle-text');
+            if (riddleText) {
+                riddleText.innerHTML = "「孔明大擺空城計 ── <span style='border-bottom: 3px dashed var(--primary-gold); color: var(--primary-gold); padding: 0 1vw;'>？</span>」";
+            }
+
+            // 重置 locks
+            for (let k in slideLocks) {
+            slideLocks[k] = [1, 2, 3].includes(Number(k));
+        }
+        clearAllDrawings();
+        goToSlide(1);
+        }
+
+        // ============================== 平板全域劃記與持久化記憶邏輯 ==============================
+        const drawCanvas = document.getElementById('drawing-canvas');
+        let isDrawing = false;
+        let drawingTool = 'pointer'; // 'pointer', 'pen', 'eraser'
+        let lastX = 0;
+        let lastY = 0;
+        
+        // 記憶結構：key是slideId, value是base64 PNG
+        let slideDrawings = {};
+        
+        // 從 localStorage 讀取歷史紀錄
+        try {
+            const savedDrawings = localStorage.getItem('empty-fort-slide-drawings');
+            if (savedDrawings) {
+                slideDrawings = JSON.parse(savedDrawings);
+            }
+        } catch(e) {
+            console.error("讀取劃記歷史失敗", e);
+        }
+
+        // 初始化畫布大小（使用 getBoundingClientRect 取 canvas 自身的真實視覺尺寸）
+        function initDrawingCanvas() {
+            if (!drawCanvas) return;
+            const rect = drawCanvas.getBoundingClientRect();
+            const w = Math.round(rect.width) || 800;
+            const h = Math.round(rect.height) || 450;
+            drawCanvas.width = w;
+            drawCanvas.height = h;
+            console.log('🎨 initDrawingCanvas:', {w, h});
+            
+            // 重新加載當前頁的劃記
+            loadCurrentSlideDrawing();
+        }
+
+        window.addEventListener('resize', () => {
+            // 在調整大小前，先存儲當前畫面以免遺失
+            saveCurrentSlideDrawing();
+            initDrawingCanvas();
+        });
+
+        // 選項面板展開與收合
+        function toggleDrawingMenu() {
+            const panel = document.getElementById('drawing-menu-panel');
+            if (panel) {
+                panel.classList.toggle('show');
+            }
+        }
+
+        // 設定工具
+        function setDrawingTool(tool) {
+            drawingTool = tool;
+            
+            // 更新按鈕樣式
+            document.querySelectorAll('.drawing-menu-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            if (tool === 'pointer') {
+                const btn = document.getElementById('tool-pointer');
+                if (btn) btn.classList.add('active');
+                drawCanvas.style.pointerEvents = 'none'; // 穿透點擊
+            } else if (tool === 'pen') {
+                const btn = document.getElementById('tool-pen');
+                if (btn) btn.classList.add('active');
+                drawCanvas.style.pointerEvents = 'auto'; // 啟用劃記
+            } else if (tool === 'eraser') {
+                const btn = document.getElementById('tool-eraser');
+                if (btn) btn.classList.add('active');
+                drawCanvas.style.pointerEvents = 'auto'; // 啟用橡皮擦
+            }
+        }
+
+        // 取得跨平台精確座標（含 CSS↔Canvas 縮放修正）
+        function getCoords(e) {
+            const rect = drawCanvas.getBoundingClientRect();
+            let clientX, clientY;
+            
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else if (e.changedTouches && e.changedTouches.length > 0) {
+                clientX = e.changedTouches[0].clientX;
+                clientY = e.changedTouches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            
+            // CSS 像素 → Canvas 內部像素（修正縮放比）
+            const scaleX = drawCanvas.width / rect.width;
+            const scaleY = drawCanvas.height / rect.height;
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
+        // 開始繪圖/擦除（使用 Pointer Events API，徹底解決瀏覽器原生拖曳吃掉 mousemove 的問題）
+        function startDrawing(e) {
+            if (drawingTool === 'pointer') return;
+            
+            // 動態防禦：用 getBoundingClientRect 取 canvas 真實視覺尺寸
+            const rect = drawCanvas.getBoundingClientRect();
+            const cw = Math.round(rect.width);
+            const ch = Math.round(rect.height);
+            if (cw > 0 && ch > 0 && (drawCanvas.width !== cw || drawCanvas.height !== ch)) {
+                drawCanvas.width = cw;
+                drawCanvas.height = ch;
+                loadCurrentSlideDrawing();
+                console.log('🎨 Canvas 尺寸修正:', {cw, ch});
+            }
+            
+            isDrawing = true;
+            
+            // 阻止預設行為（防止電腦上滑動時選取文字或觸發原生拖曳）
+            if (e.cancelable !== false) {
+                e.preventDefault();
+            }
+            
+            // ★ 關鍵修復：Pointer Capture — 確保後續所有 move/up 事件都由此 canvas 接收
+            if (e.pointerId !== undefined) {
+                try { drawCanvas.setPointerCapture(e.pointerId); } catch(_) {}
+            }
+            
+            const coords = getCoords(e);
+            lastX = coords.x;
+            lastY = coords.y;
+            
+            // 起筆圓點（讓使用者立刻看到「有反應」）
+            const ctx = drawCanvas.getContext('2d');
+            if (ctx && drawingTool === 'pen') {
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.fillStyle = '#284b8c';
+                ctx.beginPath();
+                ctx.arc(lastX, lastY, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            console.log('✏️ startDrawing OK', {tool: drawingTool, x: lastX, y: lastY, canvasW: drawCanvas.width, canvasH: drawCanvas.height});
+        }
+
+        function draw(e) {
+            if (!isDrawing || drawingTool === 'pointer') return;
+            if (e.cancelable !== false) {
+                e.preventDefault();
+            }
+            
+            const ctx = drawCanvas.getContext('2d');
+            if (!ctx) return;
+            
+            const coords = getCoords(e);
+            const x = coords.x;
+            const y = coords.y;
+            
+            // 坐標安全容錯
+            if (lastX === undefined || lastX === null) lastX = x;
+            if (lastY === undefined || lastY === null) lastY = y;
+            
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            
+            if (drawingTool === 'pen') {
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.strokeStyle = '#284b8c'; // 靛青藍，青花瓷古風 (實心無透明度)
+                ctx.lineWidth = 3;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+            } else if (drawingTool === 'eraser') {
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.lineWidth = 35;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+            }
+            
+            ctx.stroke();
+            lastX = x;
+            lastY = y;
+        }
+
+        function stopDrawing(e) {
+            if (isDrawing) {
+                isDrawing = false;
+                // 釋放 Pointer Capture
+                if (e && e.pointerId !== undefined) {
+                    try { drawCanvas.releasePointerCapture(e.pointerId); } catch(_) {}
+                }
+                saveCurrentSlideDrawing();
+                console.log('✏️ stopDrawing OK — 劃記已儲存');
+            }
+        }
+
+        // ★ 統一使用 Pointer Events API（涵蓋滑鼠 + 觸控 + 觸控筆，一軌搞定）
+        if (drawCanvas) {
+            drawCanvas.addEventListener('pointerdown', (e) => {
+                startDrawing(e);
+            });
+            drawCanvas.addEventListener('pointermove', (e) => {
+                draw(e);
+            });
+            drawCanvas.addEventListener('pointerup', (e) => {
+                stopDrawing(e);
+            });
+            drawCanvas.addEventListener('pointercancel', (e) => {
+                stopDrawing(e);
+            });
+            // 防止觸控裝置的 300ms 延遲與預設手勢
+            drawCanvas.style.touchAction = 'none';
+        }
+
+        // ============================== 頁尾嵌入式工具列與畫布互動控制 ==============================
+        const footerToolbar = document.querySelector('.drawing-footer-toolbar');
+        if (footerToolbar) {
+            let lastTap = 0;
+            // 雙點擊/雙觸碰工具列任何位置，快速切換滑鼠指針與畫筆
+            footerToolbar.addEventListener('pointerdown', (e) => {
+                const now = Date.now();
+                if (now - lastTap < 300) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (drawingTool === 'pointer') {
+                        setDrawingTool('pen');
+                    } else {
+                        setDrawingTool('pointer');
+                    }
+                    console.log('✏️ 雙擊/雙觸頁尾工具列切換工具為:', drawingTool);
+                }
+                lastTap = now;
+            });
+        }
+
+        if (drawCanvas) {
+            let canvasLastTap = 0;
+            // 雙點擊/雙觸碰畫布，快速切換回滑鼠指針模式
+            drawCanvas.addEventListener('pointerdown', (e) => {
+                const now = Date.now();
+                if (now - canvasLastTap < 300) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDrawingTool('pointer');
+                    isDrawing = false; // 取消目前的劃記狀態
+                    console.log('✏️ 雙擊畫布切換工具為 pointer');
+                }
+                canvasLastTap = now;
+            });
+        }
+
+        // 儲存當前頁劃記
+        function saveCurrentSlideDrawing() {
+            if (!drawCanvas) return;
+            const slideId = slideIdMap[currentSlide];
+            const ctx = drawCanvas.getContext('2d');
+            if (!ctx) return;
+            
+            // 檢查 Canvas 是否為空
+            const buffer = new Uint32Array(ctx.getImageData(0, 0, drawCanvas.width, drawCanvas.height).data.buffer);
+            const isEmpty = !buffer.some(color => color !== 0);
+            
+            if (isEmpty) {
+                delete slideDrawings[slideId];
+            } else {
+                slideDrawings[slideId] = drawCanvas.toDataURL();
+            }
+            
+            try {
+                localStorage.setItem('empty-fort-slide-drawings', JSON.stringify(slideDrawings));
+            } catch(e) {
+                console.error("保存劃記失敗", e);
+            }
+        }
+
+        // 加載當前頁劃記
+        function loadCurrentSlideDrawing() {
+            if (!drawCanvas) return;
+            const ctx = drawCanvas.getContext('2d');
+            if (!ctx) return;
+            ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+            
+            const slideId = slideIdMap[currentSlide];
+            const dataUrl = slideDrawings[slideId];
+            
+            if (dataUrl) {
+                const img = new Image();
+                img.onload = function() {
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.drawImage(img, 0, 0, drawCanvas.width, drawCanvas.height);
+                };
+                img.src = dataUrl;
+            }
+        }
+
+        // 清空當前頁劃記
+        function clearCurrentDrawing() {
+            if (!drawCanvas) return;
+            const ctx = drawCanvas.getContext('2d');
+            if (ctx) {
+                ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+            }
+            const slideId = slideIdMap[currentSlide];
+            delete slideDrawings[slideId];
+            localStorage.setItem('empty-fort-slide-drawings', JSON.stringify(slideDrawings));
+        }
+
+        // 清空所有頁面劃記
+        function clearAllDrawings() {
+            if (!confirm("確定要清除所有頁面的劃記嗎？此動作無法復原！")) return;
+            if (drawCanvas) {
+                const ctx = drawCanvas.getContext('2d');
+                if (ctx) {
+                    ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+                }
+            }
+            slideDrawings = {};
+            localStorage.removeItem('empty-fort-slide-drawings');
+        }
+
+
+        // ============================== 新增：點擊圖片放大 (Lightbox) ==============================
+        function openImageModal(src, alt) {
+            const lightbox = document.getElementById('image-lightbox');
+            const img = document.getElementById('lightbox-img');
+            const caption = document.getElementById('lightbox-caption');
+            if (lightbox && img) {
+                img.src = src;
+                if (caption) {
+                    caption.innerText = alt || '';
+                    caption.style.display = alt ? 'block' : 'none';
+                }
+                lightbox.style.display = 'flex';
+            }
+        }
+
+        function closeImageModal() {
+            const lightbox = document.getElementById('image-lightbox');
+            if (lightbox) {
+                lightbox.style.display = 'none';
+            }
+        }
+
+        function initImageLightbox() {
+            document.querySelectorAll('.slide img').forEach(img => {
+                img.style.cursor = 'zoom-in';
+                const captionText = img.getAttribute('alt') || img.getAttribute('title') || '';
+                img.addEventListener('click', function(e) {
+                    e.stopPropagation(); // 阻止事件氣泡，以免與劃記事件衝突
+                    openImageModal(this.src, captionText);
+                });
+            });
+        }
+
+        // 初始化
+        updateSlideUI();
+        setTimeout(initDrawingCanvas, 200);
+        setTimeout(initImageLightbox, 300);
+    </script>
+
+    <!-- ============================== 新增：圖片放大 Lightbox ============================== -->
+    <div id="image-lightbox" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); z-index: 10000; justify-content: center; align-items: center; cursor: zoom-out;" onclick="closeImageModal()">
+        <img id="lightbox-img" style="max-width: 90%; max-height: 90%; object-fit: contain; border: 3px solid #fff; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);" alt="放大圖片">
+        <div id="lightbox-caption" style="position: absolute; bottom: 4vh; color: #fff; font-size: 2.5vh; font-family: var(--font-ancient); background: rgba(0,0,0,0.6); padding: 1vh 2vw; border-radius: 4px; font-weight: 900; display: none;"></div>
+        <div style="position: absolute; top: 3vh; right: 4vw; color: #fff; font-size: 6vh; cursor: pointer; font-weight: bold; line-height: 1;">&times;</div>
+    </div>
+
+</body>
+</html>
