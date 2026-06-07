@@ -21,6 +21,7 @@
   - `G:\我的雲端硬碟\工作\國文教學\0教科書\康軒\` （國文備課資料夾）
   - `G:\我的雲端硬碟\Obsidian\sshorng\` （Obsidian 第二大腦）
   - `G:\我的雲端硬碟\AI_Agent\` （AI 工作區根目錄）
+- **Obsidian 專屬規則指引**：當 AI 進入 `Obsidian/sshorng/` 知識庫進行作業時，**必須**優先讀取並遵循該庫底下的 `600-Management/Obsidian-Rules.md` 規則檔案。
 - **HTML 小程式管理**：納入工作區 `100_Todo/projects/html/` 以利 AI 讀寫，但已在母資料夾 Git 中將其排除，保留各程式獨立使用其各自 GitHub repo 的完整自由。
 - **Git & GAS 專案對應**：
   - **獨立 Git 專案**：在 `100_Todo/projects/html/` 下的各個子資料夾（如 `個案管理系統`、`公文網頁公告`、`口語表達教練`、`暖心留言板` 等）均作為獨立 Git 倉庫或專案管理，不受主 AI 庫的 git 控制。
@@ -59,6 +60,7 @@
 
 - **Google Drive 架構下的 Symbolic Links 限制**：在 FAT32/ExFAT-like 的 Google 雲端虛擬硬碟（G 槽）上直接建立 Junction 或 Symlink 會因「NTFS 磁碟區需求」而報錯。應在 NTFS 格式的 C 槽（`C:\Users\sshor\.gemini\config`）上建立 Junction 連回 G 槽（`G:\我的雲端硬碟\AI_Agent`），以實現跨電腦同步。
 - **PowerShell 編碼亂碼**：Windows 上的 PowerShell 腳本在寫入中文時，務必強制使用 UTF-8 with BOM 格式，以防在 ANSI/cp950 環境下解析出錯。
+- **PowerShell profile 雜訊**：若 PowerShell 會自動載入 `profile.ps1` 並跳出執行原則警告，後續執行讀寫命令時可優先加上 `-NoProfile`，避免訊息干擾同步與讀檔流程。
 - **平板標題渲染裁切與 Noto Serif TC 相容性**：在 iPad Safari 等平板環境下，預設的 `<h3>` / `<h4>` 等標題標籤常因 User Agent 的 margin/padding 渲染差異，加上 `Noto Serif TC` 中文字型的特殊 metrics，導致字體頂部被卡片邊框裁切。應優先使用無預設 margin 的 `<div>` 標籤並加上明確的 `line-height: 1.2`，並將卡片頂部 `padding` 設為大於 `3vh` 的安全間距，以防破版與裁切。
 - **NotebookLM 憑證過期重登**：NotebookLM CLI 的 Token 損毀或過期時會導致 `Authentication expired`，此時需在實體 CMD 中執行 `nlm login --clear --force` 來清空快取並重登。
 - **Windows 下 HyperFrames 音訊混音中文路徑 Bug**：當專案位於包含中文或非 ASCII 字元的路徑（如「我的雲端硬碟」）下，HyperFrames 的音訊混音處理（FFmpeg 部分）在 Windows 上容易因字元編碼問題而直接崩潰或退出（Exit Code 1）。**解決方法**：將 `index.html`、`bgm_fixed.mp3`、字型及相關影格暫存複製到本機純 ASCII 路徑下（例如 `C:\Users\User\.gemini\antigravity\temp_render`），在該處執行渲染，完成後再將 `.mp4` 影片複製回雲端硬碟即可。
