@@ -1,0 +1,26 @@
+- generic [ref=e2]:
+  - complementary [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: 師
+      - generic [ref=e6]: 教師
+      - generic [ref=e7]: 教師帳戶
+    - navigation [ref=e8]:
+      - button "📋 班級管理" [ref=e9] [cursor=pointer]:
+        - generic [ref=e10]: 📋
+        - text: 班級管理
+      - button "📊 成績總覽" [ref=e11] [cursor=pointer]:
+        - generic [ref=e12]: 📊
+        - text: 成績總覽
+      - button "👤 學生詳情" [ref=e13] [cursor=pointer]:
+        - generic [ref=e14]: 👤
+        - text: 學生詳情
+      - button "📈 題目分析" [ref=e15] [cursor=pointer]:
+        - generic [ref=e16]: 📈
+        - text: 題目分析
+      - button "⬇️ 匯出報表" [ref=e17] [cursor=pointer]:
+        - generic [ref=e18]: ⬇️
+        - text: 匯出報表
+    - button "🚪 登出" [ref=e20] [cursor=pointer]
+  - main [ref=e21]:
+    - paragraph [ref=e23]: 正在載入教師後台…
+    - text: ↕ ↕ ↕ ↕ ↕ ↕
