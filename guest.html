@@ -418,27 +418,14 @@
       margin-bottom: 0.5rem;
       display: flex;
       align-items: center;
-      flex-wrap: nowrap; /* prevent icons from wrapping to next line */
+      flex-wrap: wrap;
       gap: 0.5rem;
-      min-width: 0;
-      overflow: hidden;
     }
 
-    /* Keep name truncated but on same line; controls stay fixed */
     .guest-name {
-      flex: 1 1 auto;
-      min-width: 0; /* allow ellipsis */
-      overflow: hidden;
-      text-overflow: ellipsis;
       white-space: nowrap;
-    }
-
-    .guest-controls {
-      display: inline-flex;
-      gap: 0.25rem;
-      align-items: center;
-      flex: 0 0 auto; /* don't shrink or wrap */
-      margin-left: 0.25rem;
+      flex-shrink: 0;
+      font-weight: 600;
     }
 
     .guest-info p {
@@ -929,9 +916,7 @@
           <div class="guest-info">
             <h3>
               <span class="guest-name">${guest.name}</span>
-              <span class="guest-controls">
-                ${isArrived ? `<span class="status-badge badge-arrived">${guest.arrivalTime || '已報到'}</span>` : ''}
-              </span>
+              ${isArrived ? `<span class="status-badge badge-arrived">${guest.arrivalTime || '已報到'}</span>` : ''}
             </h3>
             <p>${guest.unit} / ${guest.title}</p>
           </div>
@@ -1008,14 +993,12 @@
             <h3>
               <span class="cat-tag" style="background-color: ${getCategoryColor(guest.category)}">${guest.category}</span>
               <span class="guest-name">${guest.name}</span>
-              <span class="guest-controls">
-                <button class="btn-edit-inline" onclick="openEditModal('${guest.name.replace(/'/g, "\\'")}')" title="編輯貴賓資料">✏️</button>
-                <button class="btn-delete-inline" onclick="confirmDeleteGuest('${guest.name.replace(/'/g, "\\'")}')" title="刪除貴賓">🗑️</button>
-                <button class="btn-star-inline" onclick="toggleConfirmAction('${guest.name.replace(/'/g, "\\'")}', ${!guest.confirmed}); event.stopPropagation();" title="${guest.confirmed ? '取消確認出席' : '標記確認出席'}">
-                  ${guest.confirmed ? '⭐' : '☆'}
-                </button>
-                ${isArrived ? `<span class="status-badge badge-arrived">${guest.arrivalTime}</span>` : ''}
-              </span>
+              <button class="btn-edit-inline" onclick="openEditModal('${guest.name.replace(/'/g, "\\'")}')" title="編輯貴賓資料">✏️</button>
+              <button class="btn-delete-inline" onclick="confirmDeleteGuest('${guest.name.replace(/'/g, "\\'")}')" title="刪除貴賓">🗑️</button>
+              <button class="btn-star-inline" onclick="toggleConfirmAction('${guest.name.replace(/'/g, "\\'")}', ${!guest.confirmed}); event.stopPropagation();" title="${guest.confirmed ? '取消確認出席' : '標記確認出席'}">
+                ${guest.confirmed ? '⭐' : '☆'}
+              </button>
+              ${isArrived ? `<span class="status-badge badge-arrived">${guest.arrivalTime}</span>` : ''}
             </h3>
             <p>${guest.unit} / ${guest.title}</p>
           </div>
@@ -1040,7 +1023,7 @@
     function createHallCard(guest, act, label, btnClass) {
       const div = document.createElement('div');
       div.className = 'guest-card arrived';
-      div.innerHTML = `<div class="guest-info"><h3><span class="cat-tag" style="background-color: ${getCategoryColor(guest.category)}">${guest.category}</span><span class="guest-name">${guest.name}</span><span class="guest-controls"><span class="status-badge badge-arrived">${guest.arrivalTime}</span></span></h3><p>${guest.unit} / ${guest.title}</p></div><div class="guest-actions"><button class="btn-action ${btnClass}" onclick="action('${act}', '${guest.name}', this)">${label}</button></div>`;
+      div.innerHTML = `<div class="guest-info"><h3><span class="cat-tag" style="background-color: ${getCategoryColor(guest.category)}">${guest.category}</span><span class="guest-name">${guest.name}</span> <span class="status-badge badge-arrived">${guest.arrivalTime}</span></h3><p>${guest.unit} / ${guest.title}</p></div><div class="guest-actions"><button class="btn-action ${btnClass}" onclick="action('${act}', '${guest.name}', this)">${label}</button></div>`;
       return div;
     }
 
