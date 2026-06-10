@@ -1217,7 +1217,7 @@ createApp({
       // 轉換年級代號 (7 -> 七)
       const gradeMap = { '7': '七', '8': '八', '9': '九' };
       const targetGradeChar = gradeMap[this.batchConfig.grade];
-      const targets = this.cases.filter(c => String(c.grade) === targetGradeChar && c.status !== '已結案');
+      const targets = this.cases.filter(c => String(c.grade) === targetGradeChar);
 
       if (targets.length === 0) {
         this.showToast(`該年級 [${targetGradeChar}] 查無任何在案個案資料。`, 'warning');
