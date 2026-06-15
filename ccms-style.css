@@ -2003,6 +2003,19 @@ tr.selected td {
   transition: all 0.2s;
 }
 
+/* blockquote 縮排樣式 */
+.editor-input blockquote,
+blockquote {
+  margin: 6px 0 6px 24px;
+  border-left: 2px solid var(--bd);
+  padding-left: 10px;
+  color: var(--tx2);
+}
+.editor-input blockquote blockquote,
+blockquote blockquote {
+  margin-left: 24px; /* 支援多層縮排 */
+}
+
 /* 深度同步排版邏輯 */
 .editor-input>div {
   margin-bottom: 6px;

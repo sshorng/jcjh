@@ -2410,11 +2410,37 @@ createApp({
 
       const lines = html.split('\n');
       let inUl = false, inOl = false;
+      let currentBqDepth = 0;
       const res = [];
 
       lines.forEach(line => {
-        const ulMatch = line.match(/^[\-\*]\s+(.*)/);
-        const olMatch = line.match(/^\d+\.\s+(.*)/);
+        // 1. 檢測 Blockquote 深度 (以 > 數量為準)
+        const bqRegex = /^(>\s*)+/;
+        const bqMatch = line.match(bqRegex);
+        let depth = 0;
+        let cleanLine = line;
+        if (bqMatch) {
+          const bqs = bqMatch[0].match(/>/g) || [];
+          depth = bqs.length;
+          cleanLine = line.substring(bqMatch[0].length);
+        }
+
+        // 2. 根據深度變化插入/閉合 blockquote 標籤
+        while (currentBqDepth < depth) {
+          if (inUl) { res.push('</ul>'); inUl = false; }
+          if (inOl) { res.push('</ol>'); inOl = false; }
+          res.push('<blockquote>');
+          currentBqDepth++;
+        }
+        while (currentBqDepth > depth) {
+          if (inUl) { res.push('</ul>'); inUl = false; }
+          if (inOl) { res.push('</ol>'); inOl = false; }
+          res.push('</blockquote>');
+          currentBqDepth--;
+        }
+
+        const ulMatch = cleanLine.match(/^[\-\*]\s+(.*)/);
+        const olMatch = cleanLine.match(/^\d+\.\s+(.*)/);
 
         if (ulMatch) {
           if (!inUl) { if (inOl) { res.push('</ol>'); inOl = false; } res.push('<ul>'); inUl = true; }
@@ -2425,11 +2451,16 @@ createApp({
         } else {
           if (inUl) { res.push('</ul>'); inUl = false; }
           if (inOl) { res.push('</ol>'); inOl = false; }
-          res.push(line ? `<div>${line}</div>` : '<div><br></div>');
+          res.push(cleanLine ? `<div>${cleanLine}</div>` : '<div><br></div>');
         }
       });
+
       if (inUl) res.push('</ul>');
       if (inOl) res.push('</ol>');
+      while (currentBqDepth > 0) {
+        res.push('</blockquote>');
+        currentBqDepth--;
+      }
       return res.join('');
     },
     html2md(html) {
@@ -2455,6 +2486,14 @@ createApp({
               } else {
                 md += `- ${process(child)}\n`;
               }
+            } else if (tag === 'blockquote') {
+              const inner = process(child);
+              const lines = inner.split('\n');
+              const formatted = lines.map((l, idx) => {
+                if (idx === lines.length - 1 && !l) return '';
+                return `> ${l}`;
+              }).join('\n');
+              md += formatted + '\n';
             } else if (tag === 'div' || tag === 'br') {
               const inner = process(child);
               if (inner || tag === 'br') md += (inner || '') + '\n';
@@ -2675,20 +2714,32 @@ createApp({
           return;
         }
 
+        let isBlockquote = false;
+        let bqDepth = 0;
+
+        // 偵測縮排/引言
+        const bqMatch = line.match(/^(>\s*)+/);
+        if (bqMatch) {
+          isBlockquote = true;
+          const bqs = bqMatch[0].match(/>/g) || [];
+          bqDepth = bqs.length;
+          text = line.substring(bqMatch[0].length).trim();
+        }
+
         let isBullet = null;
         let isBulletPrefix = '';
 
         // 偵測清單類型 (區分 ul/ol)
         if (text.startsWith('- ') || text.startsWith('* ')) {
           isBullet = 'ul';
-          text = text.trim().substring(2);
+          text = text.substring(2).trim();
         } else {
           // 修正正則：確保能抓到多位數
           const olMatch = text.match(/^(\d+\.)\s+(.*)/);
           if (olMatch) {
             isBullet = 'ol';
             isBulletPrefix = olMatch[1]; // 這裡會抓到正確的 "1.", "2." 等
-            text = olMatch[2];
+            text = olMatch[2].trim();
           }
         }
 
@@ -2734,11 +2785,27 @@ createApp({
           spacing: { before: 40, after: 40 }
         };
 
+        let indentLeft = 0;
+        let indentHanging = 0;
+
         if (isBullet === 'ul') {
           pProps.bullet = { level: 0 };
-          pProps.indent = { left: 440, hanging: 440 };
+          indentLeft = 440;
+          indentHanging = 440;
         } else if (isBullet === 'ol') {
-          pProps.indent = { left: 440, hanging: 440 };
+          indentLeft = 440;
+          indentHanging = 440;
+        }
+
+        if (isBlockquote) {
+          indentLeft += bqDepth * 440; // 每層引言縮排 440 dxa (約二個中文字寬)
+        }
+
+        if (indentLeft > 0) {
+          pProps.indent = { left: indentLeft };
+          if (indentHanging > 0) {
+            pProps.indent.hanging = indentHanging;
+          }
         }
 
         paragraphs.push(new Paragraph(pProps));

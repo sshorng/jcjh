@@ -583,12 +583,18 @@
                         title="項目符號"><i class="fas fa-list-ul"></i></button>
                       <button type="button" class="editor-btn" @click="execEditorCommand('insertOrderedList')"
                         title="編號清單"><i class="fas fa-list-ol"></i></button>
+                      <button type="button" class="editor-btn" @click="execEditorCommand('indent')"
+                        title="增加縮排 (Tab)"><i class="fas fa-indent"></i></button>
+                      <button type="button" class="editor-btn" @click="execEditorCommand('outdent')"
+                        title="減少縮排 (Shift+Tab)"><i class="fas fa-outdent"></i></button>
                     </div>
                     <!-- 🎯 所見即所得編輯區：透過 @input 即時同步回 Markdown 語法 -->
                     <div id="record-editor" class="editor-input" contenteditable="true"
                       :style="isDragging ? 'border-color: var(--pri); background: rgba(var(--p-rgb), 0.1);' : ''"
                       @dragover.prevent="isDragging = true" @dragleave.prevent="isDragging = false"
                       @drop.prevent="handleDrop" @input="recordForm.content = html2md($event.target.innerHTML)"
+                      @keydown.tab.exact.prevent="execEditorCommand('indent')"
+                      @keydown.tab.shift.prevent="execEditorCommand('outdent')"
                       placeholder="請輸入服務內容...">
                     </div>
                   </div>
