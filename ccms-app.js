@@ -2408,6 +2408,21 @@ createApp({
       // 2. 處理粗體 **text** -> <strong>text</strong>
       html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
+      // 輔助函數：將編號前綴轉換成數值 (例如 (1) -> 1, a. -> 1)
+      const parsePrefixToNumber = (prefix) => {
+        const clean = prefix.replace(/[\(\)\s]/g, '');
+        const numMatch = clean.match(/^(\d+)/);
+        if (numMatch) {
+          return parseInt(numMatch[1], 10);
+        }
+        const alphaMatch = clean.match(/^([a-zA-Z]+)/);
+        if (alphaMatch) {
+          const char = alphaMatch[1].toLowerCase();
+          return char.charCodeAt(0) - 96;
+        }
+        return null;
+      };
+
       const lines = html.split('\n');
       let inUl = false, inOl = false;
       let currentBqDepth = 0;
@@ -2440,14 +2455,20 @@ createApp({
         }
 
         const ulMatch = cleanLine.match(/^[\-\*]\s+(.*)/);
-        const olMatch = cleanLine.match(/^\d+\.\s+(.*)/);
+        // 支援 1. 或 (1) 或 a. 或 (a) 等前綴
+        const olMatch = cleanLine.match(/^(\d+\.|\(\d+\)|[a-zA-Z]+\.|\([a-zA-Z]+\))\s+(.*)/);
 
         if (ulMatch) {
           if (!inUl) { if (inOl) { res.push('</ol>'); inOl = false; } res.push('<ul>'); inUl = true; }
           res.push(`<li>${ulMatch[1]}</li>`);
         } else if (olMatch) {
           if (!inOl) { if (inUl) { res.push('</ul>'); inUl = false; } res.push('<ol>'); inOl = true; }
-          res.push(`<li>${olMatch[1]}</li>`);
+          const val = parsePrefixToNumber(olMatch[1]);
+          if (val !== null) {
+            res.push(`<li value="${val}">${olMatch[2]}</li>`);
+          } else {
+            res.push(`<li>${olMatch[2]}</li>`);
+          }
         } else {
           if (inUl) { res.push('</ul>'); inUl = false; }
           if (inOl) { res.push('</ol>'); inOl = false; }
@@ -2467,6 +2488,27 @@ createApp({
       const div = document.createElement('div');
       div.innerHTML = html.replace(/<p>/g, '<div>').replace(/<\/p>/g, '</div>'); // 統一轉換
 
+      // 輔助函數：計算總縮排深度以及 blockquote/list 的各自貢獻
+      const getIndentDetails = (node, rootNode) => {
+        let bqCount = 0;
+        let listCount = 0;
+        let curr = node;
+        while (curr && curr !== rootNode) {
+          const tag = curr.tagName ? curr.tagName.toLowerCase() : '';
+          if (tag === 'blockquote') {
+            bqCount++;
+          } else if (tag === 'ol' || tag === 'ul') {
+            listCount++;
+          }
+          curr = curr.parentNode;
+        }
+        return {
+          bqCount,
+          listCount,
+          totalDepth: bqCount + (listCount > 0 ? listCount - 1 : 0)
+        };
+      };
+
       const process = (node) => {
         let md = '';
         node.childNodes.forEach(child => {
@@ -2477,14 +2519,60 @@ createApp({
             if (tag === 'b' || tag === 'strong') md += `**${process(child)}**`;
             else if (tag === 'mark') md += `==${process(child)}==`;
             else if (tag === 'li') {
-              const parentTag = child.parentNode.tagName.toLowerCase();
-              if (parentTag === 'ol') {
-                // 🚀 動態計算序號
-                const siblings = Array.from(child.parentNode.children);
-                const index = siblings.indexOf(child) + 1;
-                md += `${index}. ${process(child)}\n`;
+              // 向上尋找最近的清單祖先以決定是 ol 還是 ul
+              let listAncestor = child.parentNode;
+              while (listAncestor && listAncestor.tagName) {
+                const t = listAncestor.tagName.toLowerCase();
+                if (t === 'ol' || t === 'ul') {
+                  break;
+                }
+                listAncestor = listAncestor.parentNode;
+              }
+              const isOl = listAncestor && listAncestor.tagName.toLowerCase() === 'ol';
+              
+              const { bqCount, listCount, totalDepth } = getIndentDetails(child, div);
+              
+              // 嵌套清單貢獻的 > 前綴
+              const quotePrefix = '> '.repeat(listCount > 1 ? listCount - 1 : 0);
+
+              if (isOl) {
+                // 優先使用 value 屬性
+                let index = child.getAttribute('value') ? parseInt(child.getAttribute('value'), 10) : null;
+                if (!index) {
+                  const siblings = Array.from(child.parentNode.children).filter(el => el.tagName.toLowerCase() === 'li');
+                  index = siblings.indexOf(child) + 1;
+                }
+                
+                let prefix = '';
+                if (totalDepth === 0) prefix = `${index}.`;
+                else if (totalDepth === 1) prefix = `(${index})`;
+                else if (totalDepth === 2) {
+                  const charCode = 96 + index;
+                  const char = charCode >= 97 && charCode <= 122 ? String.fromCharCode(charCode) : '?';
+                  prefix = `${char}.`;
+                } else {
+                  const charCode = 96 + index;
+                  const char = charCode >= 97 && charCode <= 122 ? String.fromCharCode(charCode) : '?';
+                  prefix = `(${char})`;
+                }
+                
+                const inner = process(child);
+                const lines = inner.split('\n');
+                const formatted = lines.map((l, idx) => {
+                  if (idx === lines.length - 1 && !l) return '';
+                  if (idx === 0) return `${quotePrefix}${prefix} ${l}`;
+                  return `${quotePrefix}${l}`;
+                }).join('\n');
+                md += formatted + '\n';
               } else {
-                md += `- ${process(child)}\n`;
+                const inner = process(child);
+                const lines = inner.split('\n');
+                const formatted = lines.map((l, idx) => {
+                  if (idx === lines.length - 1 && !l) return '';
+                  if (idx === 0) return `${quotePrefix}- ${l}`;
+                  return `${quotePrefix}${l}`;
+                }).join('\n');
+                md += formatted + '\n';
               }
             } else if (tag === 'blockquote') {
               const inner = process(child);
@@ -2734,11 +2822,11 @@ createApp({
           isBullet = 'ul';
           text = text.substring(2).trim();
         } else {
-          // 修正正則：確保能抓到多位數
-          const olMatch = text.match(/^(\d+\.)\s+(.*)/);
+          // 修正正則：確保能抓到多位數與 (1)、a. 等各種格式
+          const olMatch = text.match(/^(\d+\.|\(\d+\)|[a-zA-Z]+\.|\([a-zA-Z]+\))\s+(.*)/);
           if (olMatch) {
             isBullet = 'ol';
-            isBulletPrefix = olMatch[1]; // 這裡會抓到正確的 "1.", "2." 等
+            isBulletPrefix = olMatch[1]; // 這裡會抓到正確的 "1.", "(1)", "a." 等
             text = olMatch[2].trim();
           }
         }

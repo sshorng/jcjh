@@ -2003,6 +2003,13 @@ tr.selected td {
   transition: all 0.2s;
 }
 
+@counter-style parentheses-decimal {
+  system: numeric;
+  symbols: "0" "1" "2" "3" "4" "5" "6" "7" "8" "9";
+  prefix: "(";
+  suffix: ") ";
+}
+
 /* blockquote 縮排樣式 */
 .editor-input blockquote,
 blockquote {
@@ -2015,6 +2022,31 @@ blockquote {
 blockquote blockquote {
   margin-left: 24px; /* 支援多層縮排 */
 }
+
+/* 多層級列表編號樣式 */
+.editor-input ol,
+ol {
+  list-style-type: decimal;
+}
+.editor-input blockquote ol,
+blockquote ol,
+.editor-input ol ol,
+ol ol {
+  list-style-type: parentheses-decimal;
+}
+.editor-input blockquote blockquote ol,
+blockquote blockquote ol,
+.editor-input ol ol ol,
+ol ol ol {
+  list-style-type: lower-alpha;
+}
+.editor-input blockquote blockquote blockquote ol,
+blockquote blockquote blockquote ol,
+.editor-input ol ol ol ol,
+ol ol ol ol {
+  list-style-type: lower-roman;
+}
+
 
 /* 深度同步排版邏輯 */
 .editor-input>div {
