@@ -2003,13 +2003,6 @@ tr.selected td {
   transition: all 0.2s;
 }
 
-@counter-style parentheses-decimal {
-  system: numeric;
-  symbols: "0" "1" "2" "3" "4" "5" "6" "7" "8" "9";
-  prefix: "(";
-  suffix: ") ";
-}
-
 /* blockquote 縮排樣式 */
 .editor-input blockquote,
 blockquote {
@@ -2028,23 +2021,66 @@ blockquote blockquote {
 ol {
   list-style-type: decimal;
 }
+
+/* 第二層：括號數字 (1), (2), (3) - 使用相容性 100% 的 CSS Counter 實現 */
 .editor-input blockquote ol,
 blockquote ol,
 .editor-input ol ol,
 ol ol {
-  list-style-type: parentheses-decimal;
+  list-style-type: none !important; /* 關閉預設的 1. */
+  counter-reset: ccms-ol-counter;
+  padding-left: 0 !important;
 }
+
+.editor-input blockquote ol > li,
+blockquote ol > li,
+.editor-input ol ol > li,
+ol ol > li {
+  counter-increment: ccms-ol-counter;
+  position: relative;
+  padding-left: 28px; /* 騰出放置 (1) 的寬度 */
+}
+
+.editor-input blockquote ol > li::before,
+blockquote ol > li::before,
+.editor-input ol ol > li::before,
+ol ol > li::before {
+  content: "(" counter(ccms-ol-counter) ")";
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-weight: 500;
+  color: var(--tx2);
+}
+
+/* 第三層：a., b., c. */
 .editor-input blockquote blockquote ol,
 blockquote blockquote ol,
 .editor-input ol ol ol,
 ol ol ol {
-  list-style-type: lower-alpha;
+  list-style-type: lower-alpha !important;
+  padding-left: 20px !important;
 }
+.editor-input blockquote blockquote ol > li::before,
+blockquote blockquote ol > li::before,
+.editor-input ol ol ol > li::before,
+ol ol ol > li::before {
+  content: none !important; /* 第三層還原為原生 bullet，不使用 before */
+}
+
+/* 第四層：i., ii., iii. */
 .editor-input blockquote blockquote blockquote ol,
 blockquote blockquote blockquote ol,
 .editor-input ol ol ol ol,
 ol ol ol ol {
-  list-style-type: lower-roman;
+  list-style-type: lower-roman !important;
+  padding-left: 20px !important;
+}
+.editor-input blockquote blockquote blockquote ol > li::before,
+blockquote blockquote blockquote ol > li::before,
+.editor-input ol ol ol ol > li::before,
+ol ol ol ol > li::before {
+  content: none !important;
 }
 
 
