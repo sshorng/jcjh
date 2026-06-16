@@ -2429,15 +2429,21 @@ createApp({
       const res = [];
 
       lines.forEach(line => {
-        // 1. 檢測 Blockquote 深度 (以 > 數量為準)
-        const bqRegex = /^(>\s*)+/;
-        const bqMatch = line.match(bqRegex);
+        // 1. 檢測縮排深度 (支援 > 與空格/Tab 混合，每 3 或 4 個空格算一層，一個 > 算一層)
         let depth = 0;
         let cleanLine = line;
-        if (bqMatch) {
-          const bqs = bqMatch[0].match(/>/g) || [];
-          depth = bqs.length;
-          cleanLine = line.substring(bqMatch[0].length);
+        while (true) {
+          const spaceMatch = cleanLine.match(/^( {3,4}|\t)/);
+          const bqMatch = cleanLine.match(/^>\s*/);
+          if (spaceMatch) {
+            depth++;
+            cleanLine = cleanLine.substring(spaceMatch[0].length);
+          } else if (bqMatch) {
+            depth++;
+            cleanLine = cleanLine.substring(bqMatch[0].length);
+          } else {
+            break;
+          }
         }
 
         // 2. 根據深度變化插入/閉合 blockquote 標籤
@@ -2805,14 +2811,24 @@ createApp({
         let isBlockquote = false;
         let bqDepth = 0;
 
-        // 偵測縮排/引言
-        const bqMatch = line.match(/^(>\s*)+/);
-        if (bqMatch) {
-          isBlockquote = true;
-          const bqs = bqMatch[0].match(/>/g) || [];
-          bqDepth = bqs.length;
-          text = line.substring(bqMatch[0].length).trim();
+        // 偵測縮排/引言 (支援 > 與空格/Tab)
+        let cleanLine = line;
+        while (true) {
+          const spaceMatch = cleanLine.match(/^( {3,4}|\t)/);
+          const bqMatch = cleanLine.match(/^>\s*/);
+          if (spaceMatch) {
+            isBlockquote = true;
+            bqDepth++;
+            cleanLine = cleanLine.substring(spaceMatch[0].length);
+          } else if (bqMatch) {
+            isBlockquote = true;
+            bqDepth++;
+            cleanLine = cleanLine.substring(bqMatch[0].length);
+          } else {
+            break;
+          }
         }
+        text = cleanLine.trim();
 
         let isBullet = null;
         let isBulletPrefix = '';
