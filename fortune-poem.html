@@ -1,0 +1,1490 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>建成國中輔導靈籤 · AI解籤系統</title>
+<!-- 導入 Noto Sans TC 與 Noto Serif TC -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@600;900&display=swap" rel="stylesheet">
+<!-- SMTP.js 已移除，寄信用 mailto: 零設定 -->
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+<style>
+:root {
+  --primary: #FF8C00; /* 貓咪暖橘 */
+  --primary-light: #FFF5EB;
+  --primary-dark: #D35400;
+  --secondary: #FF4757; /* 斗篷紅 */
+  --secondary-light: #FFE3E3;
+  --green: #2ED573; /* 療癒綠 */
+  --green-light: #E8FBF0;
+  --cream: #FFFDF9; /* 紙質背景 */
+  --ink: #2F3542; /* 深炭字 */
+  --mute: #747D8C;
+  --border: #FFE4CC;
+  --shadow: 0 10px 30px rgba(211, 84, 0, 0.08);
+  --shadow-hover: 0 15px 40px rgba(211, 84, 0, 0.15);
+  --font: "Noto Sans TC", sans-serif;
+  --serif: "Noto Serif TC", serif;
+}
+
+* { box-sizing: border-box; }
+body {
+  font-family: var(--font);
+  background: #F8F1EB;
+  color: var(--ink);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-image: radial-gradient(#FFE4CC 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.container {
+  width: 100%;
+  max-width: 900px;
+  margin: 30px 15px;
+  background: var(--cream);
+  border: 4px solid var(--border);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  padding: 30px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 裝飾爪印 */
+.paw-decor {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  opacity: 0.05;
+  color: var(--primary);
+  pointer-events: none;
+}
+.paw-top-left { top: 15px; left: 15px; transform: rotate(-30deg); }
+.paw-bottom-right { bottom: 15px; right: 15px; transform: rotate(150deg); }
+
+/* 頂部導航與設定 */
+.header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  position: relative;
+  z-index: 10;
+}
+.settings-btn {
+  background: #FFF;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.03);
+  transition: all 0.2s ease;
+}
+.settings-btn:hover {
+  transform: rotate(45deg);
+  border-color: var(--primary);
+  box-shadow: 0 6px 12px rgba(255, 140, 0, 0.15);
+}
+
+/* 標題區 */
+.title-section {
+  text-align: center;
+  margin-bottom: 30px;
+}
+.title-section h1 {
+  font-family: var(--serif);
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--primary-dark);
+  margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.title-section p {
+  font-size: 15px;
+  color: var(--mute);
+  margin: 0;
+}
+
+/* 貓大仙動態展示 */
+.deity-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30px;
+  background: linear-gradient(135deg, var(--primary-light) 0%, #FFF3E6 100%);
+  border: 2px solid var(--border);
+  border-radius: 20px;
+  padding: 20px;
+  position: relative;
+}
+.deity-bubble {
+  background: #FFF;
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 12px 18px;
+  font-size: 15px;
+  font-weight: 500;
+  max-width: 80%;
+  text-align: center;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+  position: relative;
+}
+.deity-bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 10px 10px 0;
+  border-style: solid;
+  border-color: #FFF transparent;
+  display: block;
+  width: 0;
+}
+.deity-bubble::before {
+  content: "";
+  position: absolute;
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 12px 12px 0;
+  border-style: solid;
+  border-color: var(--border) transparent;
+  display: block;
+  width: 0;
+  z-index: -1;
+}
+
+/* 輸入表單區 */
+.form-group {
+  margin-bottom: 24px;
+}
+.form-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+.form-label span {
+  font-size: 13px;
+  color: var(--mute);
+  font-weight: 400;
+}
+.text-input {
+  width: 100%;
+  height: 90px;
+  background: #FFF;
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+  font-size: 15px;
+  color: var(--ink);
+  font-family: var(--font);
+  resize: none;
+  outline: none;
+  transition: all 0.2s ease;
+}
+.text-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 10px rgba(255, 140, 0, 0.1);
+}
+
+/* 分類選擇卡 */
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.category-card {
+  background: #FFF;
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 14px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.category-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--primary);
+}
+.category-card.active {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  box-shadow: 0 6px 15px rgba(255, 140, 0, 0.1);
+}
+.category-card svg {
+  width: 32px;
+  height: 32px;
+  transition: transform 0.3s ease;
+}
+.category-card.active svg {
+  transform: scale(1.15) rotate(-5deg);
+}
+.category-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* 籤號網格 */
+.number-grid-container {
+  max-height: 180px;
+  overflow-y: auto;
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 12px;
+  background: #FFF;
+}
+.number-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 8px;
+}
+.number-btn {
+  aspect-ratio: 1;
+  background: #FFF;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.number-btn:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+.number-btn.active {
+  background: var(--primary);
+  color: #FFF;
+  border-color: var(--primary-dark);
+  box-shadow: 0 4px 8px rgba(255, 140, 0, 0.2);
+  transform: scale(1.08);
+}
+
+/* 送出按鈕 */
+.submit-btn {
+  width: 100%;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: #FFF;
+  border: none;
+  border-radius: 18px;
+  padding: 16px;
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 6px 15px rgba(211, 84, 0, 0.2);
+  transition: all 0.2s ease;
+  margin-top: 10px;
+}
+.submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(211, 84, 0, 0.3);
+}
+.submit-btn:active {
+  transform: translateY(0);
+}
+.submit-btn:disabled {
+  background: var(--mute);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* 內嵌 SVG icon 樣式 */
+.ei {
+  display: inline;
+  width: 1.1em;
+  height: 1.1em;
+  vertical-align: -0.15em;
+}
+
+/* 結果展示區 */
+.result-section {
+  margin-top: 36px;
+  border-top: 3px dashed var(--line);
+  padding-top: 30px;
+  display: none;
+}
+.result-section.active {
+  display: block;
+  animation: slideUp 0.5s ease;
+}
+.result-title {
+  text-align: center;
+  font-family: var(--serif);
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--primary-dark);
+  margin-bottom: 20px;
+}
+
+/* 籤卡本體 */
+.result-card {
+  background: #FFF;
+  border: 2px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.02);
+  margin-bottom: 24px;
+  position: relative;
+}
+.result-badge {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: var(--primary-light);
+  border: 1px solid var(--border);
+  color: var(--primary-dark);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+.poem-box {
+  text-align: center;
+  margin: 15px 0 24px 0;
+  padding-bottom: 20px;
+  border-bottom: 1.5px solid var(--border);
+}
+.poem-num {
+  font-size: 14px;
+  color: var(--mute);
+  margin-bottom: 4px;
+}
+.poem-content {
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--ink);
+  line-height: 1.5;
+  margin: 0;
+  letter-spacing: 1px;
+}
+.poem-keywords {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--mute);
+}
+.poem-keywords span {
+  font-weight: 700;
+  color: var(--primary-dark);
+}
+
+/* AI 解釋區 */
+.ai-interpretation {
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--ink);
+}
+.ai-section {
+  margin-bottom: 18px;
+}
+.ai-section-title {
+  font-weight: 800;
+  color: var(--primary-dark);
+  font-size: 16px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ai-text {
+  white-space: pre-line;
+  padding-left: 22px;
+  position: relative;
+}
+/* 下載截圖專屬容器 */
+#captureArea {
+  position: relative;
+  background: linear-gradient(160deg, #FFFDF9 0%, #FFF8F0 40%, #FFFDF9 100%);
+  border: 3px solid var(--border);
+  border-radius: 24px;
+  padding: 36px 28px 28px;
+  margin-bottom: 24px;
+  box-shadow:
+    0 0 0 5px #FFF,
+    0 0 0 8px var(--border),
+    0 12px 35px rgba(211, 84, 0, 0.10);
+  overflow: hidden;
+}
+.capture-watermark {
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 0;
+}
+.capture-paw {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  opacity: 0.25;
+  z-index: 1;
+  pointer-events: none;
+}
+.capture-paw-tl { top: 12px; left: 12px; transform: rotate(-30deg); }
+.capture-paw-tr { top: 12px; right: 12px; transform: rotate(30deg); }
+.capture-paw-bl { bottom: 12px; left: 12px; transform: rotate(-150deg); }
+.capture-paw-br { bottom: 12px; right: 12px; transform: rotate(150deg); }
+.capture-footer {
+  text-align: center;
+  font-size: 12px;
+  color: var(--mute);
+  padding-top: 16px;
+  margin-top: 8px;
+  border-top: 1.5px dashed var(--border);
+  letter-spacing: 1px;
+}
+
+.ai-text::before {
+  content: "🐾";
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-size: 12px;
+}
+
+/* 輸出按鈕列 */
+.action-row {
+  display: flex;
+  gap: 12px;
+}
+.action-btn {
+  flex: 1;
+  background: #FFF;
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+.action-btn:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
+.action-btn.primary {
+  background: var(--green);
+  color: #FFF;
+  border: none;
+  box-shadow: 0 4px 10px rgba(46, 213, 115, 0.15);
+}
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.action-btn.primary:hover {
+  background: #26c062;
+  color: #FFF;
+}
+
+/* 設定互動視窗 */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(47, 53, 66, 0.6);
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.active {
+  display: flex;
+  animation: fadeIn 0.3s ease;
+}
+.modal {
+  width: 90%;
+  max-width: 480px;
+  background: #FFF;
+  border-radius: 20px;
+  border: 3px solid var(--border);
+  padding: 24px;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+  animation: scaleUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15);
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  border-bottom: 2px dashed var(--border);
+  padding-bottom: 10px;
+}
+.modal-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--primary-dark);
+  margin: 0;
+}
+.modal-close {
+  cursor: pointer;
+  color: var(--mute);
+  font-size: 20px;
+  font-weight: bold;
+}
+.modal-close:hover {
+  color: var(--secondary);
+}
+.modal-body {
+  font-size: 14px;
+  line-height: 1.6;
+}
+.modal-body label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.modal-input {
+  width: 100%;
+  background: #FFF;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 14px;
+  outline: none;
+  margin-bottom: 16px;
+}
+.modal-input:focus {
+  border-color: var(--primary);
+}
+.modal-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* 載入中動畫 */
+.loader-overlay {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+}
+.loader {
+  border: 4px solid var(--primary-light);
+  border-top: 4px solid var(--primary);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+/* 動畫定義 */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes slideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes scaleUp {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* 手機響應式 */
+@media (max-width: 640px) {
+  .container {
+    margin: 10px 8px;
+    padding: 16px;
+    border-width: 3px;
+    border-radius: 16px;
+  }
+  .title-section h1 {
+    font-size: 22px;
+    gap: 6px;
+  }
+  .title-section p {
+    font-size: 13px;
+  }
+  .deity-display {
+    padding: 14px;
+  }
+  .deity-bubble {
+    font-size: 13px;
+    max-width: 90%;
+    padding: 10px 14px;
+  }
+  #deitySvg {
+    width: 72px;
+    height: 72px;
+  }
+  .category-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .category-card {
+    padding: 10px 6px;
+    gap: 4px;
+  }
+  .category-card svg {
+    width: 24px;
+    height: 24px;
+  }
+  .category-title {
+    font-size: 12px;
+  }
+  .number-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+  .number-btn {
+    font-size: 13px;
+    border-radius: 8px;
+  }
+  .text-input {
+    height: 72px;
+    font-size: 14px;
+  }
+  .submit-btn {
+    font-size: 16px;
+    padding: 14px;
+  }
+  .result-title {
+    font-size: 20px;
+  }
+  .result-card {
+    padding: 16px;
+  }
+  .poem-content {
+    font-size: 17px;
+  }
+  .ai-interpretation {
+    font-size: 14px;
+  }
+  #captureArea {
+    padding: 24px 16px 20px;
+  }
+  .capture-watermark {
+    width: 120px;
+    height: 120px;
+  }
+  .result-title {
+    font-size: 20px;
+  }
+  .action-btn {
+    font-size: 12px;
+    padding: 8px 6px;
+    gap: 4px;
+  }
+  .modal {
+    width: 95%;
+    padding: 16px;
+  }
+}
+@media (max-width: 500px) {
+  .action-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .action-btn {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+  }
+}
+@media (max-width: 400px) {
+  .number-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Toast 提示 */
+.toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: #FFF;
+  padding: 12px 24px;
+  border-radius: 40px;
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 2000;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+.toast.show {
+  opacity: 1;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- 爪印裝飾 -->
+  <svg class="paw-decor paw-top-left" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12,14C10.9,14 10,13.1 10,12C10,10.9 10.9,10 12,10C13.1,10 14,10.9 14,12C14,13.1 13.1,14 12,14M16,9C15.1,9 14.3,8.3 14.3,7.3C14.3,6.4 15.1,5.6 16,5.6C16.9,5.6 17.7,6.4 17.7,7.3C17.7,8.3 16.9,9 16,9M8,9C7.1,9 6.3,8.3 6.3,7.3C6.3,6.4 7.1,5.6 8,5.6C8.9,5.6 9.7,6.4 9.7,7.3C9.7,8.3 8.9,9 8,9M12,8.5C11.2,8.5 10.5,7.8 10.5,7C10.5,6.2 11.2,5.5 12,5.5C12.8,5.5 13.5,6.2 13.5,7C13.5,7.8 12.8,8.5 12,8.5Z"/>
+  </svg>
+  <svg class="paw-decor paw-bottom-right" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12,14C10.9,14 10,13.1 10,12C10,10.9 10.9,10 12,10C13.1,10 14,10.9 14,12C14,13.1 13.1,14 12,14M16,9C15.1,9 14.3,8.3 14.3,7.3C14.3,6.4 15.1,5.6 16,5.6C16.9,5.6 17.7,6.4 17.7,7.3C17.7,8.3 16.9,9 16,9M8,9C7.1,9 6.3,8.3 6.3,7.3C6.3,6.4 7.1,5.6 8,5.6C8.9,5.6 9.7,6.4 9.7,7.3C9.7,8.3 8.9,9 8,9M12,8.5C11.2,8.5 10.5,7.8 10.5,7C10.5,6.2 11.2,5.5 12,5.5C12.8,5.5 13.5,6.2 13.5,7C13.5,7.8 12.8,8.5 12,8.5Z"/>
+  </svg>
+
+  <!-- 頂部列 -->
+  <div class="header-bar">
+    <div style="font-size: 13px; font-weight: bold; background: var(--secondary-light); color: var(--secondary); padding: 4px 12px; border-radius: 20px;">
+      🏫 建成國中輔導室專用
+    </div>
+    <div class="settings-btn" id="openSettingsBtn" title="設定 API 金鑰">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+    </div>
+  </div>
+
+  <!-- 標題 -->
+  <div class="title-section">
+    <h1>建成輔導靈籤 🐾 AI 解籤站</h1>
+    <p>抽取屬於你的智慧靈籤，讓紅斗篷橘貓大仙為你溫暖開示！</p>
+  </div>
+
+  <!-- 貓大仙互動區 -->
+  <div class="deity-display">
+    <div class="deity-bubble" id="deityBubble">
+      喵～信徒你來了！把你的困擾寫在下面，並選取你擲筊確認好的籤詩號碼，本仙這就來為你指點方向！
+    </div>
+    <!-- 貓大仙 SVG 動態頭像 -->
+    <svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" id="deitySvg">
+      <!-- 斗篷 -->
+      <path d="M10 85 C 15 52, 85 52, 90 85 C 70 90, 30 90, 10 85 Z" fill="#FF4757"/>
+      <path d="M35 52 C 45 42, 55 42, 65 52" stroke="#FF4757" stroke-width="6" stroke-linecap="round"/>
+      <!-- 貓身體 -->
+      <circle cx="50" cy="46" r="30" fill="#D2B48C" id="catBody"/>
+      <!-- 耳朵 -->
+      <polygon points="25,26 35,6 45,26" fill="#8B4513"/>
+      <polygon points="75,26 65,6 55,26" fill="#8B4513"/>
+      <!-- 眼睛 -->
+      <g id="catEyes">
+        <!-- 預設微笑彎眼 -->
+        <path d="M36 41 Q40 37 44 41" stroke="#2C3542" stroke-width="3" stroke-linecap="round" fill="none"/>
+        <path d="M56 41 Q60 37 64 41" stroke="#2C3542" stroke-width="3" stroke-linecap="round" fill="none"/>
+      </g>
+      <!-- 鼻子 -->
+      <polygon points="50,49 47,45 53,45" fill="#FF8C00"/>
+      <!-- 鬍鬚 -->
+      <path d="M25 46 L10 43 M25 51 L8 51 M25 56 L10 59" stroke="#8B4513" stroke-width="2"/>
+      <path d="M75 46 L90 43 M75 51 L92 51 M75 56 L90 59" stroke="#8B4513" stroke-width="2"/>
+      <!-- 嘴巴 -->
+      <path d="M44 53 Q50 59 56 53" stroke="#2C3542" stroke-width="3" stroke-linecap="round" fill="none" id="catMouth"/>
+      <!-- 貓爪 -->
+      <circle cx="35" cy="74" r="10" fill="#D2B48C"/>
+      <circle cx="65" cy="74" r="10" fill="#D2B48C"/>
+      <circle cx="35" cy="74" r="7" fill="#8B4513"/>
+      <circle cx="65" cy="74" r="7" fill="#8B4513"/>
+    </svg>
+  </div>
+
+  <!-- 輸入區一：問題 -->
+  <div class="form-group">
+    <div class="form-label">
+      🐾 ① 寫下你的心靈困惑 <span>（大仙會一併閱讀喔）</span>
+    </div>
+    <textarea class="text-input" id="questionInput" placeholder="例如：大仙，我最近跟好朋友吵架了，心裡覺得好難過，不知道該怎麼踏出和好的第一步？"></textarea>
+  </div>
+
+  <!-- 輸入區二：籤號 -->
+  <div class="form-group">
+    <div class="form-label">
+      🐾 ② 選取你擲筊確認的靈籤號碼 <span>（01～35 號）</span>
+    </div>
+    <div class="number-grid-container">
+      <div class="number-grid" id="numberGrid">
+        <!-- JS 動態生成按鈕 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 點擊解籤 -->
+  <button class="submit-btn" id="submitBtn" disabled>
+    向橘貓大仙祈請靈籤開示 🐾
+  </button>
+
+  <!-- 載入中動畫 -->
+  <div class="loader-overlay" id="loaderOverlay">
+    <div class="loader"></div>
+    <div style="font-weight: bold; color: var(--primary-dark); font-size: 15px;" id="loaderText">
+      大仙正在閉目通靈，閱讀籤詩中...
+    </div>
+  </div>
+
+  <!-- 解籤結果展示 -->
+  <div class="result-section" id="resultSection">
+    <div id="captureArea">
+      <!-- 裝飾水印 -->
+      <svg class="capture-watermark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="46" r="30" fill="#D2B48C" opacity="0.12"/>
+        <polygon points="25,26 35,6 45,26" fill="#8B4513" opacity="0.12"/>
+        <polygon points="75,26 65,6 55,26" fill="#8B4513" opacity="0.12"/>
+        <circle cx="40" cy="40" r="3" fill="#2C3542" opacity="0.12"/>
+        <circle cx="60" cy="40" r="3" fill="#2C3542" opacity="0.12"/>
+        <path d="M44 53 Q50 59 56 53" stroke="#2C3542" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.12"/>
+        <path d="M10 85 C 15 52, 85 52, 90 85 C 70 90, 30 90, 10 85 Z" fill="#FF4757" opacity="0.06"/>
+      </svg>
+      <!-- 裝飾爪印 -->
+      <svg class="capture-paw capture-paw-tl" viewBox="0 0 24 24" fill="var(--border)">
+        <path d="M12,14C10.9,14 10,13.1 10,12C10,10.9 10.9,10 12,10C13.1,10 14,10.9 14,12C14,13.1 13.1,14 12,14M16,9C15.1,9 14.3,8.3 14.3,7.3C14.3,6.4 15.1,5.6 16,5.6C16.9,5.6 17.7,6.4 17.7,7.3C17.7,8.3 16.9,9 16,9M8,9C7.1,9 6.3,8.3 6.3,7.3C6.3,6.4 7.1,5.6 8,5.6C8.9,5.6 9.7,6.4 9.7,7.3C9.7,8.3 8.9,9 8,9M12,8.5C11.2,8.5 10.5,7.8 10.5,7C10.5,6.2 11.2,5.5 12,5.5C12.8,5.5 13.5,6.2 13.5,7C13.5,7.8 12.8,8.5 12,8.5Z"/>
+      </svg>
+      <svg class="capture-paw capture-paw-tr" viewBox="0 0 24 24" fill="var(--border)">
+        <path d="M12,14C10.9,14 10,13.1 10,12C10,10.9 10.9,10 12,10C13.1,10 14,10.9 14,12C14,13.1 13.1,14 12,14M16,9C15.1,9 14.3,8.3 14.3,7.3C14.3,6.4 15.1,5.6 16,5.6C16.9,5.6 17.7,6.4 17.7,7.3C17.7,8.3 16.9,9 16,9M8,9C7.1,9 6.3,8.3 6.3,7.3C6.3,6.4 7.1,5.6 8,5.6C8.9,5.6 9.7,6.4 9.7,7.3C9.7,8.3 8.9,9 8,9M12,8.5C11.2,8.5 10.5,7.8 10.5,7C10.5,6.2 11.2,5.5 12,5.5C12.8,5.5 13.5,6.2 13.5,7C13.5,7.8 12.8,8.5 12,8.5Z"/>
+      </svg>
+      <svg class="capture-paw capture-paw-bl" viewBox="0 0 24 24" fill="var(--border)">
+        <path d="M12,14C10.9,14 10,13.1 10,12C10,10.9 10.9,10 12,10C13.1,10 14,10.9 14,12C14,13.1 13.1,14 12,14M16,9C15.1,9 14.3,8.3 14.3,7.3C14.3,6.4 15.1,5.6 16,5.6C16.9,5.6 17.7,6.4 17.7,7.3C17.7,8.3 16.9,9 16,9M8,9C7.1,9 6.3,8.3 6.3,7.3C6.3,6.4 7.1,5.6 8,5.6C8.9,5.6 9.7,6.4 9.7,7.3C9.7,8.3 8.9,9 8,9M12,8.5C11.2,8.5 10.5,7.8 10.5,7C10.5,6.2 11.2,5.5 12,5.5C12.8,5.5 13.5,6.2 13.5,7C13.5,7.8 12.8,8.5 12,8.5Z"/>
+      </svg>
+      <svg class="capture-paw capture-paw-br" viewBox="0 0 24 24" fill="var(--border)">
+        <path d="M12,14C10.9,14 10,13.1 10,12C10,10.9 10.9,10 12,10C13.1,10 14,10.9 14,12C14,13.1 13.1,14 12,14M16,9C15.1,9 14.3,8.3 14.3,7.3C14.3,6.4 15.1,5.6 16,5.6C16.9,5.6 17.7,6.4 17.7,7.3C17.7,8.3 16.9,9 16,9M8,9C7.1,9 6.3,8.3 6.3,7.3C6.3,6.4 7.1,5.6 8,5.6C8.9,5.6 9.7,6.4 9.7,7.3C9.7,8.3 8.9,9 8,9M12,8.5C11.2,8.5 10.5,7.8 10.5,7C10.5,6.2 11.2,5.5 12,5.5C12.8,5.5 13.5,6.2 13.5,7C13.5,7.8 12.8,8.5 12,8.5Z"/>
+      </svg>
+
+      <div class="result-title">
+        <svg class="ei" viewBox="0 0 24 24" width="1em" height="1em"><ellipse cx="12" cy="14" rx="10" ry="9" fill="#D2B48C"/><polygon points="3,8 7,2 11,8" fill="#8B4513"/><polygon points="13,8 17,2 21,8" fill="#8B4513"/><circle cx="8" cy="12" r="2" fill="#2F3542"/><circle cx="16" cy="12" r="2" fill="#2F3542"/><polygon points="12,14 10,11 14,11" fill="#FF8C00"/><path d="M8,18 Q12,21 16,18" stroke="#2F3542" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        大仙解籤寶笈
+        <svg class="ei" viewBox="0 0 24 24" width="1em" height="1em"><ellipse cx="12" cy="14" rx="10" ry="9" fill="#D2B48C"/><polygon points="3,8 7,2 11,8" fill="#8B4513"/><polygon points="13,8 17,2 21,8" fill="#8B4513"/><circle cx="8" cy="12" r="2" fill="#2F3542"/><circle cx="16" cy="12" r="2" fill="#2F3542"/><polygon points="12,14 10,11 14,11" fill="#FF8C00"/><path d="M8,18 Q12,21 16,18" stroke="#2F3542" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      </div>
+      <div class="result-card" id="printableCard">
+        <div class="result-badge" id="resultBadge">人際關係</div>
+        <div class="poem-box">
+          <div class="poem-num" id="resultPoemNum">第 一 首</div>
+          <div class="poem-content" id="resultPoemContent">長風破浪會有時，直掛雲帆濟滄海。</div>
+          <div class="poem-keywords" id="resultKeywords">大仙密碼：<span>壯志凌雲</span></div>
+        </div>
+        <div class="ai-interpretation" id="aiInterpretation">
+          <!-- AI 生成內容填在此處 -->
+        </div>
+      </div>
+      <div class="capture-footer">建成國中輔導室 · 紅斗篷橘貓大仙 <svg class="ei" viewBox="0 0 24 24" width="1em" height="1em"><path d="M12,14C10.9,14 10,13.1 10,12C10,10.9 10.9,10 12,10C13.1,10 14,10.9 14,12C14,13.1 13.1,14 12,14M16,9C15.1,9 14.3,8.3 14.3,7.3C14.3,6.4 15.1,5.6 16,5.6C16.9,5.6 17.7,6.4 17.7,7.3C17.7,8.3 16.9,9 16,9M8,9C7.1,9 6.3,8.3 6.3,7.3C6.3,6.4 7.1,5.6 8,5.6C8.9,5.6 9.7,6.4 9.7,7.3C9.7,8.3 8.9,9 8,9M12,8.5C11.2,8.5 10.5,7.8 10.5,7C10.5,6.2 11.2,5.5 12,5.5C12.8,5.5 13.5,6.2 13.5,7C13.5,7.8 12.8,8.5 12,8.5Z" fill="#FF8C00"/></svg></div>
+    </div>
+    <div class="action-row">
+      <button class="action-btn" id="resetBtn">重新請示大仙</button>
+      <button class="action-btn" id="shareBtn">📤 分享</button>
+      <button class="action-btn primary" id="downloadBtn">🖼️ 下載解籤圖</button>
+    </div>
+  </div>
+</div>
+
+<!-- API 設定對話盒 -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">⚙️ 橘貓大仙 API 設定</h3>
+      <span class="modal-close" id="closeSettingsBtn">&times;</span>
+    </div>
+    <div class="modal-body">
+      <p style="margin-top: 0; color: var(--mute);">本解籤系統串接 Google Gemini AI。金鑰將安全地儲存於本機瀏覽器，不會上傳到任何外部伺服器。</p>
+      
+      <label for="apiKeyInput">Gemini API 金鑰</label>
+      <input type="password" class="modal-input" id="apiKeyInput" placeholder="請輸入 AI_KEY (例如 AIzaSy...)"/>
+      <p style="font-size: 12px; margin-top: -12px; margin-bottom: 16px;">
+        💡 <a href="https://aistudio.google.com/" target="_blank" style="color: var(--primary); font-weight: bold;">點此免費申請 Gemini API 金鑰</a>
+      </p>
+
+      <label for="modelSelect">AI 模型選擇</label>
+      <select class="modal-input" id="modelSelect">
+        <option value="gemini-flash-lite-latest">gemini-flash-lite-latest（預設推薦，極速流暢）</option>
+        <option value="gemini-2.5-flash">gemini-2.5-flash（次速推薦，均衡型）</option>
+        <option value="gemini-2.5-pro">gemini-2.5-pro（解籤更細膩深刻）</option>
+      </select>
+
+      <div style="background: var(--secondary-light); padding: 10px; border-radius: 8px; font-size: 12.5px; color: var(--secondary); margin-bottom: 16px;">
+        ⚠️ <strong>重要提示：</strong>本系統必須連上 AI 才能進行解籤。若無金鑰或連線失敗，大仙將無法提供開示，請聯繫輔導組老師修復。
+      </div>
+
+      <hr style="border: none; border-top: 2px dashed var(--border); margin: 18px 0;">
+
+      <p style="font-weight: 800; color: var(--primary-dark); margin: 0 0 12px 0;">✉️ 關於寄信功能</p>
+      <p style="font-size: 13px; color: var(--mute); margin: 0 0 12px 0;">
+        按下「分享」可將靈籤圖檔傳到 LINE、Email、IG 等 App，不需任何設定。
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="action-btn" id="testApiBtn" style="padding: 6px 12px; font-size: 13px;">測試金鑰</button>
+      <button class="action-btn primary" id="saveSettingsBtn" style="padding: 6px 12px; font-size: 13px;">儲存設定</button>
+    </div>
+  </div>
+</div>
+
+<!-- 寄信直接以 mailto: 開啟，無需彈窗 -->
+
+<!-- Toast 提示 -->
+<div class="toast" id="toast"></div>
+
+<script>
+// 35首靈籤資料庫
+const POEMS_DB = {
+  1: { text: "長風破浪會有時，直掛雲帆濟滄海。", 人際: "壯志凌雲", 感情: "胸懷大志", 學習: "突破困境", 未來: "前程萬里" },
+  2: { text: "行到水窮處，坐看雲起時。", 人際: "隨緣自在", 感情: "順其自然", 學習: "豁然開朗", 未來: "峰迴路轉" },
+  3: { text: "竹杖芒鞋輕勝馬，誰怕？一蓑煙雨任平生。", 人際: "不畏流言", 感情: "豁達包容", 學習: "泰然處之", 未來: "無所畏懼" },
+  4: { text: "眾裡尋他千百度，驀然回首，那人卻在，燈火闌珊處。", 人際: "珍惜眼前", 感情: "心有靈犀", 學習: "豁然開朗", 未來: "水到渠成" },
+  5: { text: "山重水複疑無路，柳暗花明又一村。", 人際: "絕處逢緣", 感情: "峰迴路轉", 學習: "柳暗花明", 未來: "否極泰來" },
+  6: { text: "Shoot for the moon. Even if you miss, you'll land among the stars.（瞄準月亮，即使沒射中，你也會落在群星之中。）", 人際: "眾星拱月", 感情: "高山仰止", 學習: "志向遠大", 未來: "無限可能" },
+  7: { text: "Every flower blooms in its own time.（每朵花都有屬於自己的花期。）", 人際: "各展其才", 感情: "靜待花開", 學習: "循序漸進", 未來: "大器晚成" },
+  8: { text: "The shiniest stars are born out of the darkest nights.（最璀璨的星辰，誕生於最漆黑的夜空。）", 人際: "逆境見真", 感情: "歷久彌新", 學習: "突破瓶頸", 未來: "絕處逢生" },
+  9: { text: "Not all those who wander are lost.（迷途漫步者，未必皆迷失方向。）", 人際: "獨樹一幟", 感情: "相知相惜", 學習: "多元探索", 未來: "另闢蹊徑" },
+  10: { text: "Time you enjoy wasting is not wasted time.（你樂在其中的虛度，便不是浪費光陰。）", 人際: "知心相伴", 感情: "浪漫相隨", 學習: "勞逸結合", 未來: "活在當下" },
+  11: { text: "等高線越密集的地方坡度越陡峭，但那裡往往擁有最壯麗的風景。", 人際: "攜手共艱", 感情: "苦盡甘來", 學習: "突破極限", 未來: "登高望遠" },
+  12: { text: "歷史總是在起伏交替中前進，眼前的低谷只是暫時，你終將寫下自己的盛世。", 人際: "看淡起伏", 感情: "歷久彌新", 學習: "溫故知新", 未來: "開創時代" },
+  13: { text: "洋流默默為海洋帶來豐富的漁場，順著這股溫柔的趨勢，你也會找到舞台。", 人際: "順應群體", 感情: "推波助瀾", 學習: "借力使力", 未來: "乘風破浪" },
+  14: { text: "絲路漫長且充滿風沙，卻在終點促成了東西方最璀璨的文化交融。", 人際: "跨界溝通", 感情: "萬里傳情", 學習: "廣泛涉獵", 未來: "前途無量" },
+  15: { text: "經濟學上的機會成本提醒我們，每種割捨與放棄，都是為了奔向更值得的擁有。", 人際: "知所進退", 感情: "認定專一", 學習: "明智抉擇", 未來: "前途光明" },
+  16: { text: "向光性是植物對陽光的追尋，即使深埋黑暗，根莖也會溫柔地迎向光明。", 人際: "積極社交", 感情: "心之所向", 學習: "求知若渴", 未來: "迎向光明" },
+  17: { text: "光的折射是因為介質改變，當生活出現阻礙，轉個彎或許能看見彩虹。", 人際: "圓融隨俗", 感情: "看見美好", 學習: "靈活變通", 未來: "前途開闊" },
+  18: { text: "地殼板塊的推擠雖然會帶來震動，但同時也隆起了最雄偉壯麗的高山。", 人際: "磨合共榮", 感情: "歷經考驗", 學習: "抗壓成長", 未來: "步步高升" },
+  19: { text: "萬有引力定律：質量越大吸引力越強。當你豐富內在，靈魂自然磁場相吸。", 人際: "增進魅力", 感情: "吸引相愛", 學習: "充實自我", 未來: "成成就凡" },
+  20: { text: "宇宙膨脹讓星系漸行漸遠，但引力依然牽引著群星，有些深刻的連結永不消逝。", 人際: "情誼永存", 感情: "念念不忘", 學習: "宏觀思考", 未來: "浩瀚無垠" },
+  21: { text: "兩條平行線也有交會的可能，只要其中一條願意改變斜率。", 人際: "轉念破冰", 感情: "創造交集", 學習: "突破盲點", 未來: "另闢蹊徑" },
+  22: { text: "人生像直角三角形，踏實做好底邊與高，你的斜邊就會無限延伸。", 人際: "相輔相成", 感情: "完美契合", 學習: "穩紮穩打", 未來: "拓展格局" },
+  23: { text: "在絕對值裡面，不管是正還是負，最終走出來的都是溫柔的正能量。", 人際: "保持包容", 感情: "真誠坦蕩", 學習: "化繁為簡", 未來: "積極樂觀" },
+  24: { text: "圓周率是無限不循環的，自由去探索，沒有人能給你的潛力下定義。", 人際: "緣分無限", 感情: "源源不絕", 學習: "廣泛涉獵", 未來: "前途無限" },
+  25: { text: "任何數的零次方都等於一，無論過去經歷了什麼，今天都是全新的開始。", 人際: "重新出發", 感情: "歸零思考", 學習: "重拾動機", 未來: "開創新局" },
+  26: { text: "防守固然重要，但只有勇敢出手投籃，才有得分的機會。", 人際: "主動出擊", 感情: "勇敢表達", 學習: "放膽嘗試", 未來: "衝向終點" },
+  27: { text: "晝夜節律是身體與地球最古老的約定，在每一次呼吸與沉睡間，悄悄找回內在的平衡。", 人際: "尋找共鳴", 感情: "順其自然", 學習: "張弛有度", 未來: "生生不息" },
+  28: { text: "色彩的調配需要比例，過度飽和的顏色反而容易讓人視覺疲勞。", 人際: "恰如其分", 感情: "留白之美", 學習: "勞逸結合", 未來: "多彩多姿" },
+  29: { text: "當帷幕徐徐拉開，無論有無台詞，你都正在上演獨一無二的劇本。", 人際: "聚焦亮點", 感情: "真情流露", 學習: "找準定位", 未來: "大放異彩" },
+  30: { text: "樂譜上的休止符不是結束，而是為了讓下一段主旋律更加慷慨激昂。", 人際: "懂得進退", 感情: "適時放空", 學習: "稍事休息", 未來: "蓄勢待發" },
+  31: { text: "當程式出現 Bug 時，正是優化系統、讓自己迎來強大升級最好的契機。", 人際: "化解誤會", 感情: "轉危為安", 學習: "錯中反思", 未來: "危機轉機" },
+  32: { text: "穿搭展現個人風格，不需要盲目追求流行，穿出適合自己的剪裁最自在。", 人際: "展現本色", 感情: "適合至上", 學習: "截長補短", 未來: "獨一無二" },
+  33: { text: "迷失方向時就看看指北針，定下心找出真正的座標，你就不會走錯路。", 人際: "認清損友", 感情: "堅定不移", 學習: "確立目標", 未來: "指引方向" },
+  34: { text: "傾聽自己內心的真實聲音，接納不完美的自己，你就是最棒的存在。", 人際: "自信社交", 感情: "自立自強", 學習: "自我覺察", 未來: "自信展現" },
+  35: { text: "結構的穩定來自於合理的卡榫與支撐，基礎打得穩，才能承受外部的壓力。", 人際: "緊密相連", 感情: "互相支撐", 學習: "穩打穩紮", 未來: "頂天立地" }
+};
+
+// 數字轉換中文（一到三十五）
+const CHINESE_NUMS = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十", "二一", "二二", "二三", "二四", "二五", "二六", "二七", "二八", "二九", "三十", "三一", "三二", "三三", "三四", "三五"];
+
+// 自動偵測問題類別的函數
+function detectCategory(question) {
+  const text = question.toLowerCase();
+  // 感情關鍵字
+  if (text.includes("喜歡") || text.includes("愛") || text.includes("告白") || text.includes("男女") || text.includes("分手") || text.includes("戀愛") || text.includes("情侶") || text.includes("吃醋") || text.includes("曖昧") || text.includes("暗戀")) {
+    return "感情";
+  }
+  // 學習關鍵字
+  if (text.includes("功課") || text.includes("讀書") || text.includes("考試") || text.includes("成績") || text.includes("課業") || text.includes("不合格") || text.includes("不及格") || text.includes("段考") || text.includes("會考") || text.includes("作業") || text.includes("報告") || text.includes("補習")) {
+    return "學習";
+  }
+  // 未來關鍵字
+  if (text.includes("未來") || text.includes("志願") || text.includes("高中") || text.includes("志向") || text.includes("目標") || text.includes("生涯") || text.includes("夢想") || text.includes("出路") || text.includes("長大") || text.includes("科系") || text.includes("選擇")) {
+    return "未來";
+  }
+  // 預設人際關係
+  return "人際";
+}
+
+// 狀態管理
+let selectedNumber = null;
+
+// DOM 元素載入
+document.addEventListener("DOMContentLoaded", () => {
+  const numberGrid = document.getElementById("numberGrid");
+  const submitBtn = document.getElementById("submitBtn");
+  const questionInput = document.getElementById("questionInput");
+  
+  const settingsModal = document.getElementById("settingsModal");
+  const openSettingsBtn = document.getElementById("openSettingsBtn");
+  const closeSettingsBtn = document.getElementById("closeSettingsBtn");
+  const saveSettingsBtn = document.getElementById("saveSettingsBtn");
+  const testApiBtn = document.getElementById("testApiBtn");
+  const apiKeyInput = document.getElementById("apiKeyInput");
+  const modelSelect = document.getElementById("modelSelect");
+  
+  const loaderOverlay = document.getElementById("loaderOverlay");
+  const resultSection = document.getElementById("resultSection");
+  const resetBtn = document.getElementById("resetBtn");
+  const shareBtn = document.getElementById("shareBtn");
+  const downloadBtn = document.getElementById("downloadBtn");
+  
+  const deityBubble = document.getElementById("deityBubble");
+  const deitySvg = document.getElementById("deitySvg");
+  const catEyes = document.getElementById("catEyes");
+  const catMouth = document.getElementById("catMouth");
+
+  // 預設 API 金鑰與模型
+  const DEFAULT_API_KEY = atob("QVEuQWI4Uk42TGJYamR5LWQzOTFWdHRpQll1TDhqMm40WTY3eDN5M1VXNHM2eHZkcnd6bnc=");
+  const DEFAULT_MODEL = "gemini-flash-lite-latest";
+
+  // 初始化 API 設定
+  apiKeyInput.value = localStorage.getItem("gemini_api_key") || DEFAULT_API_KEY;
+  modelSelect.value = localStorage.getItem("gemini_model") || DEFAULT_MODEL;
+
+  // 生成 1-35 號籤網格
+  for (let i = 1; i <= 35; i++) {
+    const btn = document.createElement("div");
+    btn.className = "number-btn";
+    btn.textContent = String(i).padStart(2, "0");
+    btn.dataset.num = i;
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".number-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      selectedNumber = i;
+      updateCatState("happy", `喵！第 ${i} 號靈籤收到！大仙已經感應到這張牌的能量了！`);
+      validateForm();
+    });
+    numberGrid.appendChild(btn);
+  }
+
+  // 輸入框長度驗證與狀態
+  questionInput.addEventListener("input", () => {
+    validateForm();
+  });
+
+  // 設定彈窗控制
+  openSettingsBtn.addEventListener("click", () => settingsModal.classList.add("active"));
+  closeSettingsBtn.addEventListener("click", () => settingsModal.classList.remove("active"));
+  saveSettingsBtn.addEventListener("click", () => {
+    localStorage.setItem("gemini_api_key", apiKeyInput.value.trim());
+    localStorage.setItem("gemini_model", modelSelect.value);
+    settingsModal.classList.remove("active");
+    updateCatState("happy", "喵！API 設定已成功儲存！大仙的 AI 觸角已經伸出去囉！");
+  });
+
+  // 測試金鑰
+  testApiBtn.addEventListener("click", async () => {
+    const key = apiKeyInput.value.trim();
+    if (!key) {
+      alert("請輸入金鑰！");
+      return;
+    }
+    testApiBtn.disabled = true;
+    testApiBtn.textContent = "連線中...";
+    try {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts: [{ text: "Hello" }] }] })
+      });
+      if (res.ok) {
+        alert("🎉 連線成功！金鑰有效！");
+      } else {
+        const err = await res.json();
+        alert(`❌ 連線失敗：${err.error.message}`);
+      }
+    } catch (e) {
+      alert(`❌ 網路錯誤：${e.message}`);
+    } finally {
+      testApiBtn.disabled = false;
+      testApiBtn.textContent = "測試金鑰";
+    }
+  });
+
+  // 驗證表單填寫狀態
+  function validateForm() {
+    const hasQuestion = questionInput.value.trim().length > 0;
+    if (selectedNumber && hasQuestion) {
+      submitBtn.removeAttribute("disabled");
+    } else {
+      submitBtn.setAttribute("disabled", "true");
+    }
+  }
+
+  // 提交解籤
+  submitBtn.addEventListener("click", async () => {
+    const question = questionInput.value.trim() || "未特別說明具體困惑，想尋求今日指引。";
+    const apiKey = localStorage.getItem("gemini_api_key") || DEFAULT_API_KEY;
+    const model = localStorage.getItem("gemini_model") || DEFAULT_MODEL;
+    const poemData = POEMS_DB[selectedNumber];
+    
+    // 自動判斷分類與關鍵字
+    const category = detectCategory(question);
+    const categoryKeyword = poemData[category] || poemData["人際"];
+
+    // 更新介面狀態
+    submitBtn.setAttribute("disabled", "true");
+    loaderOverlay.style.display = "flex";
+    resultSection.classList.remove("active");
+    
+    updateCatState("think", "呼嚕嚕... 本仙正閉上雙眼進行跨次元思考，這就為你把脈心靈...");
+
+    // 平滑滾動到載入動畫
+    loaderOverlay.scrollIntoView({ behavior: "smooth" });
+
+    let finalInterpretation = "";
+
+    if (apiKey) {
+      // 啟用 AI 模式
+      try {
+        const prompt = `學生提問：${question}
+指引分類：${category}
+抽到的靈籤號碼：第 ${selectedNumber} 首
+籤詩內文：${poemData.text}
+該分類的籤詩密碼/關鍵字：${categoryKeyword}
+
+請以「紅斗篷橘貓大仙」溫暖可愛的口吻，為這名信徒進行解籤。`;
+
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            systemInstruction: {
+              parts: [{
+                text: `你是一位溫暖、貼心且帶有可愛俏皮口吻的國中輔導老師 AI 助理，化身為輔導室守護神「紅斗篷橘貓大仙」（簡稱貓大仙）。
+你的任務是根據學生的提問、判定的類別以及他所抽到的「建成國中輔導靈籤」內容，給予詳盡、幽默且富有啟發與支持性的解籤指引。
+
+請遵循以下寫作格式輸出：
+【大仙的貓眼觀察】🐾
+（字數約 120-150 字，以溫馨溫暖的文字同理信徒的困擾，給予心靈擁抱）
+
+【靈籤密碼解碼】🐱
+（字數約 150-200 字，將學生的問題、籤詩內文與分類密碼結合，進行有創意的轉化詮釋。解釋為什麼這首籤詩對他來說是個正面指引，能帶來什麼力量）
+
+【貓仙心靈處方箋】💖
+（提供 2 個立即可行、好玩且溫馨的小小行動處方）
+
+規則：
+1. 稱呼對方為「信徒」，自稱為「本仙」或「大仙」。
+2. 使用繁體中文，多用溫暖的句型、可愛的擬聲詞（如「喵～」、「呼嚕嚕～」）與表情符號（🐾, 🐱, 💖）。
+3. 絕不提及技術名詞或你是個 AI 模型，完全維持貓大仙的人設。
+4. 結尾重申「心誠則靈」，強調命運掌握在自己手裡。`
+              }]
+            },
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 800
+            }
+          })
+        });
+
+        if (response.ok) {
+          const resJson = await response.json();
+          finalInterpretation = resJson.candidates[0].content.parts[0].text;
+        } else {
+          const errJson = await response.json();
+          console.error(errJson);
+          finalInterpretation = `【大仙的貓眼觀察】🐾
+喵嗚……大仙的 AI 能量似乎斷線了，無法連上天界主機！這不是你的問題，別擔心喵。
+
+【靈籤密碼解碼】🐱
+大仙目前神力受阻（錯誤代碼：${errJson.error.message || "未知伺服器錯誤"}）。請儘速聯繫輔導室輔導組老師前來修復大仙的 API 金鑰設定，大仙才能重新為大家通靈開示。
+
+【貓仙心靈處方箋】💖
+1. 溫馨提醒：請先將你的籤詩號碼「第 ${CHINESE_NUMS[selectedNumber]} 首」與籤詩內文拍照或抄寫下來，並直接帶著這張實體靈籤去找輔導老師聊聊喔，老師們就是大仙在人間的溫暖化身！
+2. 命運提示：心誠則靈，這張籤詩依然有效，別忘了你的命運掌握在自己手裡，心想事成！`;
+        }
+      } catch (e) {
+        console.error(e);
+        finalInterpretation = `【大仙的貓眼觀察】🐾
+呼嚕嚕……大仙的 AI 觸角在穿越次元時受到了網路磁場干擾，無法連上天界主機！
+
+【靈籤密碼解碼】🐱
+大仙目前因網路連線異常（網路錯誤：${e.message}）而無法進行 AI 解籤。請確認設備是否連上校園網路，或者請前往輔導室聯繫輔導組老師確認網路與 API 設定。
+
+【貓仙心靈處方箋】💖
+1. 溫馨提醒：請先將你的籤詩號碼「第 ${CHINESE_NUMS[selectedNumber]} 首」與籤詩內文拍照或抄寫下來，並直接帶著這張實體靈籤去找輔導老師聊聊喔，老師們就是大仙在人間的溫暖化身！
+2. 命運提示：求籤要誠心，別氣餒，先將這首籤詩記在心裡吧！`;
+      }
+    } else {
+      // 沒有 API Key 的情況
+      finalInterpretation = `【大仙的貓眼觀察】🐾
+喵～大仙偵測到系統裡還沒有裝上「API 金鑰」這顆能量水晶，無法施展 AI 通靈解籤的神力！
+
+【靈籤密碼解碼】🐱
+本解籤站目前尚未完成 AI 設定。請立即聯繫輔導室輔導組老師，請老師進入右上角設定按鈕填寫正確的 API 金鑰，大仙才能開機為大家解籤。
+
+【貓仙心靈處方箋】💖
+1. 溫馨提醒：請先將你的籤詩號碼「第 ${CHINESE_NUMS[selectedNumber]} 首」與籤詩內文拍照或抄寫下來，並直接帶著這張實體靈籤去找輔導老師聊聊喔，老師們就是大仙在人間的溫暖化身！
+2. 命運提示：心誠則靈，這張籤詩依然有效，你的智慧與力量一直都藏在你的心裡！`;
+    }
+
+    // 關閉載入狀態，渲染結果
+    loaderOverlay.style.display = "none";
+    submitBtn.removeAttribute("disabled");
+    
+    // 設定籤詩卡片內容
+    document.getElementById("resultBadge").textContent = category + "指引";
+    document.getElementById("resultPoemNum").textContent = `第 ${CHINESE_NUMS[selectedNumber]} 首`;
+    document.getElementById("resultPoemContent").textContent = poemData.text;
+    document.getElementById("resultKeywords").innerHTML = `大仙密碼：<span>${categoryKeyword}</span>`;
+
+    // 啟動打字效果
+    resultSection.classList.add("active");
+    updateCatState("happy", "喵嗚！天機已經顯現，快來讀讀本仙給你的溫暖信件吧！");
+    
+    // 平滑滾動到結果
+    resultSection.scrollIntoView({ behavior: "smooth" });
+    
+    const interpretationEl = document.getElementById("aiInterpretation");
+    typeWriter(interpretationEl, finalInterpretation);
+  });
+
+  // 重新請示
+  resetBtn.addEventListener("click", () => {
+    questionInput.value = "";
+    selectedNumber = null;
+    document.querySelectorAll(".number-btn").forEach(b => b.classList.remove("active"));
+    resultSection.classList.remove("active");
+    validateForm();
+    updateCatState("happy", "喵～沒問題！來，深呼吸，將我們的心情重置，準備下一次虔誠求籤吧！");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  // Toast 提示
+  function showToast(msg) {
+    const toast = document.getElementById("toast");
+    toast.textContent = msg;
+    toast.classList.add("show");
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => toast.classList.remove("show"), 2500);
+  }
+
+  // 在真實 DOM 中將 emoji 文字節點取代為 SVG（capture 後立即還原）
+  function svgTag(ch) {
+    const cp = ch.codePointAt(0);
+    if (cp === 0x1F43E) return '<svg class="ei" viewBox="0 0 24 24"><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm4-5a1.7 1.7 0 1 0 0-3.4 1.7 1.7 0 0 0 0 3.4zm-8 0a1.7 1.7 0 1 0 0-3.4 1.7 1.7 0 0 0 0 3.4zm4-.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z" fill="#FF8C00"/></svg>';
+    if (cp === 0x1F431 || cp === 0x1F638) return '<svg class="ei" viewBox="0 0 24 24"><ellipse cx="12" cy="14" rx="10" ry="9" fill="#D2B48C"/><polygon points="3,8 7,2 11,8" fill="#8B4513"/><polygon points="13,8 17,2 21,8" fill="#8B4513"/><circle cx="8" cy="12" r="2" fill="#2F3542"/><circle cx="16" cy="12" r="2" fill="#2F3542"/><polygon points="12,14 10,11 14,11" fill="#FF8C00"/><path d="M8,18 Q12,21 16,18" stroke="#2F3542" stroke-width="2" fill="none" stroke-linecap="round"/></svg>';
+    if (cp >= 0x1F495 && cp <= 0x1F49C || cp === 0x2764) return '<svg class="ei" viewBox="0 0 24 24"><path d="M12 21c0 0-8-5-8-11 0-4 3-6 5-5 1.5.5 2.5 2 3 3 .5-1 1.5-2.5 3-3 2-1 5 1 5 5 0 6-8 11-8 11z" fill="#FF4757"/></svg>';
+    if (cp === 0x26A0) return '<svg class="ei" viewBox="0 0 24 24"><path d="M12 2L1 22h22z" fill="#FF8C00"/><path d="M11 9v5h2V9z" fill="#FFF"/><circle cx="12" cy="18" r="1.5" fill="#FFF"/></svg>';
+    if (cp === 0x1F4A1) return '<svg class="ei" viewBox="0 0 24 24"><path d="M12 2C8 2 6 5 6 8c0 3 2 5 2 7h8c0-2 2-4 2-7 0-3-2-6-6-6z" fill="#FFD93D"/><rect x="10" y="15" width="4" height="2" rx="1" fill="#FFD93D"/><rect x="11" y="17" width="2" height="3" rx="1" fill="#FFD93D"/></svg>';
+    if (cp === 0x274C) return '<svg class="ei" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="#FF4757" stroke-width="3" stroke-linecap="round"/></svg>';
+    if (cp >= 0x1F389 && cp <= 0x1F38A) return '<svg class="ei" viewBox="0 0 24 24"><path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z" fill="#FFD93D"/></svg>';
+    if (cp === 0x1F44D) return '<svg class="ei" viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.5a2 2 0 0 0 2-2l1.5-8a2 2 0 0 0-2-2H14z" fill="#2ED573"/></svg>';
+    if (cp === 0x1F44E) return '<svg class="ei" viewBox="0 0 24 24"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.5a2 2 0 0 0-2 2l-1.5 8a2 2 0 0 0 2 2H10z" fill="#FF4757"/></svg>';
+    return null;
+  }
+
+  function emojiToSVGInDOM(root) {
+    const re = /(\u26A0\uFE0F|\u26A0|[\u{1F300}-\u{1FFFF}])/gu;
+    // 第一輪：收集所有含 emoji 的文字節點（不修改 DOM，避免 TreeWalker 錯亂）
+    const targets = [];
+    const iter = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+    while (iter.nextNode()) {
+      const n = iter.currentNode;
+      if (re.test(n.textContent)) { targets.push(n); re.lastIndex = 0; }
+    }
+    // 第二輪：逐一替換
+    const fix = [];
+    for (const n of targets) {
+      const t = n.textContent;
+      re.lastIndex = 0;
+      const pieces = [];
+      let idx = 0, m;
+      while ((m = re.exec(t)) !== null) {
+        if (m.index > idx) pieces.push(document.createTextNode(t.slice(idx, m.index)));
+        const svg = svgTag(m[0]);
+        if (svg) {
+          const d = document.createElement("div");
+          d.innerHTML = svg;
+          pieces.push(d.firstElementChild);
+        } else {
+          pieces.push(document.createTextNode(m[0]));
+        }
+        idx = m.index + m[0].length;
+      }
+      if (idx < t.length) pieces.push(document.createTextNode(t.slice(idx)));
+      if (pieces.length === 0) continue;
+      const par = n.parentNode;
+      const ref = n.nextSibling;
+      par.removeChild(n);
+      for (const el of pieces) par.insertBefore(el, ref);
+      fix.push({ par, orig: n, first: pieces[0], last: pieces[pieces.length - 1], ref });
+    }
+    return fix;
+  }
+
+  function restoreDOM(fix) {
+    for (const { par, orig, first, last, ref } of fix) {
+      let node = first;
+      while (node) {
+        const nxt = node.nextSibling;
+        par.removeChild(node);
+        if (node === last) break;
+        node = nxt;
+      }
+      par.insertBefore(orig, ref);
+    }
+  }
+
+  // 將解籤卡片截圖為 canvas（含標題與裝飾）
+  async function captureCard() {
+    const area = document.getElementById("captureArea");
+    const fix = emojiToSVGInDOM(area);
+    const canvas = await html2canvas(area, {
+      scale: 2,
+      backgroundColor: "#FFFDF9",
+      useCORS: true,
+      logging: false
+    });
+    restoreDOM(fix);
+    return canvas;
+  }
+
+  // 下載解籤圖
+  downloadBtn.addEventListener("click", async () => {
+    downloadBtn.disabled = true;
+    downloadBtn.textContent = "生成中...";
+    try {
+      const canvas = await captureCard();
+      const link = document.createElement("a");
+      link.download = `建成靈籤_第${CHINESE_NUMS[selectedNumber]}首.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      showToast("圖片已下載！");
+    } catch (e) {
+      console.error(e);
+      showToast("圖片生成失敗，請重試");
+    } finally {
+      downloadBtn.disabled = false;
+      downloadBtn.textContent = "🖼️ 下載解籤圖";
+    }
+  });
+
+  // 分享（手機用 Web Share API 可傳圖檔，桌機 fallback 到 mailto）
+  function buildShareText() {
+    const poemNum = document.getElementById("resultPoemNum").textContent;
+    const poemContent = document.getElementById("resultPoemContent").textContent;
+    const badge = document.getElementById("resultBadge").textContent;
+    const keywords = document.querySelector("#resultKeywords span").textContent;
+    return `建成輔導靈籤 · ${poemNum}\n${poemContent}\n${badge} · 大仙密碼：${keywords}`;
+  }
+
+  shareBtn.addEventListener("click", async () => {
+    shareBtn.disabled = true;
+    shareBtn.textContent = "準備中...";
+    try {
+      const text = buildShareText();
+      const canvas = await captureCard();
+      canvas.toBlob(async (blob) => {
+        const file = new File([blob], `建成靈籤_第${CHINESE_NUMS[selectedNumber]}首.png`, { type: "image/png" });
+        if (navigator.share && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({ title: "建成輔導靈籤", text, files: [file] });
+          } catch (e) { /* user cancelled */ }
+        } else if (navigator.share) {
+          try {
+            await navigator.share({ title: "建成輔導靈籤", text });
+          } catch (e) { /* user cancelled */ }
+        } else {
+          window.open(`mailto:?subject=${encodeURIComponent("建成輔導靈籤 · 橘貓大仙給你的訊息")}&body=${encodeURIComponent(text)}`, "_blank");
+        }
+        shareBtn.disabled = false;
+        shareBtn.textContent = "📤 分享";
+      });
+    } catch (e) {
+      shareBtn.disabled = false;
+      shareBtn.textContent = "📤 分享";
+      showToast("分享失敗，請重試");
+    }
+  });
+
+  // 將 Markdown 基本語法轉成 HTML
+  function renderMarkdown(text) {
+    return text
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*(.+?)\*/g, "<em>$1</em>")
+      .replace(/\n/g, "<br/>")
+      // 讓 【小標題】 變成粗體
+      .replace(/【[^<]*?】/g, "<strong>$&</strong>");
+  }
+
+  // 打字機特效（支援 HTML 標籤以原子單位輸出）
+  function typeWriter(element, rawText) {
+    element.innerHTML = "";
+    const html = renderMarkdown(rawText);
+    // 將字串切成文字片段與 HTML 標籤
+    const tokens = html.match(/<[^>]+>|[^<]+/g) || [];
+    let i = 0;
+    const speed = 15;
+
+    function type() {
+      if (i >= tokens.length) return;
+      const token = tokens[i];
+      if (token.startsWith("<")) {
+        element.insertAdjacentHTML("beforeend", token);
+        i++;
+        type(); // 標籤一次輸出，不延遲
+      } else {
+        let ci = 0;
+        const chars = [...token]; // 以 code point 為單位分割，emoji 不會被切半
+        function typeChar() {
+          if (ci < chars.length) {
+            element.insertAdjacentHTML("beforeend", chars[ci]);
+            ci++;
+            setTimeout(typeChar, speed);
+          } else {
+            i++;
+            type();
+          }
+        }
+        typeChar();
+      }
+    }
+    type();
+  }
+
+  // 貓咪狀態變更
+  function updateCatState(state, text) {
+    deityBubble.textContent = text;
+    if (state === "happy") {
+      catEyes.innerHTML = `
+        <path d="M36 41 Q40 37 44 41" stroke="#2C3542" stroke-width="3" stroke-linecap="round" fill="none"/>
+        <path d="M56 41 Q60 37 64 41" stroke="#2C3542" stroke-width="3" stroke-linecap="round" fill="none"/>
+      `;
+      catMouth.setAttribute("d", "M44 53 Q50 59 56 53");
+    } else if (state === "think") {
+      catEyes.innerHTML = `
+        <circle cx="40" cy="40" r="3" fill="#2C3542"/>
+        <circle cx="60" cy="40" r="3" fill="#2C3542"/>
+      `;
+      catMouth.setAttribute("d", "M46 56 H54");
+    } else if (state === "nod") {
+      catEyes.innerHTML = `
+        <path d="M35 38 L43 43" stroke="#2C3542" stroke-width="3" stroke-linecap="round"/>
+        <path d="M65 38 L57 43" stroke="#2C3542" stroke-width="3" stroke-linecap="round"/>
+      `;
+      catMouth.setAttribute("d", "M45 54 Q50 50 55 54");
+    }
+  }
+});
+</script>
+
+</body>
+</html>
