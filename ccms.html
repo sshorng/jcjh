@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-TW">
 
 <head>
@@ -1528,6 +1528,13 @@
             <label>報表標題顯示之目標學期</label>
             <input type="text" v-model="feedbackModal.targetSem" class="form-control" placeholder="例：113-2">
           </div>
+          <div class="fg" style="margin-bottom:14px">
+            <label>負責專輔</label>
+            <select v-model="feedbackModal.counselor" class="form-control">
+              <option value="">全部專輔</option>
+              <option v-for="name in configs.allCounselors" :key="name" :value="name">{{ name }}</option>
+            </select>
+          </div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" @click="feedbackModal.show=false">取消</button>
@@ -1548,7 +1555,7 @@
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
-  <script src="ccms-app.js?v=20260616d"></script>
+  <script src="ccms-app.js?v=20260701a"></script>
 </body>
 
 </html>

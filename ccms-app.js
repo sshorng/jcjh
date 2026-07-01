@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 輔導室個案管理系統 - 前端 Vue 3 應用程式
  * 架構：獨立 HTML + GAS API
  */
@@ -77,7 +77,7 @@ createApp({
       isDragging: false, // 拖曳上傳狀態
       pwdForm: { oldPwd: '', newPwd: '', confirmPwd: '' },
       exportModal: { show: false, yearMonth: '' },
-      feedbackModal: { show: false, targetSem: '', currentSem: '' },
+      feedbackModal: { show: false, targetSem: '', currentSem: '', counselor: '' },
       backupGrade: '全部',
       selectedCaseIds: [], // 用於批次操作勾選
       recordDrafts: {}, // 🎨 新增案例草稿暫存
@@ -2135,12 +2135,13 @@ createApp({
       else { ts = 1; }
       const tsem = `${ty}-${ts}`;
 
-      this.feedbackModal = { show: true, currentSem: csem, targetSem: tsem };
+      this.feedbackModal = { show: true, currentSem: csem, targetSem: tsem, counselor: '' };
     },
 
     async exportFeedbackForms() {
       const targetSem = this.feedbackModal.targetSem;
       const currentSem = this.feedbackModal.currentSem;
+      const selectedCounselor = this.feedbackModal.counselor;
       if (!targetSem || !currentSem) return;
 
       this.loading = true;
@@ -2178,11 +2179,13 @@ createApp({
           if (sumField) {
             const caseSums = summaryMap[c.id];
             const text = caseSums ? caseSums[sumField] : '';
-            if (text && text.trim() !== '') {
+            const counselor = caseSums ? caseSums.counselor : c.counselor;
+            const matchesCounselor = !selectedCounselor || counselor === selectedCounselor;
+            if (matchesCounselor && text && text.trim() !== '') {
               targetCases.push({
                 ...c,
                 exportSummary: text,
-                counselor: caseSums ? caseSums.counselor : c.counselor,
+                counselor,
                 mentorTeacher: caseSums ? caseSums.mentorTeacher : '',
                 specialEduTeacher: caseSums ? caseSums.specialEduTeacher : '',
                 serviceMethod: caseSums ? caseSums.serviceMethod : ''
@@ -2197,7 +2200,8 @@ createApp({
         });
 
         if (targetCases.length === 0) {
-          this.showToast('該學期沒有任何已填寫綜述的學生', 'error');
+          const scope = selectedCounselor ? `專輔「${selectedCounselor}」` : '該學期';
+          this.showToast(`${scope}沒有任何已填寫綜述的學生`, 'error');
           this.loading = false;
           return;
         }
@@ -2380,7 +2384,8 @@ createApp({
         });
 
         const buffer = await Packer.toBlob(doc);
-        window.saveAs(buffer, `導師回覆表_${targetSem}_共${targetCases.length}份.docx`);
+        const counselorSuffix = selectedCounselor ? `_${selectedCounselor}` : '_全部專輔';
+        window.saveAs(buffer, `導師回覆表_${targetSem}${counselorSuffix}_共${targetCases.length}份.docx`);
         this.feedbackModal.show = false;
         this.showToast('導師回覆表產生成功！', 'success');
 
