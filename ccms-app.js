@@ -2647,14 +2647,14 @@ createApp({
       const FONT_SIZE = 24;
       const FONT_SIZE_TITLE = 36;
       const FONT_SIZE_LABEL = 24;
-      const lightBorder = { style: BorderStyle.SINGLE, size: 1, color: "E2E8F0" };
+      const lightBorder = { style: BorderStyle.SINGLE, size: 1, color: "333333" };
       const modernBorders = { top: lightBorder, bottom: lightBorder, left: lightBorder, right: lightBorder };
 
       const create2ColRow = (label, value) => new TableRow({
         children: [
           new TableCell({
             width: { size: 25, type: WidthType.PERCENTAGE },
-            shading: { fill: "F8FAFC" }, verticalAlign: VerticalAlign.CENTER, borders: modernBorders,
+            shading: { fill: "F0F0F0" }, verticalAlign: VerticalAlign.CENTER, borders: modernBorders,
             margins: { top: 120, bottom: 120, left: 120, right: 120 },
             children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, size: FONT_SIZE_LABEL, color: "475569" })], alignment: AlignmentType.CENTER })],
           }),
@@ -2695,23 +2695,27 @@ createApp({
         new TableRow({
           tableHeader: true,
           children: [
-            new TableCell({ width: { size: 5, type: WidthType.PERCENTAGE }, shading: { fill: "F8FAFC" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "項次", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-            new TableCell({ width: { size: 10, type: WidthType.PERCENTAGE }, shading: { fill: "F8FAFC" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "日期", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-            new TableCell({ width: { size: 8, type: WidthType.PERCENTAGE }, shading: { fill: "F8FAFC" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "對象", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-            new TableCell({ width: { size: 8, type: WidthType.PERCENTAGE }, shading: { fill: "F8FAFC" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "方式", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-            new TableCell({ width: { size: 62, type: WidthType.PERCENTAGE }, shading: { fill: "F8FAFC" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "紀錄內容", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-            new TableCell({ width: { size: 7, type: WidthType.PERCENTAGE }, shading: { fill: "F8FAFC" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "記錄者", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ width: { size: 5, type: WidthType.PERCENTAGE }, shading: { fill: "E8E8E8" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "項次", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ width: { size: 10, type: WidthType.PERCENTAGE }, shading: { fill: "E8E8E8" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "日期", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ width: { size: 8, type: WidthType.PERCENTAGE }, shading: { fill: "E8E8E8" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "對象", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ width: { size: 8, type: WidthType.PERCENTAGE }, shading: { fill: "E8E8E8" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "方式", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ width: { size: 62, type: WidthType.PERCENTAGE }, shading: { fill: "E8E8E8" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "紀錄內容", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ width: { size: 7, type: WidthType.PERCENTAGE }, shading: { fill: "E8E8E8" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "記錄者", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
           ]
         })
       ];
 
       records.forEach((r, idx) => {
-        const createDataCell = (text, width, align = AlignmentType.CENTER) => new TableCell({
-          borders: modernBorders, 
-          verticalAlign: VerticalAlign.CENTER, 
-          margins: { top: 120, bottom: 120, left: 120, right: 120 },
-          children: [new Paragraph({ children: [new TextRun({ text: String(text || '-'), size: FONT_SIZE })], alignment: align })]
-        });
+        const createDataCell = (text, width, align = AlignmentType.CENTER, shading = null) => {
+          const cellOpts = {
+            borders: modernBorders, 
+            verticalAlign: VerticalAlign.CENTER, 
+            margins: { top: 120, bottom: 120, left: 120, right: 120 },
+            children: [new Paragraph({ children: [new TextRun({ text: String(text || '-'), size: FONT_SIZE })], alignment: align })]
+          };
+          if (shading) cellOpts.shading = { fill: shading };
+          return new TableCell(cellOpts);
+        };
 
         let contentChildren = this.parseMarkdownToDocx(r.content, FONT_SIZE);
         if (r.attachments && r.attachments.length > 0) {
@@ -2766,19 +2770,20 @@ createApp({
           }
         }
 
+        const sideShading = "F5F5F5";
         recordRows.push(new TableRow({
           children: [
-            createDataCell(idx + 1, 5),
-            createDataCell(this.formatDate(r.dateTime), 10),
-            createDataCell(r.target, 8),
-            createDataCell(r.method, 8),
+            createDataCell(idx + 1, 5, AlignmentType.CENTER, sideShading),
+            createDataCell(this.formatDate(r.dateTime), 10, AlignmentType.CENTER, sideShading),
+            createDataCell(r.target, 8, AlignmentType.CENTER, sideShading),
+            createDataCell(r.method, 8, AlignmentType.CENTER, sideShading),
             new TableCell({
               width: { size: 62, type: WidthType.PERCENTAGE },
               borders: modernBorders,
               margins: { top: 120, bottom: 120, left: 120, right: 120 },
               children: contentChildren 
             }),
-            createDataCell(r.recorderName, 7),
+            createDataCell(r.recorderName, 7, AlignmentType.CENTER, sideShading),
           ]
         }));
       });
@@ -2789,9 +2794,9 @@ createApp({
         sections: [{
           properties: { page: { margin: { top: 720, bottom: 720, left: 720, right: 720 } } },
           children: [
-            new Paragraph({ children: [new TextRun({ text: "建成國中學生輔導紀錄", bold: true, size: FONT_SIZE_TITLE, color: "0F172A" })], alignment: AlignmentType.CENTER, spacing: { after: 600 } }),
+            new Paragraph({ children: [new TextRun({ text: "建成國中學生輔導紀錄", bold: true, size: FONT_SIZE_TITLE, color: "000000" })], alignment: AlignmentType.CENTER, spacing: { after: 400 } }),
             new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: infoRows }),
-            new Paragraph({ children: [new TextRun({ text: "【 輔導歷程與服務紀錄回顧 】", bold: true, size: FONT_SIZE + 6, color: "1E293B" })], spacing: { before: 800, after: 300 } }),
+            new Paragraph({ children: [new TextRun({ text: "輔導歷程與服務紀錄", bold: true, size: FONT_SIZE + 6, color: "000000" })], spacing: { before: 600, after: 200 } }),
             new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: recordRows })
           ],
         }],
