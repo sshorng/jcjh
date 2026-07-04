@@ -2654,7 +2654,7 @@ createApp({
         children: [
           new TableCell({
             width: { size: 25, type: WidthType.PERCENTAGE },
-            shading: { fill: "F0F0F0" }, verticalAlign: VerticalAlign.CENTER, borders: modernBorders,
+            shading: { fill: "F5F5F5" }, verticalAlign: VerticalAlign.CENTER, borders: modernBorders,
             margins: { top: 120, bottom: 120, left: 120, right: 120 },
             children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, size: FONT_SIZE_LABEL, color: "475569" })], alignment: AlignmentType.CENTER })],
           }),
@@ -2695,12 +2695,12 @@ createApp({
         new TableRow({
           tableHeader: true,
           children: [
-            new TableCell({ width: { size: 5, type: WidthType.PERCENTAGE }, shading: { fill: "E8E8E8" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "項次", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-            new TableCell({ width: { size: 10, type: WidthType.PERCENTAGE }, shading: { fill: "E8E8E8" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "日期", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-            new TableCell({ width: { size: 8, type: WidthType.PERCENTAGE }, shading: { fill: "E8E8E8" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "對象", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-            new TableCell({ width: { size: 8, type: WidthType.PERCENTAGE }, shading: { fill: "E8E8E8" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "方式", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-            new TableCell({ width: { size: 62, type: WidthType.PERCENTAGE }, shading: { fill: "E8E8E8" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "紀錄內容", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-            new TableCell({ width: { size: 7, type: WidthType.PERCENTAGE }, shading: { fill: "E8E8E8" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "記錄者", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ width: { size: 5, type: WidthType.PERCENTAGE }, shading: { fill: "EEEEEE" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "項次", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ width: { size: 10, type: WidthType.PERCENTAGE }, shading: { fill: "EEEEEE" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "日期", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ width: { size: 8, type: WidthType.PERCENTAGE }, shading: { fill: "EEEEEE" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "對象", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ width: { size: 8, type: WidthType.PERCENTAGE }, shading: { fill: "EEEEEE" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "方式", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ width: { size: 62, type: WidthType.PERCENTAGE }, shading: { fill: "EEEEEE" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "紀錄內容", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ width: { size: 7, type: WidthType.PERCENTAGE }, shading: { fill: "EEEEEE" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "記錄者", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
           ]
         })
       ];
@@ -2770,20 +2770,22 @@ createApp({
           }
         }
 
-        const sideShading = "F5F5F5";
+        const rowShading = idx % 2 === 0 ? "F8F8F8" : null;
         recordRows.push(new TableRow({
           children: [
-            createDataCell(idx + 1, 5, AlignmentType.CENTER, sideShading),
-            createDataCell(this.formatDate(r.dateTime), 10, AlignmentType.CENTER, sideShading),
-            createDataCell(r.target, 8, AlignmentType.CENTER, sideShading),
-            createDataCell(r.method, 8, AlignmentType.CENTER, sideShading),
+            createDataCell(idx + 1, 5, AlignmentType.CENTER, rowShading),
+            createDataCell(this.formatDate(r.dateTime), 10, AlignmentType.CENTER, rowShading),
+            createDataCell(r.target, 8, AlignmentType.CENTER, rowShading),
+            createDataCell(r.method, 8, AlignmentType.CENTER, rowShading),
             new TableCell({
               width: { size: 62, type: WidthType.PERCENTAGE },
               borders: modernBorders,
+              verticalAlign: VerticalAlign.CENTER,
               margins: { top: 120, bottom: 120, left: 120, right: 120 },
-              children: contentChildren 
+              children: contentChildren,
+              ...(rowShading ? { shading: { fill: rowShading } } : {})
             }),
-            createDataCell(r.recorderName, 7, AlignmentType.CENTER, sideShading),
+            createDataCell(r.recorderName, 7, AlignmentType.CENTER, rowShading),
           ]
         }));
       });
