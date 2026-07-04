@@ -2647,8 +2647,10 @@ createApp({
       const FONT_SIZE = 24;
       const FONT_SIZE_TITLE = 36;
       const FONT_SIZE_LABEL = 24;
-      const lightBorder = { style: BorderStyle.SINGLE, size: 1, color: "333333" };
-      const modernBorders = { top: lightBorder, bottom: lightBorder, left: lightBorder, right: lightBorder };
+      const cellBorder = { style: BorderStyle.SINGLE, size: 1, color: "333333" };
+      const modernBorders = { top: cellBorder, bottom: cellBorder, left: cellBorder, right: cellBorder };
+      const headerBottom = { style: BorderStyle.SINGLE, size: 8, color: "000000" };
+      const headerBorders = { top: cellBorder, bottom: headerBottom, left: cellBorder, right: cellBorder };
 
       const create2ColRow = (label, value) => new TableRow({
         children: [
@@ -2656,13 +2658,13 @@ createApp({
             width: { size: 25, type: WidthType.PERCENTAGE },
             shading: { fill: "F5F5F5" }, verticalAlign: VerticalAlign.CENTER, borders: modernBorders,
             margins: { top: 120, bottom: 120, left: 120, right: 120 },
-            children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, size: FONT_SIZE_LABEL, color: "475569" })], alignment: AlignmentType.CENTER })],
+            children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, size: FONT_SIZE_LABEL, color: "000000" })], alignment: AlignmentType.CENTER })],
           }),
           new TableCell({
             width: { size: 75, type: WidthType.PERCENTAGE },
             verticalAlign: VerticalAlign.CENTER, borders: modernBorders,
             margins: { top: 120, bottom: 120, left: 120, right: 120 },
-            children: [new Paragraph({ children: [new TextRun({ text: String(value || '-'), size: FONT_SIZE, color: "1E293B" })], spacing: { before: 40, after: 40 } })],
+            children: [new Paragraph({ children: [new TextRun({ text: String(value || '-'), size: FONT_SIZE, color: "000000" })], spacing: { before: 40, after: 40 } })],
           }),
         ],
       });
@@ -2695,12 +2697,12 @@ createApp({
         new TableRow({
           tableHeader: true,
           children: [
-            new TableCell({ width: { size: 5, type: WidthType.PERCENTAGE }, shading: { fill: "EEEEEE" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "項次", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-            new TableCell({ width: { size: 10, type: WidthType.PERCENTAGE }, shading: { fill: "EEEEEE" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "日期", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-            new TableCell({ width: { size: 8, type: WidthType.PERCENTAGE }, shading: { fill: "EEEEEE" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "對象", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-            new TableCell({ width: { size: 8, type: WidthType.PERCENTAGE }, shading: { fill: "EEEEEE" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "方式", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-            new TableCell({ width: { size: 62, type: WidthType.PERCENTAGE }, shading: { fill: "EEEEEE" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "紀錄內容", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
-            new TableCell({ width: { size: 7, type: WidthType.PERCENTAGE }, shading: { fill: "EEEEEE" }, borders: modernBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "記錄者", bold: true, size: FONT_SIZE })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ width: { size: 5, type: WidthType.PERCENTAGE }, shading: { fill: "F5F5F5" }, borders: headerBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "項次", bold: true, size: FONT_SIZE, color: "000000" })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ width: { size: 10, type: WidthType.PERCENTAGE }, shading: { fill: "F5F5F5" }, borders: headerBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "日期", bold: true, size: FONT_SIZE, color: "000000" })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ width: { size: 8, type: WidthType.PERCENTAGE }, shading: { fill: "F5F5F5" }, borders: headerBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "對象", bold: true, size: FONT_SIZE, color: "000000" })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ width: { size: 8, type: WidthType.PERCENTAGE }, shading: { fill: "F5F5F5" }, borders: headerBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "方式", bold: true, size: FONT_SIZE, color: "000000" })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ width: { size: 62, type: WidthType.PERCENTAGE }, shading: { fill: "F5F5F5" }, borders: headerBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "紀錄內容", bold: true, size: FONT_SIZE, color: "000000" })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ width: { size: 7, type: WidthType.PERCENTAGE }, shading: { fill: "F5F5F5" }, borders: headerBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "記錄者", bold: true, size: FONT_SIZE, color: "000000" })], alignment: AlignmentType.CENTER })] }),
           ]
         })
       ];
@@ -2770,7 +2772,7 @@ createApp({
           }
         }
 
-        const rowShading = idx % 2 === 0 ? "F8F8F8" : null;
+        const rowShading = idx % 2 === 0 ? "FAFAFA" : null;
         recordRows.push(new TableRow({
           children: [
             createDataCell(idx + 1, 5, AlignmentType.CENTER, rowShading),
@@ -2792,7 +2794,7 @@ createApp({
 
       return new Document({
         creator: "輔導個案管理系統", title: `個案紀錄-${c.name}`,
-        styles: { default: { document: { run: { font: "微軟正黑體", size: FONT_SIZE, color: "1E293B" } } } },
+        styles: { default: { document: { run: { font: "微軟正黑體", size: FONT_SIZE, color: "000000" } } } },
         sections: [{
           properties: { page: { margin: { top: 720, bottom: 720, left: 720, right: 720 } } },
           children: [
