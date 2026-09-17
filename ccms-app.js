@@ -2703,22 +2703,32 @@ createApp({
           children: [
             new TableCell({ width: { size: 5, type: WidthType.PERCENTAGE }, shading: { fill: "E2E2E2" }, borders: headerBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "項次", bold: true, size: FONT_SIZE, color: "000000" })], alignment: AlignmentType.CENTER })] }),
             new TableCell({ width: { size: 10, type: WidthType.PERCENTAGE }, shading: { fill: "E2E2E2" }, borders: headerBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "日期", bold: true, size: FONT_SIZE, color: "000000" })], alignment: AlignmentType.CENTER })] }),
-            new TableCell({ width: { size: 10, type: WidthType.PERCENTAGE }, shading: { fill: "E2E2E2" }, borders: headerBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "時間", bold: true, size: FONT_SIZE, color: "000000" })], alignment: AlignmentType.CENTER })] }),
             new TableCell({ width: { size: 8, type: WidthType.PERCENTAGE }, shading: { fill: "E2E2E2" }, borders: headerBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "對象", bold: true, size: FONT_SIZE, color: "000000" })], alignment: AlignmentType.CENTER })] }),
             new TableCell({ width: { size: 8, type: WidthType.PERCENTAGE }, shading: { fill: "E2E2E2" }, borders: headerBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "方式", bold: true, size: FONT_SIZE, color: "000000" })], alignment: AlignmentType.CENTER })] }),
-            new TableCell({ width: { size: 52, type: WidthType.PERCENTAGE }, shading: { fill: "E2E2E2" }, borders: headerBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "紀錄內容", bold: true, size: FONT_SIZE, color: "000000" })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ width: { size: 62, type: WidthType.PERCENTAGE }, shading: { fill: "E2E2E2" }, borders: headerBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "紀錄內容", bold: true, size: FONT_SIZE, color: "000000" })], alignment: AlignmentType.CENTER })] }),
             new TableCell({ width: { size: 7, type: WidthType.PERCENTAGE }, shading: { fill: "E2E2E2" }, borders: headerBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "記錄者", bold: true, size: FONT_SIZE, color: "000000" })], alignment: AlignmentType.CENTER })] }),
           ]
         })
       ];
 
       records.forEach((r, idx) => {
-        const createDataCell = (text, width, align = AlignmentType.CENTER, shading = null) => {
+        const createDataCell = (text, width, align = AlignmentType.CENTER, shading = null, subText = '') => {
+          const paragraphs = [new Paragraph({
+            children: [new TextRun({ text: String(text || '-'), size: FONT_SIZE })],
+            alignment: align
+          })];
+          if (subText) {
+            paragraphs.push(new Paragraph({
+              children: [new TextRun({ text: String(subText), size: FONT_SIZE })],
+              alignment: align,
+              spacing: { before: 0, after: 0 }
+            }));
+          }
           const cellOpts = {
-            borders: modernBorders, 
-            verticalAlign: VerticalAlign.CENTER, 
+            borders: modernBorders,
+            verticalAlign: VerticalAlign.CENTER,
             margins: { top: 120, bottom: 120, left: 120, right: 120 },
-            children: [new Paragraph({ children: [new TextRun({ text: String(text || '-'), size: FONT_SIZE })], alignment: align })]
+            children: paragraphs
           };
           if (shading) cellOpts.shading = { fill: shading };
           return new TableCell(cellOpts);
@@ -2781,12 +2791,11 @@ createApp({
         recordRows.push(new TableRow({
           children: [
             createDataCell(idx + 1, 5, AlignmentType.CENTER, rowShading),
-            createDataCell(this.formatDate(r.dateTime), 10, AlignmentType.CENTER, rowShading),
-            createDataCell(r.time, 10, AlignmentType.CENTER, rowShading),
+            createDataCell(this.formatDate(r.dateTime), 10, AlignmentType.CENTER, rowShading, r.time),
             createDataCell(r.target, 8, AlignmentType.CENTER, rowShading),
             createDataCell(r.method, 8, AlignmentType.CENTER, rowShading),
             new TableCell({
-              width: { size: 52, type: WidthType.PERCENTAGE },
+              width: { size: 62, type: WidthType.PERCENTAGE },
               borders: modernBorders,
               verticalAlign: VerticalAlign.CENTER,
               margins: { top: 120, bottom: 120, left: 120, right: 120 },
