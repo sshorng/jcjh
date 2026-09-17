@@ -1232,6 +1232,12 @@ tbody tr:hover {
   margin-right: 4px;
 }
 
+.record-time {
+  margin-left: 6px;
+  color: var(--tx);
+  font-weight: 500;
+}
+
 .timeline-content {
   font-size: 15px;
   line-height: 1.8;

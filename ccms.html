@@ -8,7 +8,7 @@
   <meta name="description" content="建成國中輔導個案管理系統 - 優先關懷個案名單與晤談紀錄管理">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="ccms-style.css?v=20260616d">
+  <link rel="stylesheet" href="ccms-style.css?v=20260917a">
 </head>
 
 <body>
@@ -165,7 +165,9 @@
                 <tbody>
                   <tr v-for="r in dashData.recentRecords" :key="r.id" @click="viewCaseById(r.caseId)" class="hover-row"
                     style="cursor: pointer">
-                    <td style="white-space: nowrap">{{ formatDate(r.dateTime) }}</td>
+                    <td style="white-space: nowrap">
+                      {{ formatDate(r.dateTime) }}<small v-if="r.time" class="record-time">{{ r.time }}</small>
+                    </td>
                     <td style="white-space: nowrap">
                       <span :class="{'privacy-active': isPrivacyMode}">
                         <span>{{ splitName(r.studentName).first }}</span><span class="name-mid privacy-blur">{{
@@ -499,6 +501,10 @@
               </div>
               <div class="form-grid">
                 <div class="fg"><label>日期</label><input v-model="recordForm.date" type="date"></div>
+                <div class="fg">
+                  <label>時間（可留白，自由填寫）</label>
+                  <input v-model="recordForm.time" type="text" placeholder="例：第 3 節、09:10、午休">
+                </div>
                 <!-- 🎯 改造：服務項目與對象對應組合 (優化空間版) -->
                 <div class="fg full"
                   style="background: rgba(var(--p-alpha), 0.02); padding: 10px; border-radius: 10px; border: 1px dashed var(--bd);">
@@ -662,7 +668,8 @@
               <div class="timeline-item" v-for="r in paginatedRecords" :key="r.id">
                 <div class="timeline-card">
                   <div class="timeline-meta">
-                    <span><i class="fas fa-calendar"></i> {{ formatDate(r.dateTime) }}</span>
+                    <span><i class="fas fa-calendar"></i> {{ formatDate(r.dateTime) }}<small v-if="r.time"
+                        class="record-time">{{ r.time }}</small></span>
                     <span v-if="r.service" class="badge badge-active" style="margin-left:10px">{{ r.service }}</span>
                     <span><i class="fas fa-user-tag"></i> {{ r.target }}</span>
                     <span><i class="fas fa-bullseye"></i> {{ r.method }}</span>
@@ -1555,7 +1562,7 @@
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
-  <script src="ccms-app.js?v=20260701a"></script>
+  <script src="ccms-app.js?v=20260917a"></script>
 </body>
 
 </html>

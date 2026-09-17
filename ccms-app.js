@@ -249,7 +249,7 @@ createApp({
           const isServiceItemsEmpty = (p.serviceItems || []).every(it => !it.service && !it.target);
           const isEmpty = (!p.content.trim()) &&
             isServiceItemsEmpty && (p.methodArr.length === 0) &&
-            (!p.customTarget.trim()) && (!p.customMethod.trim()) && (!p.excludeFromReport) &&
+            (!p.customTarget.trim()) && (!p.customMethod.trim()) && (!String(p.time || '').trim()) && (!p.excludeFromReport) &&
             (p.date === def.date);
 
           if (isEmpty) {
@@ -351,6 +351,7 @@ createApp({
         String(now.getDate()).padStart(2, '0');
       return {
         date: localDate,
+        time: '',
         targetArr: [],
         customTarget: '',
         methodArr: [],
@@ -1719,6 +1720,7 @@ createApp({
 
         this.recordForm = {
           date: rec.dateTime,
+          time: rec.time || '',
           targetArr: targetArr,
           customTarget: customTargets.join(', '),
           methodArr: methodArr,
@@ -1861,6 +1863,7 @@ createApp({
         r = await this.api('updateRecord', {
           id: this.editingRecordId,
           dateTime: this.recordForm.date,
+          time: this.recordForm.time,
           target: targetStr,
           method: methodStr,
           service: serviceStr,
@@ -1872,6 +1875,7 @@ createApp({
         r = await this.api('addRecord', {
           caseId: this.currentCase.id,
           dateTime: this.recordForm.date,
+          time: this.recordForm.time,
           target: targetStr,
           method: methodStr,
           service: serviceStr,
@@ -2699,9 +2703,10 @@ createApp({
           children: [
             new TableCell({ width: { size: 5, type: WidthType.PERCENTAGE }, shading: { fill: "E2E2E2" }, borders: headerBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "項次", bold: true, size: FONT_SIZE, color: "000000" })], alignment: AlignmentType.CENTER })] }),
             new TableCell({ width: { size: 10, type: WidthType.PERCENTAGE }, shading: { fill: "E2E2E2" }, borders: headerBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "日期", bold: true, size: FONT_SIZE, color: "000000" })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ width: { size: 10, type: WidthType.PERCENTAGE }, shading: { fill: "E2E2E2" }, borders: headerBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "時間", bold: true, size: FONT_SIZE, color: "000000" })], alignment: AlignmentType.CENTER })] }),
             new TableCell({ width: { size: 8, type: WidthType.PERCENTAGE }, shading: { fill: "E2E2E2" }, borders: headerBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "對象", bold: true, size: FONT_SIZE, color: "000000" })], alignment: AlignmentType.CENTER })] }),
             new TableCell({ width: { size: 8, type: WidthType.PERCENTAGE }, shading: { fill: "E2E2E2" }, borders: headerBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "方式", bold: true, size: FONT_SIZE, color: "000000" })], alignment: AlignmentType.CENTER })] }),
-            new TableCell({ width: { size: 62, type: WidthType.PERCENTAGE }, shading: { fill: "E2E2E2" }, borders: headerBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "紀錄內容", bold: true, size: FONT_SIZE, color: "000000" })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ width: { size: 52, type: WidthType.PERCENTAGE }, shading: { fill: "E2E2E2" }, borders: headerBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "紀錄內容", bold: true, size: FONT_SIZE, color: "000000" })], alignment: AlignmentType.CENTER })] }),
             new TableCell({ width: { size: 7, type: WidthType.PERCENTAGE }, shading: { fill: "E2E2E2" }, borders: headerBorders, margins: { top: 120, bottom: 120, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "記錄者", bold: true, size: FONT_SIZE, color: "000000" })], alignment: AlignmentType.CENTER })] }),
           ]
         })
@@ -2777,10 +2782,11 @@ createApp({
           children: [
             createDataCell(idx + 1, 5, AlignmentType.CENTER, rowShading),
             createDataCell(this.formatDate(r.dateTime), 10, AlignmentType.CENTER, rowShading),
+            createDataCell(r.time, 10, AlignmentType.CENTER, rowShading),
             createDataCell(r.target, 8, AlignmentType.CENTER, rowShading),
             createDataCell(r.method, 8, AlignmentType.CENTER, rowShading),
             new TableCell({
-              width: { size: 62, type: WidthType.PERCENTAGE },
+              width: { size: 52, type: WidthType.PERCENTAGE },
               borders: modernBorders,
               verticalAlign: VerticalAlign.CENTER,
               margins: { top: 120, bottom: 120, left: 120, right: 120 },
@@ -2960,6 +2966,7 @@ createApp({
 
           recordMap[cid].push({
             dateTime: r['日期時間'],
+            time: r['時間'] || '',
             target: r['對象'],
             method: r['方式'],
             recorderName: r['記錄者姓名'] || r['記錄者帳號'],
@@ -3040,7 +3047,7 @@ createApp({
           const cid = String(r['個案編號']);
           if (!recordMap[cid]) recordMap[cid] = [];
           recordMap[cid].push({
-            dateTime: r['日期時間'], target: r['對象'], method: r['方式'],
+            dateTime: r['日期時間'], time: r['時間'] || '', target: r['對象'], method: r['方式'],
             recorderName: r['記錄者姓名'] || r['記錄者帳號'],
             content: r['輔導服務紀錄']
           });
