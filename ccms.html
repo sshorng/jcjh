@@ -166,7 +166,7 @@
                   <tr v-for="r in dashData.recentRecords" :key="r.id" @click="viewCaseById(r.caseId)" class="hover-row"
                     style="cursor: pointer">
                     <td style="white-space: nowrap">
-                      {{ formatDate(r.dateTime) }}<small v-if="r.time" class="record-time">{{ r.time }}</small>
+                      {{ formatDate(r.dateTime) }}
                     </td>
                     <td style="white-space: nowrap">
                       <span :class="{'privacy-active': isPrivacyMode}">
