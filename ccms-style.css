@@ -1234,8 +1234,8 @@ tbody tr:hover {
 
 .record-time {
   margin-left: 6px;
-  color: var(--tx);
-  font-weight: 500;
+  color: var(--tx2);
+  font-weight: inherit;
 }
 
 .timeline-content {
