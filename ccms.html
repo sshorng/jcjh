@@ -151,14 +151,14 @@
               <h3><i class="fas fa-clock-rotate-left"></i> 最近服務紀錄</h3>
             </div>
             <div class="table-wrap" v-if="dashData.recentRecords && dashData.recentRecords.length">
-              <table style="table-layout: auto;">
+              <table style="table-layout: fixed; width: 100%;">
                 <thead>
                   <tr>
-                    <th style="white-space: nowrap; width: 10%">日期</th>
+                    <th style="white-space: nowrap; width: 11%">日期</th>
                     <th style="white-space: nowrap; width: 15%">學生</th>
-                    <th style="width: 21%">對象</th>
-                    <th style="width: 21%">服務項目</th>
-                    <th style="width: 21%">方式</th>
+                    <th style="width: 25%">對象</th>
+                    <th style="width: 27%">服務項目</th>
+                    <th style="white-space: nowrap; width: 10%">方式</th>
                     <th style="white-space: nowrap; width: 12%">專輔</th>
                   </tr>
                 </thead>
@@ -177,7 +177,7 @@
                     </td>
                     <td :title="r.target" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{
                       r.target }}</td>
-                    <td style="word-break: break-all; white-space: normal; min-width: 120px">{{ r.service }}</td>
+                    <td :title="r.service" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ r.service }}</td>
                     <td style="white-space: nowrap">{{ r.method }}</td>
                     <td style="white-space: nowrap">{{ r.recorderName }}</td>
                   </tr>

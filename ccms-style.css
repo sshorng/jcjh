@@ -2164,8 +2164,21 @@ mark {
 .recent-records-card .table-wrap {
   max-height: 275px; /* 回歸原本 5 筆內容的視覺高度 (約 275px) */
   overflow-y: auto;
+  overflow-x: hidden; /* 避免單筆資料過長撐出橫向捲軸 */
   scrollbar-width: thin;
   scrollbar-color: var(--bd) transparent;
+}
+
+.recent-records-card table {
+  width: 100% !important;
+  table-layout: fixed !important;
+}
+
+.recent-records-card table td,
+.recent-records-card table th {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* 🎯 現代感捲軸美化 (Webkit) */
