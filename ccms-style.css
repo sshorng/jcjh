@@ -873,6 +873,22 @@ tbody tr:hover {
   font-weight: 600;
 }
 
+.case-list-table {
+  table-layout: fixed;
+}
+
+.case-list-table .case-type-column {
+  width: 14%;
+  max-width: 14%;
+}
+
+.case-list-table td.case-type-column .badge-type {
+  max-width: 100%;
+  box-sizing: border-box;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 /* ===== ????===== */
 .search-bar {
   display: flex;
