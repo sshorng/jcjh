@@ -325,10 +325,10 @@
                   <th style="width: 4%">年級</th>
                   <th style="width: 4%">班級</th>
                   <th style="width: 4%">座號</th>
-                  <th style="width: 16%">姓名</th>
+                  <th style="width: 10%">姓名</th>
                   <th style="width: 5%">性別</th>
                   <th style="width: 8%">提報學期</th>
-                  <th class="case-type-column" style="width: 14%">個案類型</th>
+                  <th class="case-type-column" style="width: 20%">個案類型</th>
                   <th style="width: 11%">負責專輔</th>
                   <th style="width: 9%">狀態</th>
                   <th class="align-right" style="width: 10%">操作</th>
@@ -352,7 +352,7 @@
                   </td>
                   <td>{{ c.gender }}</td>
                   <td>{{ c.reportDate || '-' }}</td>
-                  <td class="case-type-column"><span class="badge badge-type" v-if="c.caseType">{{ c.caseType }}</span></td>
+                  <td class="case-type-column"><span class="badge badge-type" v-if="c.caseType" :title="c.caseType">{{ c.caseType }}</span></td>
                   <td>{{ c.counselor }}</td>
                   <td><span
                       :class="['badge', c.status==='進行中'?'badge-active':(c.status==='觀察中'?'badge-obs':'badge-closed')]">{{

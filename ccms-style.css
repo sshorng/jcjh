@@ -878,15 +878,16 @@ tbody tr:hover {
 }
 
 .case-list-table .case-type-column {
-  width: 14%;
-  max-width: 14%;
+  width: 20%;
+  max-width: 20%;
 }
 
 .case-list-table td.case-type-column .badge-type {
   max-width: 100%;
   box-sizing: border-box;
-  white-space: normal;
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ===== ????===== */
