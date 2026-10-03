@@ -366,7 +366,7 @@ createApp({
     },
 
     // ===== API 呼叫 =====
-    async api(action, data = {}, _isRetry = false) {
+    async api(action, data = {}, _isRetry = false, _urlFallback = false) {
       if (!this.gasUrl) {
         this.showToast('請先設定 GAS API 網址', 'error');
         this.showSettings = true;
@@ -419,6 +419,16 @@ createApp({
         return result;
       } catch (e) {
         console.error('API Error:', e);
+
+        // 🎯 舊版分享連結或瀏覽器可能殘留失效的自訂 GAS 網址（404），自動回退預設網址重試一次
+        const storedUrl = localStorage.getItem('cms_gas_url');
+        if (!_urlFallback && this.gasUrl && this.gasUrl !== DEFAULT_GAS_URL && storedUrl) {
+          console.warn('自訂 GAS 網址連線失敗，改用預設網址重試...');
+          this.gasUrl = DEFAULT_GAS_URL;
+          localStorage.removeItem('cms_gas_url');
+          return this.api(action, data, _isRetry, true);
+        }
+
         this.showToast('連線失敗：請檢查 GAS 網址是否正確。', 'error');
         return null;
       }
