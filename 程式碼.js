@@ -22,7 +22,7 @@ const SHEET_CLASSES = '班級設定';
 const SHEET_SETTINGS = '系統設定';
 
 // ============ 工作階段 (Session) 設定 ============
-const SESSION_DURATION = 86400; // 24 小時 (秒)
+const SESSION_DURATION = 21600; // 6 小時（CacheService 上限）
 const SESSION_PREFIX = 'sess_v1_';
 
 /**
@@ -79,7 +79,7 @@ function getSession(token) {
 function handleLogout(data) {
   const token = data.token;
   if (token) {
-    CacheService.getScriptCache().remove(SESSION_PREFIX + token);
+    CacheService.getScriptCache().remove(SESSION_PREFIX + token); PropertiesService.getScriptProperties().deleteProperty(SESSION_PREFIX + token);
   }
   return { success: true, message: '已安全登出' };
 }
@@ -585,7 +585,7 @@ function handleRequest(e) {
         result = { success: true, message: '連線成功', user: session.name };
         break;
       case 'logout':
-        result = handleLogout(data);
+        result = handleLogout(data); break; case 'checkToken': result = { success: true, user: { account: session.account, name: session.name, role: session.role } };
         break;
 
       // --- 使用者管理 ---

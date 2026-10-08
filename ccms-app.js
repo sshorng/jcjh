@@ -366,7 +366,7 @@ createApp({
     },
 
     // ===== API 呼叫 =====
-    async api(action, data = {}, _isRetry = false) {
+    async api(action, data = {}, _isRetry = false, _urlFallback = false) {
       if (!this.gasUrl) {
         this.showToast('請先設定 GAS API 網址', 'error');
         this.showSettings = true;
@@ -388,7 +388,8 @@ createApp({
           mode: 'cors',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(payload),
-          redirect: 'follow'
+          redirect: 'follow',
+          signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined)
         });
 
         if (!r.ok) throw new Error(`HTTP 錯誤: ${r.status}`);
@@ -419,7 +420,17 @@ createApp({
         return result;
       } catch (e) {
         console.error('API Error:', e);
-        this.showToast('連線失敗：請檢查 GAS 網址是否正確。', 'error');
+
+        // 🎯 舊版分享連結或瀏覽器可能殘留失效的自訂 GAS 網址（404），自動回退預設網址重試一次
+        const storedUrl = localStorage.getItem('cms_gas_url');
+        if (!_urlFallback && this.gasUrl && this.gasUrl !== DEFAULT_GAS_URL && storedUrl) {
+          console.warn('自訂 GAS 網址連線失敗，改用預設網址重試...');
+          this.gasUrl = DEFAULT_GAS_URL;
+          localStorage.removeItem('cms_gas_url');
+          return this.api(action, data, _isRetry, true);
+        }
+
+        this.showToast('連線失敗（' + (e && e.message ? e.message : '未知錯誤') + '）：請檢查 GAS 部署與網路。', 'error');
         return null;
       }
     },
@@ -760,7 +771,7 @@ createApp({
           // 3. 異步寫入快取，不阻塞 UI
           setTimeout(() => {
             try {
-              localStorage.setItem('cms_dash_cache', newDataStr);
+              localStorage.setItem('cms_dash_cache', JSON.stringify(this.dashData));
             } catch (e) { }
           }, 0);
 
