@@ -389,7 +389,7 @@ createApp({
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(payload),
           redirect: 'follow',
-          signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined)
+          signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(action === 'login' || action === 'getDashboard' ? 60000 : 30000) : undefined)
         });
 
         if (!r.ok) throw new Error(`HTTP 錯誤: ${r.status}`);
@@ -419,7 +419,7 @@ createApp({
         }
         return result;
       } catch (e) {
-        console.error('API Error:', e);
+        console.error('API Error:', e); if (e && e.name === 'TimeoutError' && !_isRetry) { console.warn('請求超時（疑似 GAS 冷啟動），等待 1 秒後自動重試一次...'); await new Promise(res => setTimeout(res, 1000)); return this.api(action, data, true, _urlFallback); }
 
         // 🎯 舊版分享連結或瀏覽器可能殘留失效的自訂 GAS 網址（404），自動回退預設網址重試一次
         const storedUrl = localStorage.getItem('cms_gas_url');
