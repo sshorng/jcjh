@@ -1290,28 +1290,27 @@
               <div class="fg"><label>導師</label><input v-model="caseForm.homeroom" disabled placeholder="系統自動帶入"></div>
               <div class="fg"><label>班輔</label><input v-model="caseForm.classGuidance" disabled placeholder="系統自動帶入">
               </div>
-              <div class="fg full"><label>專輔（可複選，先勾選者為主，後勾選者為輔，共同輔導皆可編輯、查看此個案）</label>
-                <div class="checkbox-group">
-                  <label v-for="name in configs.allCounselors" :key="name"><input type="checkbox" :value="name"
-                      v-model="caseForm.counselorArr"> {{ name }}</label>
-                </div>
-                <div v-if="caseForm.counselorArr && caseForm.counselorArr.length" class="meta-hint"
-                  style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
-                  <span style="color: var(--text-mut); font-size: 13px;">已選：</span>
-                  <span v-for="(name, idx) in caseForm.counselorArr" :key="name"
-                    :class="['badge', idx === 0 ? 'badge-primary' : 'badge-secondary']"
-                    style="font-size: 13px; padding: 4px 8px;">
-                    {{ name }}【{{ idx === 0 ? '主' : '輔' }}】
-                    <a v-if="idx !== 0" href="#" @click.prevent="setPrimaryCounselor(name)" title="改為主要專輔"
-                      style="margin-left: 4px; text-decoration: underline;">設為主</a>
-                    <a href="#" @click.prevent="removeCounselor(name)" title="移除此專輔"
-                      style="margin-left: 4px; text-decoration: underline;">×</a>
-                  </span>
-                </div>
-                <div v-if="caseForm.counselorArr && caseForm.counselorArr.length > 1" class="meta-hint"
-                  style="margin-top: 6px; color: var(--acc); font-size: 13px; font-weight: bold;">
-                  <i class="fas fa-info-circle"></i> 正式編號以主要專輔（{{ caseForm.counselorArr[0] }}）的教師編碼產生。
-                </div>
+               <div class="fg full"><label>專輔（可複選，先勾選者為主，後勾選者為輔，共同輔導皆可編輯、查看此個案）</label>
+                 <div class="checkbox-group">
+                   <label v-for="name in configs.allCounselors" :key="name"><input type="checkbox" :value="name"
+                       v-model="caseForm.counselorArr"> {{ name }}</label>
+                 </div>
+                 <div v-if="caseForm.counselorArr && caseForm.counselorArr.length" class="meta-hint"
+                   style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
+                   <span style="font-size: 13px;">已選：</span>
+                   <span v-for="(name, idx) in caseForm.counselorArr" :key="name"
+                     :class="['badge', idx === 0 ? 'badge-main' : 'badge-sub']"
+                     style="font-size: 13px; padding: 4px 10px;">
+                     {{ name }}【{{ idx === 0 ? '主' : '輔' }}】
+                     <a href="#" @click.prevent="removeCounselor(name)" title="移除此專輔"
+                       style="margin-left: 4px; text-decoration: underline; color: inherit;">×</a>
+                   </span>
+                 </div>
+                 <div v-if="caseForm.counselorArr && caseForm.counselorArr.length > 1" class="meta-hint"
+                   style="margin-top: 6px; color: var(--acc); font-size: 13px; font-weight: bold;">
+                   <i class="fas fa-info-circle"></i> 正式編號以主要專輔（{{ caseForm.counselorArr[0] }}）的教師編碼產生；要換主請取消勾選後依序重勾。
+                 </div>
+               </div>
               </div>
               <div class="fg"><label>特教個管老師</label><input v-model="caseForm.specialEduTeacher" placeholder="直接輸入特教個管姓名">
               </div>
