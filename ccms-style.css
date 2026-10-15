@@ -865,18 +865,6 @@ tbody tr:hover {
   background: rgba(var(--p-alpha), .15);
   color: var(--p);
 }
- .badge-main {
-   background: #e76f51;
-   color: #fff;
-   font-weight: 700;
-   border: 1px solid #e76f51;
- }
- .badge-sub {
-   background: transparent;
-   color: #e76f51;
-   border: 1px solid #e76f51;
-   font-weight: 600;
- }
 
 .badge-type {
   background: rgba(var(--p-alpha), 0.12);

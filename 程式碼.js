@@ -223,12 +223,6 @@ function hashPassword(password) {
    var nm = String(userName || '');
    return list.some(function(n) { return n === acc || (nm && n === nm); });
  }
- // 報表等輸出歸屬：只認第一位（主專輔），次要專輔不影響任何輸出
- function isPrimaryCounselor(sheetVal, account, userName) {
-   var first = splitCounselors(sheetVal)[0] || '';
-   if (!first) return false;
-   return first === String(account || '') || (String(userName || '') !== '' && first === String(userName));
- }
 
 /**
  * 取得當前學期（格式：114-1, 113-2）
@@ -1795,10 +1789,10 @@ function handleGetMonthlyReportData(data) {
   const teacherCode = currentUser ? (currentUser['教師編碼'] || '1') : '1';
   const userName = currentUser ? (currentUser['姓名'] || '') : '';
 
-  // 月報表歸屬只看主專輔：次要專輔的協同個案不列入其報表（紀錄仍歸主專輔統計）
+  // 專輔教師只能匯出自己負責的個案（支援多位專輔共同輔導）
   let myCases = casesRaw;
   if (role === '專輔教師' && account) {
-    myCases = casesRaw.filter(c => isPrimaryCounselor(c['專輔'], account, userName));
+    myCases = casesRaw.filter(c => isCounselorAssigned(c['專輔'], account, userName));
   }
 
   const myCaseIds = new Set(myCases.map(c => String(c['個案編號'])));
@@ -2924,13 +2918,13 @@ function handleGetBatchSummaries(data) {
 
   const allUsers = getSheetData(SHEET_USERS);
   let myCases = cases;
-  // 綜述僅供回覆表匯出（報表輸出）：只取主專輔負責的個案，次要專輔不影響
+  
   if (data.role === '專輔教師' && data.account) {
     const user = allUsers.find(u => u['帳號'] === data.account);
     const userName = user ? user['姓名'] : '';
     myCases = cases.filter(c => {
       const cfg = classMap[`${c['年級']}_${c['班級']}`];
-      return isPrimaryCounselor(c['專輔'] || (cfg ? cfg['專輔'] : ''), data.account, userName);
+      return isCounselorAssigned(c['專輔'] || (cfg ? cfg['專輔'] : ''), data.account, userName);
     });
   }
 
