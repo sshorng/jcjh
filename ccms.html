@@ -1579,6 +1579,45 @@
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
   <script src="ccms-app.js?v=20261015d"></script>
+  <script>
+  // 診斷與自癒：把「為什麼壞掉」直接顯示在畫面上，避免無聲死頁
+  (function () {
+    var problems = [];
+    function note(msg) { if (problems.indexOf(msg) < 0) problems.push(msg); }
+    window.addEventListener('error', function (e) {
+      note('JS錯誤：' + (e.message || '未知') + ' @ ' + (e.filename || '').split('/').pop() + ':' + (e.lineno || '?'));
+      show();
+    });
+    window.addEventListener('unhandledrejection', function (e) {
+      note('非同步錯誤：' + ((e.reason && (e.reason.message || e.reason)) || '未知'));
+      show();
+    });
+    function show() {
+      var el = document.getElementById('ccmsDiag');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'ccmsDiag';
+        el.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:2147483647;background:#7f1d1d;color:#fff;font:13px/1.6 monospace;padding:10px 14px;white-space:pre-wrap;max-height:40vh;overflow:auto;';
+        document.addEventListener('DOMContentLoaded', function () { document.body.appendChild(el); });
+        if (document.body) document.body.appendChild(el);
+      }
+      el.textContent = '⚠️ 系統診斷：\n' + problems.join('\n');
+    }
+    window.addEventListener('load', function () {
+      setTimeout(function () {
+        if (!window.Vue) note('Vue 核心未載入（外部 CDN 被擋或離線）');
+        var app = document.getElementById('app');
+        if (!app || !app.__vue_app__) {
+          note('Vue 未接管頁面（app 未掛載）。頁面看到的是原始模板，不是真實介面。');
+          var mv = (document.scripts.filter(function (s) { return /ccms-app/.test(s.src); })[0] || {}).src || '';
+          note('目前載入的 app 版本：' + (mv.split('?v=')[1] || '無版本參數'));
+          note('主控台輸入 location.reload(true) 或按 Ctrl+F5 後，若仍出現本視窗請截圖告知管理員。');
+        }
+        if (problems.length) show();
+      }, 3000);
+    });
+  })();
+  </script>
 </body>
 
 </html>
