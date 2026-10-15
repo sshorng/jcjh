@@ -332,15 +332,16 @@ createApp({
       const raw = (c.counselorArr && c.counselorArr.length) ? c.counselorArr : c.counselor;
       return this.splitCounselors(raw);
     },
-     // 報表等輸出歸屬：只取第一位（主專輔），次要專輔不影響任何輸出
-     primaryCounselor(c) {
-       if (typeof c === 'string' || Array.isArray(c)) return this.splitCounselors(c)[0] || '';
-       return this.counselorNames(c)[0] || '';
-     },
     isAssignedCounselor(c, account, name) {
       const list = this.counselorNames(c);
       if (!list.length) return false;
       return list.some(n => n === String(account || '') || (name && n === String(name)));
+    },
+    // 主輔調整：把指定專輔移到第一位（主），其餘依序為輔
+    setPrimaryCounselor(name) {
+      const rest = (this.caseForm.counselorArr || []).filter(n => n !== name);
+      this.caseForm.counselorArr = [name, ...rest];
+      this.caseForm.counselor = this.caseForm.counselorArr.join('、');
     },
     // 從已選專輔中移除
     removeCounselor(name) {
@@ -2242,10 +2243,8 @@ createApp({
           if (sumField) {
             const caseSums = summaryMap[c.id];
             const text = caseSums ? caseSums[sumField] : '';
-             const counselorFull = caseSums ? caseSums.counselor : c.counselor;
-             // 報表歸屬只看主專輔：次要專輔不影響篩選與輸出內容
-             const counselor = this.primaryCounselor(counselorFull);
-             const matchesCounselor = !selectedCounselor || counselor === selectedCounselor;
+            const counselor = caseSums ? caseSums.counselor : c.counselor;
+            const matchesCounselor = !selectedCounselor || this.splitCounselors(counselor).includes(selectedCounselor);
             if (matchesCounselor && text && text.trim() !== '') {
               targetCases.push({
                 ...c,
@@ -2742,9 +2741,9 @@ createApp({
         create2ColRow("個案類別", c.caseType),
         create2ColRow("個案來源", c.caseSource),
         create2ColRow("專輔個案摘要", c.situation),
-         create2ColRow("導師提報內容", (c.reportDate ? `(${c.reportDate}) ` : '') + (c.teacherReport || '-')),
-         create2ColRow("主要服務方式", c.serviceMethod),
-         create2ColRow("負責專職輔導", this.primaryCounselor(c)),
+        create2ColRow("導師提報內容", (c.reportDate ? `(${c.reportDate}) ` : '') + (c.teacherReport || '-')),
+        create2ColRow("主要服務方式", c.serviceMethod),
+        create2ColRow("負責專職輔導", c.counselor),
         create2ColRow("認輔教師", c.mentorTeacher),
         create2ColRow("身分背景", c.identity),
       ];
@@ -3059,7 +3058,7 @@ createApp({
             serviceMethod: String(c['個案服務方式'] || ''),
             identity: String(c['身分背景'] || ''),
             specialEdu: String(c['特教身分'] || ''),
-             counselor: this.primaryCounselor(String(c['專輔'] || '')),
+            counselor: String(c['專輔'] || ''),
             mentorTeacher: String(c['認輔教師'] || ''),
             specialEduTeacher: String(c['特教個管老師'] || ''),
             caseSource: String(c['個案來源'] || ''),
@@ -3137,7 +3136,7 @@ createApp({
             serviceMethod: String(c['個案服務方式'] || ''),
             identity: String(c['身分背景'] || ''),
             specialEdu: String(c['特教身分'] || ''),
-             counselor: this.primaryCounselor(String(c['專輔'] || '')),
+            counselor: String(c['專輔'] || ''),
             mentorTeacher: String(c['認輔教師'] || ''),
             specialEduTeacher: String(c['特教個管老師'] || ''),
             caseSource: String(c['個案來源'] || ''),

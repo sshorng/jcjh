@@ -1290,27 +1290,28 @@
               <div class="fg"><label>導師</label><input v-model="caseForm.homeroom" disabled placeholder="系統自動帶入"></div>
               <div class="fg"><label>班輔</label><input v-model="caseForm.classGuidance" disabled placeholder="系統自動帶入">
               </div>
-               <div class="fg full"><label>專輔（可複選，先勾選者為主，後勾選者為輔，共同輔導皆可編輯、查看此個案）</label>
-                 <div class="checkbox-group">
-                   <label v-for="name in configs.allCounselors" :key="name"><input type="checkbox" :value="name"
-                       v-model="caseForm.counselorArr"> {{ name }}</label>
-                 </div>
-                 <div v-if="caseForm.counselorArr && caseForm.counselorArr.length" class="meta-hint"
-                   style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
-                   <span style="font-size: 13px;">已選：</span>
-                   <span v-for="(name, idx) in caseForm.counselorArr" :key="name"
-                     :class="['badge', idx === 0 ? 'badge-main' : 'badge-sub']"
-                     style="font-size: 13px; padding: 4px 10px;">
-                     {{ name }}【{{ idx === 0 ? '主' : '輔' }}】
-                     <a href="#" @click.prevent="removeCounselor(name)" title="移除此專輔"
-                       style="margin-left: 4px; text-decoration: underline; color: inherit;">×</a>
-                   </span>
-                 </div>
-                 <div v-if="caseForm.counselorArr && caseForm.counselorArr.length > 1" class="meta-hint"
-                   style="margin-top: 6px; color: var(--acc); font-size: 13px; font-weight: bold;">
-                   <i class="fas fa-info-circle"></i> 正式編號以主要專輔（{{ caseForm.counselorArr[0] }}）的教師編碼產生；要換主請取消勾選後依序重勾。
-                 </div>
-               </div>
+              <div class="fg full"><label>專輔（可複選，先勾選者為主，後勾選者為輔，共同輔導皆可編輯、查看此個案）</label>
+                <div class="checkbox-group">
+                  <label v-for="name in configs.allCounselors" :key="name"><input type="checkbox" :value="name"
+                      v-model="caseForm.counselorArr"> {{ name }}</label>
+                </div>
+                <div v-if="caseForm.counselorArr && caseForm.counselorArr.length" class="meta-hint"
+                  style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
+                  <span style="color: var(--text-mut); font-size: 13px;">已選：</span>
+                  <span v-for="(name, idx) in caseForm.counselorArr" :key="name"
+                    :class="['badge', idx === 0 ? 'badge-primary' : 'badge-secondary']"
+                    style="font-size: 13px; padding: 4px 8px;">
+                    {{ name }}【{{ idx === 0 ? '主' : '輔' }}】
+                    <a v-if="idx !== 0" href="#" @click.prevent="setPrimaryCounselor(name)" title="改為主要專輔"
+                      style="margin-left: 4px; text-decoration: underline;">設為主</a>
+                    <a href="#" @click.prevent="removeCounselor(name)" title="移除此專輔"
+                      style="margin-left: 4px; text-decoration: underline;">×</a>
+                  </span>
+                </div>
+                <div v-if="caseForm.counselorArr && caseForm.counselorArr.length > 1" class="meta-hint"
+                  style="margin-top: 6px; color: var(--acc); font-size: 13px; font-weight: bold;">
+                  <i class="fas fa-info-circle"></i> 正式編號以主要專輔（{{ caseForm.counselorArr[0] }}）的教師編碼產生。
+                </div>
               </div>
               <div class="fg"><label>特教個管老師</label><input v-model="caseForm.specialEduTeacher" placeholder="直接輸入特教個管姓名">
               </div>
@@ -1572,33 +1573,13 @@
 
   </div>
 
-   <!-- Vue 本地優先：站內自帶 v3.5.44，不再依賴學校網路是否放行外部 CDN；載入失敗才回退 unpkg -->
-   <script src="./vue.global.prod.js?v=3.5.44"></script>
-   <script>if (!window.Vue) { document.write('<script src="https://unpkg.com/vue@3.5.44/dist/vue.global.prod.js"><\/script>'); }</script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
   <!-- 🎯 效能優化：匯出套件以 defer 方式非阻塞載入，不影響首次渲染 -->
   <script defer src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
-   <script src="ccms-app.js?v=20261015c"></script>
-   <script>
-   // 開機守衛：若 Vue 核心未載入（CDN 被擋或離線），顯示明確提示而非無反應死頁面
-   window.addEventListener('load', function () {
-     setTimeout(function () {
-       var mounted = false;
-       try {
-         var el = document.getElementById('app');
-         mounted = !!(window.Vue && el && el.__vue_app__);
-       } catch (e) { mounted = false; }
-       if (!mounted) {
-         var b = document.createElement('div');
-         b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;font-size:15px;padding:12px 16px;text-align:center;';
-         b.textContent = '頁面核心載入失敗（Vue 無法啟動，多半是網路或 CDN 被阻擋），請確認連線後按 Ctrl+F5 強制重整。若持續發生請聯繫管理員。';
-         document.body.insertBefore(b, document.body.firstChild);
-       }
-     }, 2500);
-   });
-   </script>
+  <script src="ccms-app.js?v=20261008b"></script>
 </body>
 
 </html>
