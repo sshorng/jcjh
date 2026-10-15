@@ -337,6 +337,17 @@ createApp({
       if (!list.length) return false;
       return list.some(n => n === String(account || '') || (name && n === String(name)));
     },
+    // 主輔調整：把指定專輔移到第一位（主），其餘依序為輔
+    setPrimaryCounselor(name) {
+      const rest = (this.caseForm.counselorArr || []).filter(n => n !== name);
+      this.caseForm.counselorArr = [name, ...rest];
+      this.caseForm.counselor = this.caseForm.counselorArr.join('、');
+    },
+    // 從已選專輔中移除
+    removeCounselor(name) {
+      this.caseForm.counselorArr = (this.caseForm.counselorArr || []).filter(n => n !== name);
+      this.caseForm.counselor = this.caseForm.counselorArr.join('、');
+    },
 
     // ===== 表單初始化 =====
     emptyCaseForm() {
