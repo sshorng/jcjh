@@ -1290,11 +1290,15 @@
               <div class="fg"><label>導師</label><input v-model="caseForm.homeroom" disabled placeholder="系統自動帶入"></div>
               <div class="fg"><label>班輔</label><input v-model="caseForm.classGuidance" disabled placeholder="系統自動帶入">
               </div>
-              <div class="fg"><label>專輔</label>
-                <select v-model="caseForm.counselor">
-                  <option value="">--請選擇專輔人員--</option>
-                  <option v-for="name in configs.allCounselors" :key="name" :value="name">{{ name }}</option>
-                </select>
+              <div class="fg full"><label>專輔（可複選，共同輔導的老師皆可編輯、查看此個案）</label>
+                <div class="checkbox-group">
+                  <label v-for="name in configs.allCounselors" :key="name"><input type="checkbox" :value="name"
+                      v-model="caseForm.counselorArr"> {{ name }}</label>
+                </div>
+                <div v-if="caseForm.counselorArr && caseForm.counselorArr.length > 1" class="meta-hint"
+                  style="margin-top: 6px; color: var(--acc); font-size: 13px; font-weight: bold;">
+                  <i class="fas fa-info-circle"></i> 正式編號以後續第一位專輔（{{ caseForm.counselorArr[0] }}）的教師編碼產生。
+                </div>
               </div>
               <div class="fg"><label>特教個管老師</label><input v-model="caseForm.specialEduTeacher" placeholder="直接輸入特教個管姓名">
               </div>
@@ -1471,7 +1475,7 @@
           <ul style="padding-left:20px">
             <li><strong>管理員</strong>：全權限（可看/編輯所有個案、帳號管理、系統配置）</li>
             <li><strong>行政</strong>：可看/編輯所有個案，但不具備帳號管理權限</li>
-            <li><strong>專輔教師</strong>：僅能看/編輯自己負責的個案</li>
+            <li><strong>專輔教師</strong>：僅能看／編輯自己負責的個案（含共同輔導的個案）</li>
           </ul>
         </div>
       </div>

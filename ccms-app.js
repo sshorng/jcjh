@@ -125,7 +125,7 @@ createApp({
       // 1. 下拉篩選
       if (this.filterGrade) result = result.filter(c => c.grade === this.filterGrade);
       if (this.filterStatus) result = result.filter(c => c.status === this.filterStatus);
-      if (this.filterCounselor) result = result.filter(c => c.counselor === this.filterCounselor);
+      if (this.filterCounselor) result = result.filter(c => this.counselorNames(c).includes(this.filterCounselor));
 
       if (this.filterIdentity) {
         const q = this.filterIdentity.trim();
@@ -322,6 +322,22 @@ createApp({
       return { first: name[0], mid: name.substring(1, len - 1), last: name[len - 1] };
     },
 
+    // ===== 專輔多選共用（以「、」分隔儲存，舊單一姓名自動相容） =====
+    splitCounselors(val) {
+      if (Array.isArray(val)) return val.map(s => String(s || '').trim()).filter(Boolean);
+      return String(val || '').split(/[,，、;；\s]+/).map(s => s.trim()).filter(Boolean);
+    },
+    counselorNames(c) {
+      if (!c) return [];
+      const raw = (c.counselorArr && c.counselorArr.length) ? c.counselorArr : c.counselor;
+      return this.splitCounselors(raw);
+    },
+    isAssignedCounselor(c, account, name) {
+      const list = this.counselorNames(c);
+      if (!list.length) return false;
+      return list.some(n => n === String(account || '') || (name && n === String(name)));
+    },
+
     // ===== 表單初始化 =====
     emptyCaseForm() {
       // 自動計算當前學期
@@ -334,6 +350,8 @@ createApp({
         id: '', grade: '', class: '', seatNo: '', name: '', gender: '', reportDate: semester,
         situation: '', specialEdu: '0.以下皆非', foreignLowIncome: '',
         teacherReport: '',
+        homeroom: '', classGuidance: '', counselor: '', counselorArr: [],
+        mentorTeacher: '', specialEduTeacher: '',
         serviceMethod: '', caseSource: '', customCaseSource: '', caseType: '', identity: '',
         referralStatus: '2.無轉介', referralMonth: '', // 🎯 預計格式: 115-03
         caseTypeArr: [], identityArr: [],
@@ -914,7 +932,8 @@ createApp({
           caseTypeMainOther: mainOther,
           caseTypeSubOther: subOther,
           identityArr: rawIdentity.filter(id => id !== '特教生'),
-          counselor: base.counselor || ''
+          counselor: base.counselor || '',
+          counselorArr: this.splitCounselors(base.counselorArr && base.counselorArr.length ? base.counselorArr : (base.counselor || ''))
         };
       } else {
         this.caseForm = this.emptyCaseForm();
@@ -980,7 +999,11 @@ createApp({
       if (cfg) {
         this.caseForm.homeroom = cfg['導師'] || '';
         this.caseForm.classGuidance = cfg['班輔'] || '';
-        this.caseForm.counselor = cfg['專輔'] || '';
+        // 多選支援：僅在尚未選取專輔時才自動帶入，避免覆蓋已選的共同輔導名單
+        if ((!this.caseForm.counselorArr || !this.caseForm.counselorArr.length) && !this.caseForm.counselor) {
+          this.caseForm.counselor = cfg['專輔'] || '';
+          this.caseForm.counselorArr = this.splitCounselors(cfg['專輔'] || '');
+        }
         this.showToast(`已自動代入班級相關人員資訊`, 'info');
       }
     },
@@ -994,17 +1017,19 @@ createApp({
       }
     },
     async generateOfficialId() {
+      // 多選支援：以第一位專輔的教師編碼產生編號
+      const firstCounselor = (this.caseForm.counselorArr && this.caseForm.counselorArr.length ? this.caseForm.counselorArr : this.splitCounselors(this.caseForm.counselor))[0] || '';
       if (!this.caseForm.reportDate) {
         this.showToast('請先選取年級或填寫「提報學期」（例：114-1）。', 'error'); return;
       }
-      if (!this.caseForm.counselor) {
+      if (!firstCounselor) {
         this.showToast('請先選取負責之「專輔」老師。', 'error'); return;
       }
       this.loading = true;
       try {
         const r = await this.api('generateOfficialId', {
           reportDate: this.caseForm.reportDate,
-          counselor: this.caseForm.counselor
+          counselor: firstCounselor
         });
         if (r?.success) {
           this.caseForm.id = r.id;
@@ -1052,6 +1077,13 @@ createApp({
       }
 
       console.log('[DEBUG] saveCaseForm start', { editingId: this.editingId, formId: this.caseForm.id });
+
+      // 專輔多選正規化：counselorArr 為主，以「、」分隔存成單一字串（後端同欄位儲存，舊資料相容）
+      const counselorList = (this.caseForm.counselorArr && this.caseForm.counselorArr.length ? this.caseForm.counselorArr : this.splitCounselors(this.caseForm.counselor)).map(s => String(s).trim()).filter(Boolean);
+      if (!counselorList.length) {
+        this.showToast('請至少選取一位負責之「專輔」老師。', 'error'); return;
+      }
+      this.caseForm.counselor = counselorList.join('、');
 
       // 🎯 驗證：如果個案類別包含「19.其他」，說明欄位必填
       if (this.caseForm.caseTypeArr && this.caseForm.caseTypeArr.length > 0) {
@@ -1313,7 +1345,9 @@ createApp({
       });
     },
     canEditCase(c) {
-      return this.isAdmin || c.counselor === this.user?.account || c.counselor === this.user?.name;
+      if (!c) return false;
+      if (this.isAdmin) return true;
+      return this.isAssignedCounselor(c, this.user?.account, this.user?.name);
     },
 
     // --- Word 匯出 ---
@@ -1927,7 +1961,11 @@ createApp({
       });
     },
     canEditRecord(rec) {
-      return this.isAdmin || rec.recorderAccount === this.user?.account;
+      if (this.isAdmin) return true;
+      if (rec && rec.recorderAccount && rec.recorderAccount === this.user?.account) return true;
+      // 共同輔導的專輔可編輯該個案的紀錄（兩人都能編輯、查看）
+      if (this.currentCase && this.isAssignedCounselor(this.currentCase, this.user?.account, this.user?.name)) return true;
+      return false;
     },
 
     // ===== 使用者管理 =====
@@ -2195,7 +2233,7 @@ createApp({
             const caseSums = summaryMap[c.id];
             const text = caseSums ? caseSums[sumField] : '';
             const counselor = caseSums ? caseSums.counselor : c.counselor;
-            const matchesCounselor = !selectedCounselor || counselor === selectedCounselor;
+            const matchesCounselor = !selectedCounselor || this.splitCounselors(counselor).includes(selectedCounselor);
             if (matchesCounselor && text && text.trim() !== '') {
               targetCases.push({
                 ...c,

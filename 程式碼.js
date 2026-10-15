@@ -205,6 +205,24 @@ function hashPassword(password) {
   const raw = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, password + 'counseling_salt_2024');
   return raw.map(b => ('0' + ((b + 256) % 256).toString(16)).slice(-2)).join('');
 }
+ /**
+  * 專輔欄位多選支援：以「、」分隔儲存，舊單一姓名資料自動相容
+  * splitCounselors('王小明、李大華') -> ['王小明', '李大華']
+  */
+ function splitCounselors(val) {
+   if (Array.isArray(val)) return val.map(function(s) { return String(s || '').trim(); }).filter(Boolean);
+   return String(val || '').split(/[,，、;；\s]+/).map(function(s) { return s.trim(); }).filter(Boolean);
+ }
+ function normalizeCounselorField(val) {
+   return splitCounselors(val).join('、');
+ }
+ function isCounselorAssigned(sheetVal, account, userName) {
+   var list = splitCounselors(sheetVal);
+   if (!list.length) return false;
+   var acc = String(account || '');
+   var nm = String(userName || '');
+   return list.some(function(n) { return n === acc || (nm && n === nm); });
+ }
 
 /**
  * 取得當前學期（格式：114-1, 113-2）
@@ -987,11 +1005,8 @@ function handleGetCases(data) {
     const user = getSheetData(SHEET_USERS).find(u => u['帳號'] === data.account);
     const userName = user ? user['姓名'] : '';
     
-    // 只根據個案表中的「專輔」欄位篩選（支援零星個案分配）
-    filtered = cases.filter(c => {
-      const assigned = String(c['專輔'] || '');
-      return assigned === String(data.account) || (userName && assigned === String(userName));
-    });
+    // 只根據個案表中的「專輔」欄位篩選（支援多位專輔共同輔導，以「、」分隔）
+    filtered = cases.filter(c => isCounselorAssigned(c['專輔'], data.account, userName));
   }
 
   return {
@@ -1071,6 +1086,10 @@ function handleAddCase(data) {
     s_7a: '七上綜述', s_7b: '七下綜述', s_8a: '八上綜述', s_8b: '八下綜述', s_9a: '九上綜述', s_9b: '九下綜述'
   };
 
+  // 0. 專輔多選正規化：前端可能傳 counselorArr 陣列或「、」分隔字串，統一存為「、」分隔
+  if (data.counselorArr !== undefined) data.counselor = normalizeCounselorField(data.counselorArr);
+  else if (data.counselor !== undefined) data.counselor = normalizeCounselorField(data.counselor);
+
   // 1. 寫入基本與綜述欄位 (依據 Header 名稱對齊)
   for (const [key, colName] of Object.entries(fieldMap)) {
     const colIdx = headers.indexOf(colName);
@@ -1127,16 +1146,18 @@ function handleUpdateCase(data) {
     return { success: false, error: '找不到該個案' };
   }
 
-  // 權限檢查：改採「專輔」欄位比對姓名或帳號
+  // 權限檢查：專輔欄位比對姓名或帳號（支援多位專輔共同輔導）
   if (data.role === '專輔教師') {
     const userResult = getSheetData(SHEET_USERS).find(u => u['帳號'] === data.account);
     const userName = userResult ? userResult['姓名'] : '';
-    const counselorInSheet = String(caseItem['專輔'] || '');
-    
-    if (counselorInSheet !== String(data.account) && counselorInSheet !== userName) {
+    if (!isCounselorAssigned(caseItem['專輔'], data.account, userName)) {
       return { success: false, error: '您只能編輯自己負責的個案' };
     }
   }
+
+  // 專輔多選正規化
+  if (data.counselorArr !== undefined) data.counselor = normalizeCounselorField(data.counselorArr);
+  else if (data.counselor !== undefined) data.counselor = normalizeCounselorField(data.counselor);
 
   const ss = getSpreadsheet();
   const sheet = ss.getSheetByName(SHEET_CASES);
@@ -1359,11 +1380,8 @@ function handleGetRecords(data) {
     
     const cases = getSheetData(SHEET_CASES);
 
-    // 找出該老師負責的個案 ID (僅以專輔欄位為準)
-    const myCaseIds = cases.filter(c => {
-      const assigned = String(c['專輔'] || '');
-      return assigned === String(data.account) || (userName && assigned === String(userName));
-    }).map(c => String(c['個案編號'] || '').trim());
+    // 找出該老師負責的個案 ID (支援多位專輔共同輔導)
+    const myCaseIds = cases.filter(c => isCounselorAssigned(c['專輔'], data.account, userName)).map(c => String(c['個案編號'] || '').trim());
     
     filtered = filtered.filter(r => {
       const recordCaseId = String(r['個案編號'] || '').trim();
@@ -1408,8 +1426,7 @@ function handleAddRecord(data) {
     const cases = getSheetData(SHEET_CASES);
     const myCase = cases.find(c => {
       if (c['個案編號'] !== data.caseId) return false;
-      const val = String(c['專輔'] || '');
-      return val === String(data.account) || (userName && val === String(userName));
+      return isCounselorAssigned(c['專輔'], data.account, userName);
     });
     if (!myCase) {
       return { success: false, error: '您只能為自己負責的個案新增紀錄' };
@@ -1471,9 +1488,14 @@ function handleUpdateRecord(data) {
     return { success: false, error: '找不到該紀錄' };
   }
 
-  // 權限檢查
+  // 權限檢查：本人可編輯；同個案的共同輔導專輔也可編輯
   if (data.role === '專輔教師' && record['記錄者帳號'] !== data.account) {
-    return { success: false, error: '您只能編輯自己的紀錄' };
+    const _u = getSheetData(SHEET_USERS).find(u => u['帳號'] === data.account);
+    const _un = _u ? _u['姓名'] : '';
+    const _c = getSheetData(SHEET_CASES).find(c => String(c['個案編號'] || '').trim() === String(record['個案編號'] || '').trim());
+    if (!_c || !isCounselorAssigned(_c['專輔'], data.account, _un)) {
+      return { success: false, error: '您只能編輯自己的紀錄' };
+    }
   }
 
   const ss = getSpreadsheet();
@@ -1591,14 +1613,11 @@ function handleGetDashboard(data) {
   let myCases = cases;
   let myRecords = records;
 
-  // 專輔教師權限：嚴格篩選負責個案
+  // 專輔教師權限：嚴格篩選負責個案（支援多位專輔共同輔導）
   if (data.role === '專輔教師' && data.account) {
     const user = allUsers.find(u => u['帳號'] === data.account);
     const userName = user ? user['姓名'] : '';
-    myCases = cases.filter(c => {
-      const val = String(c['專輔'] || '');
-      return val === String(data.account) || (userName && val === String(userName));
-    });
+    myCases = cases.filter(c => isCounselorAssigned(c['專輔'], data.account, userName));
     const myCaseIds = new Set(myCases.map(c => String(c['個案編號']))); // 使用 Set 加速
     myRecords = records.filter(r => myCaseIds.has(String(r['個案編號'])));
   }
@@ -1770,13 +1789,10 @@ function handleGetMonthlyReportData(data) {
   const teacherCode = currentUser ? (currentUser['教師編碼'] || '1') : '1';
   const userName = currentUser ? (currentUser['姓名'] || '') : '';
 
-  // 專輔教師只能匯出自己負責的個案
+  // 專輔教師只能匯出自己負責的個案（支援多位專輔共同輔導）
   let myCases = casesRaw;
   if (role === '專輔教師' && account) {
-    myCases = casesRaw.filter(c => {
-      const val = String(c['專輔'] || '');
-      return val === String(account) || (userName && val === String(userName));
-    });
+    myCases = casesRaw.filter(c => isCounselorAssigned(c['專輔'], account, userName));
   }
 
   const myCaseIds = new Set(myCases.map(c => String(c['個案編號'])));
@@ -2908,8 +2924,7 @@ function handleGetBatchSummaries(data) {
     const userName = user ? user['姓名'] : '';
     myCases = cases.filter(c => {
       const cfg = classMap[`${c['年級']}_${c['班級']}`];
-      const val = String(c['專輔'] || (cfg ? cfg['專輔'] : ''));
-      return val === String(data.account) || (userName && val === String(userName));
+      return isCounselorAssigned(c['專輔'] || (cfg ? cfg['專輔'] : ''), data.account, userName);
     });
   }
 
@@ -3050,8 +3065,8 @@ function handleGenerateOfficialId(data) {
   const cases = getSheetData(SHEET_CASES);
   const users = getSheetData(SHEET_USERS);
   
-  // 1. 取得「負責專輔」的教師編碼
-  const counselorName = data.counselor || '';
+  // 1. 取得「負責專輔」的教師編碼（多人共同輔導時以第一位專輔編碼產生編號）
+  const counselorName = splitCounselors(data.counselor || data.counselorArr || '')[0] || '';
   if (!counselorName) {
     return { success: false, error: '請先在基本資料中選取「專輔」老師。' };
   }
