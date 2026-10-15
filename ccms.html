@@ -1572,7 +1572,9 @@
 
   </div>
 
-  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+   <!-- Vue 本地優先：站內自帶 v3.5.44，不再依賴學校網路是否放行外部 CDN；載入失敗才回退 unpkg -->
+   <script src="./vue.global.prod.js?v=3.5.44"></script>
+   <script>if (!window.Vue) { document.write('<script src="https://unpkg.com/vue@3.5.44/dist/vue.global.prod.js"><\/script>'); }</script>
   <!-- 🎯 效能優化：匯出套件以 defer 方式非阻塞載入，不影響首次渲染 -->
   <script defer src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
